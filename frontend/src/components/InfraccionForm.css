@@ -1,0 +1,117 @@
+.infraccion-form {
+  display: flex;
+  flex-direction: column;
+
+  gap: 13px;
+}
+
+.infraccion-identificadores {
+  display: grid;
+  grid-template-columns:
+    repeat(
+      2,
+      minmax(0, 1fr)
+    );
+
+  gap: 8px;
+}
+
+.infraccion-identificadores > div {
+  display: flex;
+  flex-direction: column;
+
+  padding: 9px;
+
+  border-radius: 8px;
+
+  background: #f9fafb;
+}
+
+.infraccion-identificadores span {
+  color: #9ca3af;
+
+  font-size: 9px;
+  font-weight: 700;
+
+  text-transform: uppercase;
+}
+
+.infraccion-identificadores strong {
+  margin-top: 2px;
+
+  font-size: 14px;
+}
+
+.infraccion-form label {
+  display: flex;
+  flex-direction: column;
+
+  gap: 5px;
+
+  color: #374151;
+
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.infraccion-form input,
+.infraccion-form textarea {
+  width: 100%;
+
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+
+  padding: 10px;
+
+  background: #ffffff;
+  color: #111827;
+
+  font-size: 14px;
+
+  outline: none;
+}
+
+.infraccion-form input {
+  min-height: 43px;
+}
+
+.infraccion-form textarea {
+  resize: vertical;
+}
+
+.infraccion-error,
+.infraccion-ok {
+  padding: 10px;
+
+  border-radius: 8px;
+
+  font-size: 12px;
+}
+
+.infraccion-error {
+  background: #fef2f2;
+  color: #991b1b;
+}
+
+.infraccion-ok {
+  background: #ecfdf5;
+  color: #047857;
+}
+
+.infraccion-guardar {
+  min-height: 45px;
+
+  border: none;
+  border-radius: 8px;
+
+  background: #1f2937;
+  color: #ffffff;
+
+  font-weight: 700;
+
+  cursor: pointer;
+}
+
+.infraccion-guardar:disabled {
+  opacity: 0.6;
+}

@@ -1,0 +1,457 @@
+.predio-page {
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 20px;
+  box-sizing: border-box;
+  color: #111827;
+}
+
+.predio-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.predio-eyebrow {
+  display: block;
+  margin-bottom: 4px;
+  color: #6b7280;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.7px;
+}
+
+.predio-header h1 {
+  margin: 0;
+  font-size: 30px;
+  line-height: 1.15;
+}
+
+.predio-header p {
+  max-width: 650px;
+  margin: 7px 0 0;
+  color: #6b7280;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.predio-recargar {
+  min-height: 42px;
+  padding: 0 16px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: #fff;
+  color: #374151;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.predio-recargar:hover {
+  background: #f9fafb;
+}
+
+.predio-recargar:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.predio-resumen {
+  display: flex;
+  gap: 0;
+  margin-top: 20px;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.predio-resumen-item {
+  flex: 1;
+  min-width: 0;
+  padding: 15px 18px;
+}
+
+.predio-resumen-item + .predio-resumen-item {
+  border-left: 1px solid #e5e7eb;
+}
+
+.predio-resumen-item span {
+  display: block;
+  color: #6b7280;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.predio-resumen-item strong {
+  display: block;
+  margin-top: 2px;
+  font-size: 27px;
+}
+
+.predio-resumen-item.pendiente strong {
+  color: #b45309;
+}
+
+.predio-herramientas {
+  margin-top: 16px;
+}
+
+.predio-buscador {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  border: 1px solid #d1d5db;
+  border-radius: 9px;
+  background: #fff;
+  overflow: hidden;
+}
+
+.predio-buscador > span {
+  padding-left: 14px;
+}
+
+.predio-buscador input {
+  width: 100%;
+  min-height: 46px;
+  padding: 0 12px;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 14px;
+}
+
+.predio-buscador button {
+  width: 45px;
+  height: 45px;
+  border: none;
+  background: transparent;
+  color: #6b7280;
+  font-size: 23px;
+  cursor: pointer;
+}
+
+.predio-tabs {
+  display: flex;
+  gap: 4px;
+  margin-top: 20px;
+  border-bottom: 1px solid #d1d5db;
+}
+
+.predio-tabs button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 16px;
+  border: none;
+  border-bottom: 3px solid transparent;
+  background: transparent;
+  color: #6b7280;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.predio-tabs button.activo {
+  border-bottom-color: #111827;
+  color: #111827;
+}
+
+.predio-tabs button span {
+  min-width: 23px;
+  padding: 2px 6px;
+  border-radius: 20px;
+  background: #f3f4f6;
+  font-size: 11px;
+}
+
+.predio-error,
+.predio-cargando {
+  margin-top: 20px;
+  padding: 18px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+}
+
+.predio-error {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-color: #fecaca;
+  background: #fef2f2;
+  color: #991b1b;
+}
+
+.predio-error button {
+  margin-left: auto;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 7px;
+  background: #991b1b;
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+@media (max-width: 700px) {
+  .predio-page {
+    padding: 13px;
+  }
+
+  .predio-header {
+    display: block;
+  }
+
+  .predio-header h1 {
+    font-size: 25px;
+  }
+
+  .predio-recargar {
+    width: 100%;
+    margin-top: 14px;
+  }
+
+  .predio-resumen-item {
+    padding: 13px;
+  }
+
+  .predio-resumen-item strong {
+    font-size: 23px;
+  }
+
+  .predio-tabs button {
+    flex: 1;
+    justify-content: center;
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+
+  .predio-error {
+    display: block;
+  }
+
+  .predio-error span {
+    display: block;
+    margin-top: 5px;
+  }
+
+  .predio-error button {
+    width: 100%;
+    margin: 12px 0 0;
+  }
+}
+
+/* ========================================
+   SELECTOR DE PREDIO
+======================================== */
+
+.predio-selector {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 16px 0;
+  margin-bottom: 4px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.predio-selector-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.predio-selector-info strong {
+  font-size: 15px;
+}
+
+.predio-selector-info span {
+  font-size: 13px;
+  opacity: 0.7;
+}
+
+.predio-selector select {
+  width: min(100%, 330px);
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  background: #fff;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.predio-actual {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 0;
+  font-size: 14px;
+}
+
+.predio-actual span {
+  opacity: 0.7;
+}
+
+@media (max-width: 650px) {
+  .predio-selector {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .predio-selector select {
+    width: 100%;
+    max-width: none;
+  }
+
+  .predio-actual {
+    flex-wrap: wrap;
+  }
+}
+
+/* ========================================
+   TABLA VEHÍCULOS EN PREDIO
+======================================== */
+
+.predio-tabla-contenedor {
+  width: 100%;
+  margin-top: 16px;
+  overflow-x: auto;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  background: #fff;
+}
+
+.predio-tabla {
+  width: 100%;
+  min-width: 850px;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.predio-tabla th {
+  padding: 12px 14px;
+  border-bottom: 1px solid #d1d5db;
+  background: #f9fafb;
+  color: #6b7280;
+  text-align: left;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.predio-tabla td {
+  padding: 12px 14px;
+  border-bottom: 1px solid #f1f5f9;
+  vertical-align: middle;
+}
+
+.predio-tabla tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.predio-tabla tbody tr:hover {
+  background: #f9fafb;
+}
+
+.predio-tabla-ver {
+  padding: 7px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: #fff;
+  color: #111827;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.predio-tabla-ver:hover {
+  background: #f3f4f6;
+}
+
+@media (max-width: 700px) {
+  .predio-tabla-contenedor {
+    margin-top: 12px;
+  }
+
+  .predio-tabla th,
+  .predio-tabla td {
+    padding: 10px;
+  }
+}
+
+/* ========================================
+   PAGINACIÓN
+======================================== */
+
+.predio-paginacion {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  margin-top: 16px;
+  padding: 14px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.predio-paginacion span {
+  color: #6b7280;
+  font-size: 13px;
+}
+
+.predio-paginacion strong {
+  color: #111827;
+}
+
+.predio-paginacion button {
+  min-height: 38px;
+  padding: 0 14px;
+  border: 1px solid #d1d5db;
+  border-radius: 7px;
+  background: #fff;
+  color: #111827;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.predio-paginacion button:hover:not(:disabled) {
+  background: #f3f4f6;
+}
+
+.predio-paginacion button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.predio-mensaje {
+  margin-top: 16px;
+  padding: 18px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #fff;
+  color: #6b7280;
+  text-align: center;
+}
+
+@media (max-width: 600px) {
+  .predio-paginacion {
+    gap: 8px;
+    padding: 12px 4px;
+  }
+
+  .predio-paginacion button {
+    min-height: 38px;
+    padding: 0 10px;
+    font-size: 12px;
+  }
+
+  .predio-paginacion span {
+    font-size: 12px;
+    text-align: center;
+  }
+}

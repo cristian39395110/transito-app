@@ -1,0 +1,67 @@
+.mapa-reclamos-page {
+  width: 100%;
+}
+
+.mapa-reclamos-header {
+  display: flex;
+  flex-direction: column;
+
+  gap: 12px;
+
+  margin-bottom: 14px;
+}
+
+.mapa-reclamos-header h1 {
+  margin: 0;
+
+  font-size: 25px;
+}
+
+.mapa-reclamos-header p {
+  margin: 4px 0 0;
+
+  color: #6b7280;
+
+  font-size: 13px;
+}
+
+.mapa-reclamos-header > button {
+  min-height: 41px;
+
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+
+  padding: 8px 14px;
+
+  background: #ffffff;
+
+  font-weight: 700;
+
+  cursor: pointer;
+}
+
+.mapa-reclamos-mensaje,
+.mapa-reclamos-error {
+  padding: 30px 20px;
+
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+
+  background: #ffffff;
+
+  text-align: center;
+
+  color: #6b7280;
+}
+
+.mapa-reclamos-error {
+  color: #991b1b;
+}
+
+@media (min-width: 700px) {
+  .mapa-reclamos-header {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+  }
+}

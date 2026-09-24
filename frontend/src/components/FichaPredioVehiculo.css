@@ -1,0 +1,335 @@
+.ficha-predio {
+  width: 100%;
+}
+
+.ficha-volver {
+  margin: 0 0 14px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: #4b5563;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.ficha-cabecera,
+.ficha-evidencia,
+.ficha-inventario,
+.ficha-gestion {
+  margin-bottom: 14px;
+  padding: 18px;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  background: #fff;
+}
+
+.ficha-identificacion > span,
+.ficha-seccion-titulo > div > span,
+.ficha-solo-lectura > span {
+  display: block;
+  color: #9ca3af;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+}
+
+.ficha-identificacion h1 {
+  margin: 3px 0;
+  font-size: 30px;
+  line-height: 1.1;
+}
+
+.ficha-identificacion > strong {
+  font-size: 18px;
+}
+
+.ficha-datos {
+  display: grid;
+  grid-template-columns:
+    repeat(
+      auto-fit,
+      minmax(150px, 1fr)
+    );
+  gap: 9px;
+  margin-top: 16px;
+}
+
+.ficha-dato {
+  padding: 10px 11px;
+  border: 1px solid #f3f4f6;
+  border-radius: 7px;
+  background: #f9fafb;
+}
+
+.ficha-dato span {
+  display: block;
+  color: #9ca3af;
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.ficha-dato strong {
+  display: block;
+  margin-top: 3px;
+  color: #111827;
+  font-size: 13px;
+  word-break: break-word;
+}
+
+.ficha-aviso-pendiente {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 14px;
+  padding: 14px 16px;
+  border: 1px solid #fcd34d;
+  border-radius: 9px;
+  background: #fffbeb;
+  color: #78350f;
+}
+
+.ficha-aviso-pendiente > span {
+  font-size: 23px;
+}
+
+.ficha-aviso-pendiente strong {
+  display: block;
+  color: #92400e;
+}
+
+.ficha-aviso-pendiente p {
+  margin: 4px 0 0;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.ficha-seccion-titulo {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 15px;
+}
+
+.ficha-seccion-titulo h2 {
+  margin: 3px 0 0;
+  font-size: 20px;
+}
+
+.ficha-evidencia-badge {
+  padding: 5px 9px;
+  border-radius: 20px;
+  background: #f3f4f6;
+  color: #6b7280;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.ficha-ayuda {
+  max-width: 800px;
+  margin: 7px 0 15px;
+  color: #6b7280;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.inventario-recepcion-lista {
+  display: grid;
+  grid-template-columns:
+    repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.inventario-recepcion-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 58px;
+  padding: 10px;
+  border: 1px solid #e5e7eb;
+  border-left: 4px solid #9ca3af;
+  border-radius: 7px;
+  background: #fff;
+}
+
+.inventario-recepcion-item.presente {
+  border-left-color: #16a34a;
+  background: #f0fdf4;
+}
+
+.inventario-recepcion-item.faltante {
+  border-left-color: #dc2626;
+  background: #fef2f2;
+}
+
+.inventario-recepcion-item.danado {
+  border-left-color: #d97706;
+  background: #fffbeb;
+}
+
+.inventario-recepcion-icono {
+  display: flex;
+  flex: 0 0 30px;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: #f3f4f6;
+  font-weight: 900;
+}
+
+.presente
+  .inventario-recepcion-icono {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.faltante
+  .inventario-recepcion-icono {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.danado
+  .inventario-recepcion-icono {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.inventario-recepcion-contenido {
+  min-width: 0;
+}
+
+.inventario-recepcion-contenido strong {
+  display: block;
+  font-size: 13px;
+}
+
+.inventario-recepcion-contenido span {
+  display: block;
+  margin-top: 2px;
+  color: #6b7280;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.inventario-recepcion-item.faltante
+  .inventario-recepcion-contenido
+  span {
+  color: #b91c1c;
+}
+
+.inventario-recepcion-observaciones {
+  margin-top: 12px;
+  padding: 12px;
+  border-left: 3px solid #6b7280;
+  background: #f9fafb;
+}
+
+.inventario-recepcion-observaciones span {
+  color: #6b7280;
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.inventario-recepcion-observaciones p {
+  margin: 5px 0 0;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.ficha-sin-datos,
+.ficha-error {
+  padding: 14px;
+  border-radius: 7px;
+  font-size: 13px;
+}
+
+.ficha-sin-datos {
+  border: 1px dashed #d1d5db;
+  background: #f9fafb;
+  color: #6b7280;
+}
+
+.ficha-error {
+  border: 1px solid #fecaca;
+  background: #fef2f2;
+  color: #991b1b;
+}
+
+.ficha-solo-lectura h2 {
+  margin: 3px 0 7px;
+  font-size: 20px;
+}
+
+.ficha-solo-lectura p {
+  margin: 0;
+  color: #6b7280;
+  font-size: 13px;
+}
+
+.ficha-solo-lectura > div:not(.ficha-datos) {
+  margin-top: 13px;
+  padding-top: 12px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.ficha-solo-lectura small {
+  display: block;
+  color: #9ca3af;
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.ficha-solo-lectura strong {
+  display: block;
+  margin-top: 3px;
+}
+
+@media (min-width: 1400px) {
+  .inventario-recepcion-lista {
+    grid-template-columns:
+      repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 1000px) {
+  .inventario-recepcion-lista {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 600px) {
+  .ficha-cabecera,
+  .ficha-evidencia,
+  .ficha-inventario,
+  .ficha-gestion {
+    padding: 14px;
+    border-radius: 8px;
+  }
+
+  .ficha-identificacion h1 {
+    font-size: 26px;
+  }
+
+  .ficha-seccion-titulo {
+    display: block;
+  }
+
+  .ficha-evidencia-badge {
+    display: inline-block;
+    margin-top: 8px;
+  }
+
+  .ficha-datos {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+  }
+
+  .inventario-recepcion-lista {
+    grid-template-columns: 1fr;
+  }
+}

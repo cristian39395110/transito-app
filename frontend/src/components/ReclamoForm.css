@@ -1,0 +1,259 @@
+.reclamo-form {
+  display: flex;
+  flex-direction: column;
+
+  gap: 18px;
+
+  width: 100%;
+}
+
+.reclamo-form-header h2 {
+  margin: 0;
+
+  color: #111827;
+
+  font-size: 22px;
+}
+
+.reclamo-form-header p {
+  margin: 5px 0 0;
+
+  color: #6b7280;
+
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.reclamo-form label {
+  display: flex;
+  flex-direction: column;
+
+  gap: 6px;
+
+  color: #374151;
+
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.reclamo-form input,
+.reclamo-form select,
+.reclamo-form textarea {
+  width: 100%;
+
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+
+  padding: 11px 12px;
+
+  background: #ffffff;
+  color: #111827;
+
+  outline: none;
+
+  font-size: 13px;
+  font-weight: 400;
+}
+
+.reclamo-form input:focus,
+.reclamo-form select:focus,
+.reclamo-form textarea:focus {
+  border-color: #374151;
+
+  box-shadow:
+    0 0 0 2px
+    rgba(55, 65, 81, 0.08);
+}
+
+.reclamo-form textarea {
+  resize: vertical;
+}
+
+.reclamo-form-destacado {
+  padding: 14px;
+
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+
+  background: #f9fafb;
+}
+
+.reclamo-form-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+
+  gap: 14px;
+}
+
+.reclamo-form-aviso {
+  color: #b91c1c;
+
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.reclamo-ubicacion {
+  padding: 14px;
+
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+
+  background: #fafafa;
+}
+
+.reclamo-ubicacion-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 12px;
+}
+
+.reclamo-ubicacion-header > div {
+  display: flex;
+  flex-direction: column;
+
+  gap: 2px;
+}
+
+.reclamo-ubicacion-header strong {
+  font-size: 12px;
+}
+
+.reclamo-ubicacion-header span {
+  color: #6b7280;
+
+  font-size: 9px;
+}
+
+.reclamo-ubicacion > p {
+  margin: 8px 0 12px;
+
+  color: #6b7280;
+
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.reclamo-mapa-boton {
+  border: 1px solid #d1d5db;
+  border-radius: 7px;
+
+  padding: 8px 11px;
+
+  background: #ffffff;
+  color: #374151;
+
+  cursor: pointer;
+
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.reclamo-ubicacion-seleccionada {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 10px;
+
+  margin-top: 10px;
+
+  padding: 10px 12px;
+
+  border: 1px solid #bbf7d0;
+  border-radius: 8px;
+
+  background: #f0fdf4;
+}
+
+.reclamo-ubicacion-seleccionada > div {
+  display: flex;
+  flex-direction: column;
+
+  gap: 2px;
+}
+
+.reclamo-ubicacion-seleccionada strong {
+  color: #166534;
+
+  font-size: 11px;
+}
+
+.reclamo-ubicacion-seleccionada span {
+  color: #4b5563;
+
+  font-size: 9px;
+}
+
+.reclamo-ubicacion-seleccionada button {
+  border: none;
+
+  background: transparent;
+  color: #b91c1c;
+
+  cursor: pointer;
+
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.reclamo-form-error {
+  padding: 10px 12px;
+
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+
+  background: #fef2f2;
+  color: #b91c1c;
+
+  font-size: 11px;
+}
+
+.reclamo-form-acciones {
+  display: flex;
+  justify-content: flex-end;
+
+  gap: 8px;
+}
+
+.reclamo-form-acciones button {
+  min-height: 42px;
+
+  border-radius: 8px;
+
+  padding: 8px 16px;
+
+  cursor: pointer;
+
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.reclamo-form-cancelar {
+  border: 1px solid #d1d5db;
+
+  background: #ffffff;
+  color: #374151;
+}
+
+.reclamo-form-guardar {
+  border: none;
+
+  background: #1f2937;
+  color: #ffffff;
+}
+
+.reclamo-form-guardar:disabled,
+.reclamo-form-cancelar:disabled {
+  cursor: not-allowed;
+
+  opacity: 0.55;
+}
+
+@media (min-width: 700px) {
+  .reclamo-form-grid {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+  }
+}

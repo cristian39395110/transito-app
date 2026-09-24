@@ -1,0 +1,167 @@
+.vehiculo-detalle {
+  display: flex;
+  flex-direction: column;
+
+  gap: 14px;
+}
+
+.vehiculo-detalle-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+
+  gap: 10px;
+}
+
+.vehiculo-detalle-header > div {
+  display: flex;
+  flex-direction: column;
+}
+
+.vehiculo-detalle-header div > span {
+  color: #9ca3af;
+
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.vehiculo-detalle-header h2 {
+  margin: 2px 0 0;
+
+  font-size: 25px;
+}
+
+.vehiculo-detalle-estado {
+  padding: 6px 9px;
+
+  border-radius: 20px;
+
+  background: #eff6ff;
+  color: #1d4ed8;
+
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.vehiculo-detalle-grid {
+  display: grid;
+  grid-template-columns:
+    repeat(
+      2,
+      minmax(0, 1fr)
+    );
+
+  gap: 11px;
+}
+
+.vehiculo-detalle-grid > div {
+  display: flex;
+  flex-direction: column;
+
+  gap: 3px;
+
+  padding: 10px;
+
+  border-radius: 8px;
+
+  background: #f9fafb;
+}
+
+.vehiculo-detalle-grid span,
+.vehiculo-detalle-descripcion > span {
+  color: #9ca3af;
+
+  font-size: 9px;
+  font-weight: 700;
+
+  text-transform: uppercase;
+}
+
+.vehiculo-detalle-grid strong {
+  font-size: 13px;
+}
+
+.vehiculo-detalle-descripcion {
+  padding: 11px;
+
+  border-radius: 8px;
+
+  background: #f9fafb;
+}
+
+.vehiculo-detalle-descripcion p {
+  margin: 5px 0 0;
+
+  color: #374151;
+
+  font-size: 12px;
+}
+
+.vehiculo-etapa {
+  padding: 15px;
+
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+
+  background: #ffffff;
+}
+
+.vehiculo-etapa h3 {
+  margin: 0 0 9px;
+
+  font-size: 16px;
+}
+
+.vehiculo-etapa > p {
+  margin: 5px 0;
+
+  color: #4b5563;
+
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.vehiculo-etapa-titulo {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+
+  gap: 8px;
+}
+
+.vehiculo-etapa-titulo h3 {
+  margin: 0;
+}
+
+.vehiculo-etapa-titulo span {
+  padding: 4px 7px;
+
+  border-radius: 15px;
+
+  background: #f3f4f6;
+
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.vehiculo-ayuda {
+  margin-bottom: 14px !important;
+
+  color: #6b7280 !important;
+}
+
+.vehiculo-etapa-ok {
+  border-color: #a7f3d0;
+
+  background: #ecfdf5;
+}
+
+@media (min-width: 700px) {
+  .vehiculo-detalle-grid {
+    grid-template-columns:
+      repeat(
+        3,
+        minmax(0, 1fr)
+      );
+  }
+}

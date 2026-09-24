@@ -1,0 +1,509 @@
+.remocion-page {
+  width: min(
+    1080px,
+    calc(100% - 30px)
+  );
+  margin: 0 auto;
+  padding: 24px 0 60px;
+}
+
+
+/* HEADER */
+
+.remocion-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 18px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #cbd5e1;
+}
+
+.remocion-header > button {
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  border-radius: 7px;
+  padding: 9px 12px;
+  cursor: pointer;
+}
+
+.remocion-header span {
+  display: block;
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+}
+
+.remocion-header h1 {
+  margin: 5px 0;
+  font-size: 28px;
+}
+
+.remocion-header p {
+  margin: 0;
+  color: #64748b;
+}
+
+
+/* ERROR */
+
+.remocion-error {
+  margin: 18px 0;
+  padding: 13px 15px;
+  border: 1px solid #fecaca;
+  background: #fef2f2;
+  border-radius: 7px;
+  color: #991b1b;
+  font-weight: 700;
+}
+
+
+/* ACTA */
+
+.remocion-acta {
+  margin: 20px 0 0;
+  padding: 17px 18px;
+  border-left: 5px solid #dc2626;
+  background: #fff7f7;
+}
+
+.remocion-acta > span {
+  display: block;
+  margin-bottom: 4px;
+  color: #991b1b;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+}
+
+.remocion-acta > strong {
+  display: block;
+  font-size: 20px;
+}
+
+.remocion-acta p {
+  margin: 6px 0 0;
+  color: #475569;
+}
+
+
+/* RESUMEN */
+
+.remocion-resumen {
+  display: grid;
+  grid-template-columns:
+    repeat(4, 1fr);
+  margin-top: 20px;
+  border-top: 1px solid #e2e8f0;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.remocion-resumen > div {
+  padding: 15px;
+  border-right: 1px solid #e2e8f0;
+}
+
+.remocion-resumen > div:last-child {
+  border-right: 0;
+}
+
+.remocion-resumen span {
+  display: block;
+  margin-bottom: 4px;
+  color: #64748b;
+  font-size: 11px;
+}
+
+.remocion-resumen strong {
+  display: block;
+}
+
+
+/* SECCIONES */
+
+.remocion-seccion {
+  padding: 28px 0;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.remocion-seccion-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 20px;
+  margin-bottom: 18px;
+}
+
+.remocion-seccion-header span {
+  display: block;
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.09em;
+}
+
+.remocion-seccion-header h2 {
+  margin: 4px 0 5px;
+}
+
+.remocion-seccion-header p {
+  margin: 0;
+  color: #64748b;
+}
+
+.boton-todos-presentes {
+  border: 1px solid #94a3b8;
+  background: #ffffff;
+  border-radius: 7px;
+  padding: 9px 12px;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+
+/* INVENTARIO */
+
+.inventario-lista {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  border-top: 0;
+}
+
+.inventario-item {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 12px;
+
+  min-width: 0;
+  padding: 16px;
+
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.inventario-item > strong {
+  display: block;
+  min-height: 38px;
+
+  font-size: 14px;
+  line-height: 1.35;
+  color: #0f172a;
+}
+
+.inventario-opciones {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 7px;
+}
+
+.inventario-opciones button {
+  width: 100%;
+  min-width: 0;
+  min-height: 42px;
+
+  padding: 8px 6px;
+
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+
+  background: #ffffff;
+  color: #334155;
+
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1.2;
+
+  cursor: pointer;
+}
+
+.inventario-opciones button:hover {
+  background: #f8fafc;
+  border-color: #94a3b8;
+}
+
+.inventario-opciones button.seleccionado {
+  background: #eaf2ff;
+  border-color: #2563eb;
+  color: #1d4ed8;
+}
+
+/* FORM */
+
+.remocion-seccion label {
+  display: block;
+  margin: 15px 0 6px;
+  font-weight: 700;
+}
+
+.remocion-seccion input,
+.remocion-seccion textarea,
+.remocion-seccion select {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 11px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 7px;
+  background: #ffffff;
+  color: #0f172a;
+  font: inherit;
+}
+
+.remocion-form-grid {
+  display: grid;
+  grid-template-columns:
+    1fr 1fr;
+  gap: 15px;
+}
+
+.remocion-campo-completo {
+  grid-column:
+    1 / -1;
+}
+
+
+/* GPS */
+
+.remocion-gps {
+  width: 100%;
+  padding: 15px;
+  border: 1px solid #2563eb;
+  background: #eff6ff;
+  color: #1d4ed8;
+  border-radius: 7px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.remocion-gps-ok {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 5px;
+  padding: 14px;
+  border-left: 4px solid #16a34a;
+  background: #f0fdf4;
+}
+
+.remocion-gps-ok strong {
+  color: #166534;
+}
+
+.remocion-gps-ok small {
+  color: #64748b;
+}
+
+.remocion-gps-ok button {
+  margin-top: 5px;
+  border: 1px solid #94a3b8;
+  background: #ffffff;
+  border-radius: 6px;
+  padding: 7px 10px;
+  cursor: pointer;
+}
+
+
+/* FINAL */
+
+.remocion-final {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 25px;
+  padding-top: 28px;
+}
+
+.remocion-final strong {
+  font-size: 17px;
+}
+
+.remocion-final p {
+  margin: 5px 0 0;
+  color: #64748b;
+}
+
+.remocion-final > button {
+  min-width: 260px;
+  padding: 15px 18px;
+  border: 0;
+  border-radius: 8px;
+  background: #111827;
+  color: white;
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.remocion-final > button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+
+/* RESPONSIVE */
+
+@media (max-width: 800px) {
+  .remocion-resumen {
+    grid-template-columns:
+      1fr 1fr;
+  }
+
+.inventario-lista {
+  grid-template-columns: 1fr;
+}
+
+.inventario-item {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.inventario-opciones {
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+}
+
+.inventario-opciones button {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+  .remocion-form-grid {
+    grid-template-columns:
+      1fr;
+  }
+
+  .remocion-campo-completo {
+    grid-column:
+      auto;
+  }
+
+  .remocion-final {
+    display: block;
+  }
+
+  .remocion-final > button {
+    width: 100%;
+    min-width: 0;
+    margin-top: 16px;
+  }
+}
+
+
+@media (max-width: 560px) {
+  .remocion-page {
+    width: calc(100% - 20px);
+    padding-top: 14px;
+  }
+
+  .remocion-header {
+    display: block;
+  }
+
+  .remocion-header > button {
+    margin-bottom: 14px;
+  }
+
+  .remocion-resumen {
+    grid-template-columns: 1fr;
+  }
+
+  .remocion-resumen > div {
+    border-right: 0;
+    border-bottom: 1px solid #e2e8f0;
+  }
+
+  .remocion-seccion-header {
+    display: block;
+  }
+
+  .boton-todos-presentes {
+    width: 100%;
+    margin-top: 12px;
+  }
+
+  /* INVENTARIO CELULAR */
+
+  .remocion-page .inventario-lista {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    width: 100%;
+    gap: 10px;
+  }
+
+  .remocion-page .inventario-item {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+
+    padding: 12px;
+    box-sizing: border-box;
+  }
+
+  .remocion-page .inventario-item > strong {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    min-height: 0;
+
+    margin: 0;
+    white-space: normal;
+    word-break: normal;
+    overflow-wrap: break-word;
+  }
+
+  .remocion-page .inventario-opciones {
+    display: grid;
+    grid-template-columns:
+      minmax(0, 1fr)
+      minmax(0, 1fr);
+
+    width: 100%;
+    min-width: 0;
+    gap: 7px;
+  }
+
+  .remocion-page .inventario-opciones button {
+    width: 100%;
+    min-width: 0;
+    min-height: 44px;
+    box-sizing: border-box;
+    padding: 8px 4px;
+  }
+}
+
+
+
+
+/* PRUEBA - FORZAR INVENTARIO */
+
+.remocion-page .inventario-lista .inventario-item {
+  display: block !important;
+}
+
+.remocion-page .inventario-lista .inventario-item > strong {
+  display: block !important;
+  width: 100% !important;
+  min-width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 0 10px 0 !important;
+  writing-mode: horizontal-tb !important;
+  word-break: normal !important;
+  overflow-wrap: normal !important;
+  white-space: normal !important;
+}
+
+.remocion-page .inventario-lista .inventario-opciones {
+  display: grid !important;
+  grid-template-columns:
+    minmax(0, 1fr)
+    minmax(0, 1fr) !important;
+  width: 100% !important;
+}

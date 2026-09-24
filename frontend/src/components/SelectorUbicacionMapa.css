@@ -1,0 +1,84 @@
+.selector-mapa {
+  width: 100%;
+
+  overflow: hidden;
+
+  border: 1px solid #d1d5db;
+  border-radius: 9px;
+
+  background: #ffffff;
+}
+
+.selector-mapa-ayuda {
+  padding: 8px 10px;
+
+  border-bottom: 1px solid #e5e7eb;
+
+  background: #ffffff;
+  color: #4b5563;
+
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.selector-mapa-contenedor {
+  width: 100%;
+  height: 310px;
+
+  z-index: 1;
+}
+
+.selector-mapa-icono-contenedor {
+  background: transparent;
+  border: none;
+}
+
+.selector-mapa-icono {
+  position: relative;
+
+  width: 30px;
+  height: 30px;
+
+  border: 4px solid #ffffff;
+  border-radius:
+    50% 50% 50% 0;
+
+  background: #dc2626;
+
+  box-shadow:
+    0 2px 7px
+    rgba(0, 0, 0, 0.3);
+
+  transform: rotate(-45deg);
+}
+
+.selector-mapa-icono span {
+  position: absolute;
+
+  top: 7px;
+  left: 7px;
+
+  width: 8px;
+  height: 8px;
+
+  border-radius: 50%;
+
+  background: #ffffff;
+}
+
+.selector-mapa-confirmacion {
+  padding: 8px 10px;
+
+  border-top: 1px solid #e5e7eb;
+
+  color: #166534;
+
+  font-size: 10px;
+  font-weight: 700;
+}
+
+@media (max-width: 600px) {
+  .selector-mapa-contenedor {
+    height: 270px;
+  }
+}

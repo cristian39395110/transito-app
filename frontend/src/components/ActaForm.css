@@ -1,0 +1,117 @@
+.acta-form {
+  display: flex;
+  flex-direction: column;
+
+  gap: 14px;
+}
+
+.acta-form-titulo h3 {
+  margin: 0;
+
+  font-size: 17px;
+}
+
+.acta-form-titulo p {
+  margin: 4px 0 0;
+
+  color: #6b7280;
+  font-size: 11px;
+}
+
+.acta-form-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+
+  gap: 12px;
+}
+
+.acta-form label {
+  display: flex;
+  flex-direction: column;
+
+  gap: 5px;
+
+  color: #374151;
+
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.acta-form input,
+.acta-form textarea {
+  width: 100%;
+
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+
+  padding: 10px;
+
+  background: #ffffff;
+  color: #111827;
+
+  font-size: 14px;
+  outline: none;
+}
+
+.acta-form input {
+  min-height: 43px;
+}
+
+.acta-form textarea {
+  resize: vertical;
+}
+
+.acta-form input:focus,
+.acta-form textarea:focus {
+  border-color: #4b5563;
+
+  box-shadow:
+    0 0 0 3px
+    rgba(75, 85, 99, 0.1);
+}
+
+.acta-error,
+.acta-ok {
+  padding: 10px;
+
+  border-radius: 8px;
+
+  font-size: 12px;
+}
+
+.acta-error {
+  background: #fef2f2;
+  color: #991b1b;
+}
+
+.acta-ok {
+  background: #ecfdf5;
+  color: #047857;
+}
+
+.acta-guardar {
+  min-height: 46px;
+
+  border: none;
+  border-radius: 8px;
+
+  background: #1f2937;
+  color: #ffffff;
+
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.acta-guardar:disabled {
+  opacity: 0.6;
+}
+
+@media (min-width: 650px) {
+  .acta-form-grid {
+    grid-template-columns:
+      repeat(
+        2,
+        minmax(0, 1fr)
+      );
+  }
+}

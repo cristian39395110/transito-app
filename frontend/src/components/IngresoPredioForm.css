@@ -1,0 +1,251 @@
+.ingreso-predio-form {
+  width: 100%;
+}
+
+.ingreso-bloque {
+  padding: 16px 0;
+  border-top: 1px solid #e5e7eb;
+}
+
+.ingreso-bloque:first-child {
+  padding-top: 5px;
+  border-top: none;
+}
+
+.ingreso-bloque-titulo {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.ingreso-bloque-titulo > span {
+  display: flex;
+  flex: 0 0 28px;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #111827;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.ingreso-bloque-titulo strong {
+  display: block;
+  font-size: 14px;
+}
+
+.ingreso-bloque-titulo small {
+  display: block;
+  margin-top: 2px;
+  color: #6b7280;
+  font-size: 11px;
+}
+
+.ingreso-grid {
+  display: grid;
+  grid-template-columns:
+    repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.ingreso-predio-form label > span {
+  display: block;
+  margin-bottom: 5px;
+  color: #374151;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.ingreso-predio-form label > span small {
+  color: #9ca3af;
+  font-weight: 500;
+}
+
+.ingreso-predio-form input,
+.ingreso-predio-form select,
+.ingreso-predio-form textarea {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid #d1d5db;
+  border-radius: 7px;
+  background: #fff;
+  color: #111827;
+  font-family: inherit;
+  font-size: 14px;
+  outline: none;
+}
+
+.ingreso-predio-form input,
+.ingreso-predio-form select {
+  min-height: 43px;
+  padding: 0 11px;
+}
+
+.ingreso-predio-form textarea {
+  padding: 10px 11px;
+  resize: vertical;
+}
+
+.ingreso-predio-form input:focus,
+.ingreso-predio-form select:focus,
+.ingreso-predio-form textarea:focus {
+  border-color: #6b7280;
+}
+
+.ingreso-pregunta {
+  margin: 0 0 10px;
+  color: #111827;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.ingreso-opciones {
+  display: grid;
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.ingreso-opciones button {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  min-height: 70px;
+  padding: 12px;
+  border: 2px solid #e5e7eb;
+  border-radius: 9px;
+  background: #fff;
+  text-align: left;
+  cursor: pointer;
+}
+
+.ingreso-opciones button > span {
+  display: flex;
+  flex: 0 0 34px;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: #f3f4f6;
+  font-size: 17px;
+  font-weight: 900;
+}
+
+.ingreso-opciones button strong {
+  display: block;
+  font-size: 14px;
+}
+
+.ingreso-opciones button small {
+  display: block;
+  margin-top: 2px;
+  color: #6b7280;
+  font-size: 11px;
+}
+
+.ingreso-opciones button.seleccionada.si {
+  border-color: #16a34a;
+  background: #f0fdf4;
+}
+
+.ingreso-opciones button.seleccionada.si > span {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.ingreso-opciones button.seleccionada.no {
+  border-color: #dc2626;
+  background: #fef2f2;
+}
+
+.ingreso-opciones button.seleccionada.no > span {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.ingreso-diferencias {
+  display: block;
+  margin-top: 13px;
+}
+
+.ingreso-error,
+.ingreso-ok {
+  margin-top: 12px;
+  padding: 11px 13px;
+  border-radius: 7px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.ingreso-error {
+  border: 1px solid #fecaca;
+  background: #fef2f2;
+  color: #991b1b;
+}
+
+.ingreso-ok {
+  border: 1px solid #bbf7d0;
+  background: #f0fdf4;
+  color: #166534;
+}
+
+.ingreso-guardar {
+  width: 100%;
+  min-height: 50px;
+  margin-top: 16px;
+  border: none;
+  border-radius: 8px;
+  background: #111827;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.ingreso-guardar:hover {
+  background: #1f2937;
+}
+
+.ingreso-guardar:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+@media (max-width: 800px) {
+  .ingreso-grid {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+  }
+
+  .campo-posicion {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 600px) {
+  .ingreso-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .campo-posicion {
+    grid-column: auto;
+  }
+
+  .ingreso-opciones {
+    grid-template-columns: 1fr;
+  }
+
+  .ingreso-opciones button {
+    min-height: 67px;
+  }
+
+  .ingreso-guardar {
+    min-height: 54px;
+    font-size: 15px;
+  }
+}

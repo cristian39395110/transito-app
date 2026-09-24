@@ -1,0 +1,1612 @@
+.segunda-visita-page {
+  width: min(100%, 920px);
+  margin: 0 auto;
+  padding: 18px 16px 60px;
+}
+
+.segunda-header {
+  display: flex;
+  gap: 18px;
+  align-items: flex-start;
+  padding-bottom: 18px;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.segunda-volver {
+  border: 0;
+  background: transparent;
+  padding: 8px 0;
+  cursor: pointer;
+  font-size: 15px;
+}
+
+.segunda-etiqueta {
+  display: block;
+  margin-bottom: 5px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: #64748b;
+}
+
+.segunda-header h1 {
+  margin: 0;
+  font-size: 30px;
+}
+
+.segunda-header p {
+  margin: 6px 0 0;
+  color: #64748b;
+}
+
+.segunda-error {
+  margin: 16px 0;
+  padding: 13px 15px;
+  border: 1px solid #ef4444;
+  background: #fef2f2;
+  color: #991b1b;
+  border-radius: 7px;
+  font-weight: 600;
+}
+
+.segunda-resumen {
+  display: grid;
+  grid-template-columns: 1fr 2fr 1fr;
+  gap: 0;
+  margin-top: 20px;
+  border: 1px solid #dbe1e8;
+}
+
+.segunda-resumen > div {
+  padding: 14px 16px;
+  border-right: 1px solid #dbe1e8;
+}
+
+.segunda-resumen > div:last-child {
+  border-right: 0;
+}
+
+.segunda-resumen span,
+.segunda-datos-linea span {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 12px;
+  color: #64748b;
+  text-transform: uppercase;
+}
+
+.segunda-resumen strong,
+.segunda-resumen small {
+  display: block;
+}
+
+.segunda-antecedente {
+  margin-top: 20px;
+  padding: 17px 0;
+  border-top: 1px solid #dbe1e8;
+  border-bottom: 1px solid #dbe1e8;
+}
+
+.segunda-antecedente h2 {
+  margin: 0 0 14px;
+  font-size: 18px;
+}
+
+.segunda-datos-linea {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.segunda-pregunta {
+  padding: 30px 0;
+  text-align: center;
+}
+
+.segunda-pregunta h2 {
+  margin: 0;
+  font-size: 27px;
+}
+
+.segunda-pregunta > p {
+  color: #64748b;
+}
+
+.segunda-opciones {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-top: 22px;
+}
+
+.opcion {
+  min-height: 100px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  text-align: left;
+  padding: 18px;
+  border: 2px solid #d5dbe3;
+  border-radius: 9px;
+  background: #fff;
+  cursor: pointer;
+}
+
+.opcion > span {
+  font-size: 30px;
+  font-weight: 900;
+}
+
+.opcion strong,
+.opcion small {
+  display: block;
+}
+
+.opcion strong {
+  font-size: 18px;
+}
+
+.opcion small {
+  margin-top: 4px;
+  color: #64748b;
+}
+
+.opcion-si.activa {
+  border-color: #16a34a;
+  background: #f0fdf4;
+}
+
+.opcion-no.activa {
+  border-color: #dc2626;
+  background: #fef2f2;
+}
+
+.segunda-seccion {
+  padding: 22px 0;
+  border-top: 1px solid #dbe1e8;
+}
+
+.segunda-seccion h2 {
+  margin: 0 0 12px;
+  font-size: 20px;
+}
+
+.segunda-seccion label,
+.segunda-infraccion label {
+  display: block;
+  margin-bottom: 7px;
+  font-weight: 700;
+}
+
+.segunda-seccion textarea,
+.segunda-infraccion textarea,
+.segunda-infraccion input {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid #b8c1cc;
+  border-radius: 6px;
+  padding: 12px;
+  font: inherit;
+  background: #fff;
+}
+
+.segunda-seccion textarea:focus,
+.segunda-infraccion textarea:focus,
+.segunda-infraccion input:focus {
+  outline: 2px solid #93c5fd;
+  border-color: #2563eb;
+}
+
+.segunda-ayuda {
+  margin-top: -4px;
+  color: #64748b;
+}
+
+.boton-gps {
+  width: 100%;
+  padding: 16px;
+  border: 2px solid #2563eb;
+  border-radius: 7px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-size: 16px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.gps-ok {
+  padding: 14px;
+  border-left: 4px solid #16a34a;
+  background: #f0fdf4;
+}
+
+.gps-ok strong,
+.gps-ok span,
+.gps-ok small {
+  display: block;
+  margin-bottom: 4px;
+}
+
+.gps-ok button {
+  margin-top: 8px;
+  padding: 7px 10px;
+  border: 1px solid #94a3b8;
+  background: #fff;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.segunda-infraccion {
+  margin: 20px 0;
+  padding: 22px;
+  border: 2px solid #dc2626;
+  border-radius: 8px;
+}
+
+.infraccion-titulo {
+  padding-bottom: 18px;
+  border-bottom: 1px solid #fecaca;
+}
+
+.infraccion-titulo > span {
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  color: #b91c1c;
+}
+
+.infraccion-titulo h2 {
+  margin: 5px 0;
+}
+
+.infraccion-titulo p {
+  margin: 0;
+  color: #64748b;
+}
+
+.campo-destacado {
+  margin-top: 20px;
+}
+
+.campo-destacado input {
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.segunda-seccion-interna {
+  margin-top: 20px;
+}
+
+.persona-pregunta {
+  margin-top: 22px;
+  padding-top: 18px;
+  border-top: 1px solid #dbe1e8;
+}
+
+.persona-botones {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.persona-botones button {
+  min-width: 100px;
+  padding: 11px 20px;
+  border: 1px solid #94a3b8;
+  border-radius: 6px;
+  background: #fff;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.persona-botones button.seleccionado {
+  background: #1e293b;
+  border-color: #1e293b;
+  color: #fff;
+}
+
+.datos-persona {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+  margin-top: 18px;
+}
+
+.segunda-final {
+  padding-top: 24px;
+  border-top: 2px solid #dbe1e8;
+}
+
+.boton-finalizar {
+  width: 100%;
+  min-height: 55px;
+  padding: 14px 20px;
+  border: 0;
+  border-radius: 7px;
+  background: #1d4ed8;
+  color: #fff;
+  font-size: 17px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.boton-finalizar:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.segunda-final p {
+  margin: 9px 0 0;
+  text-align: center;
+  color: #64748b;
+  font-size: 13px;
+}
+
+@media (max-width: 700px) {
+  .segunda-visita-page {
+    padding: 12px 12px 45px;
+  }
+
+  .segunda-header {
+    display: block;
+  }
+
+  .segunda-volver {
+    margin-bottom: 10px;
+  }
+
+  .segunda-header h1 {
+    font-size: 25px;
+  }
+
+  .segunda-resumen {
+    display: block;
+  }
+
+  .segunda-resumen > div {
+    border-right: 0;
+    border-bottom: 1px solid #dbe1e8;
+  }
+
+  .segunda-resumen > div:last-child {
+    border-bottom: 0;
+  }
+
+  .segunda-datos-linea {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .segunda-pregunta h2 {
+    font-size: 23px;
+  }
+
+  .segunda-opciones {
+    grid-template-columns: 1fr;
+  }
+
+  .opcion {
+    min-height: 88px;
+  }
+
+  .segunda-infraccion {
+    padding: 17px 13px;
+  }
+
+  .datos-persona {
+    grid-template-columns: 1fr;
+  }
+}
+
+.segunda-reclamo-original {
+  margin-top: 18px;
+  padding: 18px 0;
+  border-bottom: 1px solid #dbe1e8;
+}
+
+.segunda-reclamo-original h2 {
+  margin: 0 0 10px;
+  font-size: 20px;
+}
+
+.segunda-reclamo-original p {
+  margin: 0 0 10px;
+  line-height: 1.55;
+}
+
+.segunda-mapa-seccion {
+  padding: 22px 0;
+  border-bottom: 1px solid #dbe1e8;
+}
+
+.segunda-titulo-linea {
+  display: flex;
+  justify-content: space-between;
+  gap: 15px;
+  align-items: flex-start;
+  margin-bottom: 13px;
+}
+
+.segunda-titulo-linea h2 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.segunda-titulo-linea p {
+  margin: 5px 0 0;
+  color: #64748b;
+}
+
+.origen-mapa {
+  padding: 5px 9px;
+  background: #eef2f7;
+  border-radius: 5px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.segunda-mapa {
+  height: 320px;
+  overflow: hidden;
+  border: 1px solid #cbd5e1;
+  border-radius: 7px;
+}
+
+.coordenadas-anteriores {
+  margin-top: 8px;
+  color: #475569;
+  font-size: 13px;
+}
+
+.sin-mapa,
+.sin-antecedente {
+  padding: 15px;
+  background: #f8fafc;
+  border-left: 4px solid #94a3b8;
+  color: #475569;
+}
+
+.segunda-antecedentes {
+  padding: 25px 0;
+  border-bottom: 1px solid #dbe1e8;
+}
+
+.segunda-seccion-titulo > span,
+.segunda-que-verificar > span {
+  display: block;
+  margin-bottom: 4px;
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: .08em;
+}
+
+.segunda-seccion-titulo h2 {
+  margin: 0 0 20px;
+}
+
+.antecedente-bloque {
+  display: grid;
+  grid-template-columns: 155px 1fr;
+  padding: 17px 0;
+  border-top: 1px solid #e2e8f0;
+}
+
+.antecedente-fecha {
+  padding-right: 16px;
+  color: #64748b;
+  font-size: 13px;
+}
+
+.antecedente-contenido > strong {
+  display: block;
+  font-size: 17px;
+}
+
+.antecedente-contenido p {
+  margin: 8px 0;
+  line-height: 1.5;
+}
+
+.antecedente-resultado,
+.numero-acta-anterior {
+  display: inline-block;
+  margin-top: 5px;
+  font-weight: 800;
+}
+
+.numero-acta-anterior {
+  font-size: 18px;
+}
+
+.antecedente-observacion {
+  margin-top: 9px;
+  color: #475569;
+}
+
+.plazo-vencido {
+  display: inline-block;
+  margin-top: 6px;
+  padding: 4px 8px;
+  background: #fee2e2;
+  color: #991b1b;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.plazo-vigente {
+  display: inline-block;
+  margin-top: 6px;
+  padding: 4px 8px;
+  background: #dcfce7;
+  color: #166534;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.segunda-que-verificar {
+  margin-top: 25px;
+  padding: 20px;
+  background: #eff6ff;
+  border-left: 5px solid #2563eb;
+}
+
+.segunda-que-verificar h2 {
+  margin: 3px 0 8px;
+}
+
+.segunda-que-verificar > p {
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.recordatorio-situacion {
+  margin-top: 15px;
+  padding-top: 13px;
+  border-top: 1px solid #bfdbfe;
+}
+
+.recordatorio-situacion p {
+  margin: 6px 0 0;
+}
+
+@media (max-width: 700px) {
+  .segunda-titulo-linea {
+    display: block;
+  }
+
+  .origen-mapa {
+    display: inline-block;
+    margin-top: 9px;
+  }
+
+  .segunda-mapa {
+    height: 280px;
+  }
+
+  .antecedente-bloque {
+    grid-template-columns: 1fr;
+  }
+
+  .antecedente-fecha {
+    margin-bottom: 7px;
+  }
+
+  .segunda-que-verificar {
+    padding: 16px;
+  }
+}
+
+/* =========================================================
+   NUEVO CONTROL - OPCIONES
+========================================================= */
+
+.control-opciones {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.control-opcion {
+  width: 100%;
+  min-height: 88px;
+  padding: 16px;
+  border: 2px solid #dbe2ea;
+  border-radius: 10px;
+  background: #fff;
+  text-align: left;
+  cursor: pointer;
+  transition: 0.15s ease;
+}
+
+.control-opcion:hover {
+  border-color: #94a3b8;
+}
+
+.control-opcion.seleccionado {
+  border-color: #2563eb;
+  background: #eff6ff;
+}
+
+.control-opcion strong {
+  display: block;
+  margin-bottom: 5px;
+  font-size: 16px;
+}
+
+.control-opcion span {
+  display: block;
+  color: #64748b;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+
+/* =========================================================
+   PRÓRROGA
+========================================================= */
+
+.segunda-prorroga {
+  padding: 24px 0;
+  border-top: 1px solid #e2e8f0;
+}
+
+.bloque-etiqueta {
+  display: inline-block;
+  margin-bottom: 5px;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  color: #475569;
+}
+
+.plazos-rapidos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 15px 0;
+}
+
+.plazos-rapidos button {
+  min-width: 75px;
+  padding: 10px 14px;
+  border: 1px solid #cbd5e1;
+  border-radius: 7px;
+  background: #fff;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.plazos-rapidos button:hover {
+  background: #f8fafc;
+}
+
+.plazo-personalizado {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.segunda-prorroga label,
+.segunda-infraccion label,
+.accion-posterior label {
+  display: block;
+  margin: 14px 0 6px;
+  font-weight: 700;
+}
+
+.segunda-prorroga input,
+.segunda-prorroga select,
+.segunda-prorroga textarea,
+.segunda-infraccion input,
+.segunda-infraccion textarea,
+.accion-posterior textarea {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+
+/* =========================================================
+   QUÉ SE HACE DESPUÉS DE LA INFRACCIÓN
+========================================================= */
+
+.accion-posterior {
+  margin-top: 26px;
+  padding-top: 20px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.accion-posterior h3 {
+  margin: 0 0 14px;
+}
+
+.accion-posterior > button {
+  display: block;
+  width: 100%;
+  margin-bottom: 8px;
+  padding: 13px 15px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: #fff;
+  text-align: left;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.accion-posterior > button.seleccionado {
+  border-color: #2563eb;
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media (max-width: 700px) {
+  .control-opciones {
+    grid-template-columns: 1fr;
+  }
+
+  .control-opcion {
+    min-height: 78px;
+  }
+
+  .plazo-personalizado {
+    grid-template-columns: 1fr;
+  }
+
+  .segunda-prorroga,
+  .segunda-infraccion {
+    padding-top: 18px;
+  }
+}
+
+/* =========================================================
+   CONTEXTO DEL INSPECTOR
+========================================================= */
+
+.control-contexto {
+  margin: 22px 0 28px;
+  border-top: 4px solid #1e3a5f;
+  border-bottom: 1px solid #cbd5e1;
+  background: #ffffff;
+}
+
+.control-contexto-titulo {
+  padding: 20px 20px 16px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.control-contexto-titulo > span {
+  display: block;
+  margin-bottom: 5px;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  color: #1e3a5f;
+}
+
+.control-contexto-titulo h2 {
+  margin: 0 0 5px;
+  font-size: 24px;
+}
+
+.control-contexto-titulo p {
+  margin: 0;
+  color: #64748b;
+}
+
+
+.control-dato-principal {
+  padding: 20px;
+  background: #f8fafc;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.control-dato-principal > span {
+  display: block;
+  margin-bottom: 6px;
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+}
+
+.control-dato-principal > strong {
+  display: block;
+  font-size: 22px;
+  color: #0f172a;
+}
+
+.control-dato-principal > p {
+  max-width: 850px;
+  margin: 9px 0 0;
+  color: #334155;
+  line-height: 1.5;
+}
+
+
+.control-datos-grid {
+  display: grid;
+  grid-template-columns:
+    repeat(4, 1fr);
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.control-datos-grid > div {
+  padding: 15px 18px;
+  border-right: 1px solid #e2e8f0;
+}
+
+.control-datos-grid > div:last-child {
+  border-right: 0;
+}
+
+.control-datos-grid span {
+  display: block;
+  margin-bottom: 5px;
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.control-datos-grid strong {
+  display: block;
+  color: #0f172a;
+}
+
+.control-datos-grid small {
+  display: block;
+  margin-top: 4px;
+  color: #64748b;
+}
+
+
+.control-situacion-anterior {
+  padding: 18px 20px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.control-situacion-anterior > span {
+  display: block;
+  margin-bottom: 6px;
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.07em;
+}
+
+.control-situacion-anterior p {
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.5;
+  color: #1e293b;
+}
+
+
+/* =========================================================
+   HISTORIAL DE EMPLAZAMIENTOS / PRÓRROGAS
+========================================================= */
+
+.control-historial {
+  padding: 20px;
+}
+
+.control-historial h3 {
+  margin: 0 0 15px;
+}
+
+.control-historial-fila {
+  display: grid;
+  grid-template-columns: 32px 1fr;
+  gap: 12px;
+  position: relative;
+  padding-bottom: 18px;
+}
+
+.control-historial-fila:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  left: 15px;
+  top: 31px;
+  bottom: 0;
+  width: 2px;
+  background: #cbd5e1;
+}
+
+.control-historial-numero {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 31px;
+  height: 31px;
+  border-radius: 50%;
+  background: #1e3a5f;
+  color: white;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.control-historial-fila strong {
+  display: block;
+  margin-bottom: 2px;
+}
+
+.control-historial-fila p {
+  margin: 2px 0;
+}
+
+.control-historial-fila small {
+  color: #64748b;
+}
+
+.control-historial-observacion {
+  margin-top: 7px !important;
+  padding: 8px 10px;
+  background: #f8fafc;
+  border-left: 3px solid #94a3b8;
+  color: #475569;
+}
+
+
+/* =========================================================
+   BOTÓN DE RETIRO
+========================================================= */
+
+.accion-posterior button.retiro {
+  border: 2px solid #dc2626;
+}
+
+.accion-posterior button.retiro strong {
+  display: block;
+}
+
+.accion-posterior button.retiro span {
+  display: block;
+  margin-top: 5px;
+  font-size: 12px;
+  opacity: 0.8;
+}
+
+.accion-posterior button.retiro.seleccionado {
+  background: #fef2f2;
+  border-color: #dc2626;
+}
+
+
+/* =========================================================
+   MÓVIL
+========================================================= */
+
+@media (max-width: 800px) {
+  .control-datos-grid {
+    grid-template-columns:
+      1fr 1fr;
+  }
+
+  .control-datos-grid > div {
+    border-bottom:
+      1px solid #e2e8f0;
+  }
+}
+
+
+@media (max-width: 520px) {
+  .control-contexto-titulo,
+  .control-dato-principal,
+  .control-situacion-anterior,
+  .control-historial {
+    padding-left: 15px;
+    padding-right: 15px;
+  }
+
+  .control-datos-grid {
+    grid-template-columns:
+      1fr;
+  }
+
+  .control-datos-grid > div {
+    border-right: 0;
+  }
+
+  .control-dato-principal > strong {
+    font-size: 19px;
+  }
+}
+
+/* UBICACIÓN ORIGINAL DEL RECLAMO */
+
+.control-ubicacion-reclamo {
+  margin-top: 18px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #ffffff;
+}
+
+.control-ubicacion-cabecera {
+  padding: 15px 17px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.control-ubicacion-cabecera > span {
+  display: block;
+  margin-bottom: 5px;
+  color: #2563eb;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+}
+
+.control-ubicacion-cabecera > strong {
+  display: block;
+  color: #0f172a;
+  font-size: 17px;
+}
+
+.control-ubicacion-cabecera > small {
+  display: block;
+  margin-top: 4px;
+  color: #64748b;
+  font-size: 12px;
+}
+
+.control-mapa-reclamo {
+  width: 100%;
+  height: 280px;
+}
+
+.control-mapa-sin-ubicacion {
+  padding: 25px 17px;
+  color: #64748b;
+  text-align: center;
+}
+
+@media (max-width: 560px) {
+  .control-mapa-reclamo {
+    height: 230px;
+  }
+}
+
+/* =========================================================
+   CONTROL FINALIZADO
+========================================================= */
+
+.control-finalizado {
+  margin-top: 28px;
+  border: 1px solid #cbd5e1;
+  border-top: 5px solid #16a34a;
+  background: #ffffff;
+}
+
+
+/* CABECERA */
+
+.control-finalizado-cabecera {
+  padding: 22px 22px 20px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.control-finalizado-etiqueta {
+  display: block;
+  margin-bottom: 6px;
+  color: #15803d;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+}
+
+.control-finalizado-cabecera h2 {
+  margin: 0;
+  color: #0f172a;
+  font-size: 25px;
+}
+
+.control-finalizado-cabecera p {
+  margin: 7px 0 0;
+  color: #64748b;
+  line-height: 1.45;
+}
+
+
+/* RESULTADO Y FECHA */
+
+.control-finalizado-resumen {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  background: #f8fafc;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.control-finalizado-resumen > div {
+  padding: 18px 22px;
+}
+
+.control-finalizado-resumen > div:first-child {
+  border-right: 1px solid #e2e8f0;
+}
+
+.control-finalizado-resumen span {
+  display: block;
+  margin-bottom: 6px;
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.07em;
+}
+
+.control-finalizado-resumen strong {
+  display: block;
+  color: #0f172a;
+  font-size: 16px;
+  line-height: 1.4;
+}
+
+
+/* BLOQUES DE INFORMACIÓN */
+
+.control-finalizado-bloque {
+  padding: 20px 22px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.control-finalizado-label {
+  display: block;
+  margin-bottom: 8px;
+  color: #475569;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.07em;
+}
+
+.control-finalizado-bloque p {
+  margin: 0;
+  color: #1e293b;
+  font-size: 16px;
+  line-height: 1.55;
+}
+
+
+/* ACTA DE INFRACCIÓN */
+
+.control-finalizado-infraccion {
+  padding: 21px 22px;
+  border-bottom: 1px solid #e2e8f0;
+  border-left: 5px solid #dc2626;
+  background: #fffafa;
+}
+
+.control-finalizado-label-rojo {
+  color: #b91c1c;
+}
+
+.control-finalizado-infraccion h3 {
+  margin: 0;
+  color: #991b1b;
+  font-size: 22px;
+}
+
+.control-finalizado-infraccion > p {
+  margin: 9px 0 0;
+  color: #334155;
+  line-height: 1.5;
+}
+
+.control-finalizado-foto-acta {
+  margin-top: 20px;
+  padding-top: 18px;
+  border-top: 1px solid #fecaca;
+}
+
+
+/* EDICIÓN DURANTE 1 HORA */
+
+.control-finalizado-edicion {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 22px;
+  padding: 20px 22px;
+  background: #eff6ff;
+}
+
+.control-finalizado-edicion > div > strong {
+  display: block;
+  color: #1e3a8a;
+  font-size: 16px;
+}
+
+.control-finalizado-edicion p {
+  margin: 5px 0 0;
+  color: #475569;
+  line-height: 1.45;
+}
+
+.control-finalizado-editar {
+  flex-shrink: 0;
+  min-width: 180px;
+  padding: 12px 18px;
+  border: 0;
+  border-radius: 6px;
+  background: #1d4ed8;
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.control-finalizado-editar:hover {
+  background: #1e40af;
+}
+
+
+/* EDICIÓN VENCIDA */
+
+.control-finalizado-cerrado {
+  padding: 18px 22px;
+  background: #f8fafc;
+}
+
+.control-finalizado-cerrado strong {
+  display: block;
+  color: #475569;
+}
+
+.control-finalizado-cerrado p {
+  margin: 5px 0 0;
+  color: #64748b;
+}
+
+
+/* MOBILE */
+
+@media (max-width: 600px) {
+
+  .control-finalizado {
+    margin-top: 20px;
+  }
+
+  .control-finalizado-cabecera {
+    padding: 18px 15px;
+  }
+
+  .control-finalizado-cabecera h2 {
+    font-size: 22px;
+  }
+
+  .control-finalizado-resumen {
+    grid-template-columns: 1fr;
+  }
+
+  .control-finalizado-resumen > div {
+    padding: 15px;
+  }
+
+  .control-finalizado-resumen > div:first-child {
+    border-right: 0;
+    border-bottom: 1px solid #e2e8f0;
+  }
+
+  .control-finalizado-bloque,
+  .control-finalizado-infraccion {
+    padding: 18px 15px;
+  }
+
+  .control-finalizado-edicion {
+    display: block;
+    padding: 17px 15px;
+  }
+
+  .control-finalizado-editar {
+    width: 100%;
+    margin-top: 14px;
+  }
+
+  .control-finalizado-cerrado {
+    padding: 17px 15px;
+  }
+}
+
+/* =========================================================
+   OPCIÓN ACTA DE INFRACCIÓN
+========================================================= */
+
+.control-opcion-infraccion {
+  position: relative;
+  border: 2px solid #e3b7b7;
+  background: #fffafa;
+  transition:
+    border-color 0.2s ease,
+    background 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
+}
+
+.control-opcion-infraccion strong {
+  color: #8f1d1d;
+}
+
+.control-opcion-infraccion:hover {
+  border-color: #c94a4a;
+  background: #fff5f5;
+}
+
+
+/* SELECCIONADA */
+
+.control-opcion-infraccion.seleccionado {
+  border: 3px solid #b42318;
+  background: #fff1f0;
+  box-shadow:
+    0 0 0 3px rgba(180, 35, 24, 0.10),
+    0 8px 20px rgba(0, 0, 0, 0.08);
+
+  transform: translateY(-1px);
+}
+
+.control-opcion-infraccion.seleccionado strong {
+  color: #9f1710;
+}
+
+
+/* INDICADOR VISUAL */
+
+.control-opcion-infraccion.seleccionado::after {
+  content: "ACTA DE INFRACCIÓN";
+  position: absolute;
+  top: 10px;
+  right: 10px;
+
+  padding: 5px 9px;
+
+  border-radius: 999px;
+
+  background: #b42318;
+  color: #ffffff;
+
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+}
+
+
+/* CELULAR */
+
+@media (max-width: 600px) {
+  .control-opcion-infraccion.seleccionado {
+    padding-top: 46px;
+  }
+
+  .control-opcion-infraccion.seleccionado::after {
+    top: 10px;
+    left: 12px;
+    right: auto;
+  }
+}
+
+/* =========================================================
+   BLOQUE NUEVO PLAZO / PRÓRROGA
+========================================================= */
+
+.segunda-prorroga {
+  margin-top: 22px;
+  padding: 24px;
+
+  background: #fffaf0;
+  border: 1px solid #f1d59a;
+  border-left: 5px solid #d99500;
+  border-radius: 14px;
+
+  box-shadow: 0 5px 18px rgba(0, 0, 0, 0.06);
+}
+
+
+/* ETIQUETA NUEVO PLAZO */
+
+.segunda-prorroga .bloque-etiqueta {
+  display: inline-block;
+
+  margin-bottom: 10px;
+  padding: 5px 10px;
+
+  background: #fff0c7;
+  border: 1px solid #edcf7e;
+  border-radius: 999px;
+
+  color: #805900;
+
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.7px;
+}
+
+
+/* TÍTULO */
+
+.segunda-prorroga h2 {
+  margin: 4px 0 8px;
+
+  color: #2c2c2c;
+
+  font-size: 24px;
+  font-weight: 800;
+}
+
+
+/* EXPLICACIÓN */
+
+.segunda-prorroga > p {
+  margin: 0 0 22px;
+
+  color: #666;
+  line-height: 1.5;
+}
+
+
+/* =========================================================
+   BOTONES 12 / 24 / 48 / 72 HS
+========================================================= */
+
+.plazos-rapidos {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+
+  margin: 18px 0 22px;
+}
+
+.plazos-rapidos button {
+  min-height: 58px;
+
+  padding: 12px 8px;
+
+  border: 2px solid #e0b94f;
+  border-radius: 12px;
+
+  background: #ffffff;
+
+  color: #6d5000;
+
+  font-size: 17px;
+  font-weight: 800;
+
+  cursor: pointer;
+
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.15s ease,
+    box-shadow 0.2s ease;
+}
+
+.plazos-rapidos button:hover {
+  background: #fff3cf;
+  border-color: #c99300;
+
+  transform: translateY(-1px);
+
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+}
+
+.plazos-rapidos button:active {
+  transform: scale(0.97);
+}
+
+
+/* =========================================================
+   CANTIDAD + UNIDAD
+========================================================= */
+
+.plazo-personalizado {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+
+  margin-bottom: 20px;
+}
+
+.plazo-personalizado > div {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.plazo-personalizado label,
+.segunda-prorroga > label {
+  color: #444;
+
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.plazo-personalizado input,
+.plazo-personalizado select {
+  width: 100%;
+  min-height: 48px;
+
+  padding: 10px 12px;
+
+  border: 1px solid #d6d6d6;
+  border-radius: 10px;
+
+  background: #ffffff;
+
+  font-size: 16px;
+}
+
+.plazo-personalizado input:focus,
+.plazo-personalizado select:focus,
+.segunda-prorroga textarea:focus {
+  outline: none;
+
+  border-color: #d99500;
+
+  box-shadow:
+    0 0 0 3px rgba(217, 149, 0, 0.12);
+}
+
+
+/* =========================================================
+   MOTIVO
+========================================================= */
+
+.segunda-prorroga > label {
+  display: block;
+  margin-bottom: 8px;
+}
+
+.segunda-prorroga textarea {
+  width: 100%;
+
+  padding: 12px 14px;
+
+  border: 1px solid #d6d6d6;
+  border-radius: 10px;
+
+  background: #ffffff;
+
+  font-family: inherit;
+  font-size: 15px;
+
+  resize: vertical;
+}
+
+
+/* =========================================================
+   CELULAR
+========================================================= */
+
+@media (max-width: 600px) {
+  .segunda-prorroga {
+    padding: 18px 14px;
+    border-radius: 12px;
+  }
+
+  .segunda-prorroga h2 {
+    font-size: 21px;
+  }
+
+  .plazos-rapidos {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 9px;
+  }
+
+  .plazos-rapidos button {
+    min-height: 54px;
+    font-size: 16px;
+  }
+
+  .plazo-personalizado {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+}

@@ -1,0 +1,177 @@
+.galeria-fotos {
+  display: grid;
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.galeria-foto {
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  overflow: hidden;
+  padding: 0;
+
+  background: #ffffff;
+
+  cursor: pointer;
+  text-align: left;
+}
+
+.galeria-foto img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+}
+
+.galeria-foto-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+
+  padding: 8px;
+}
+
+.galeria-foto-info strong {
+  font-size: 11px;
+  color: #374151;
+}
+
+.galeria-foto-info span {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.galeria-fotos-vacia {
+  min-height: 140px;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  gap: 5px;
+
+  padding: 20px;
+
+  border: 1px dashed #d1d5db;
+  border-radius: 10px;
+
+  color: #6b7280;
+  text-align: center;
+}
+
+.galeria-fotos-vacia span {
+  font-size: 30px;
+}
+
+.galeria-fotos-vacia strong {
+  color: #374151;
+}
+
+.galeria-fotos-vacia p {
+  margin: 0;
+  font-size: 13px;
+}
+
+/*
+|--------------------------------------------------------------------------
+| MODAL
+|--------------------------------------------------------------------------
+*/
+
+.foto-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 15px;
+
+  background: rgba(
+    0,
+    0,
+    0,
+    0.85
+  );
+}
+
+.foto-modal-contenido {
+  position: relative;
+
+  width: 100%;
+  max-width: 1000px;
+  max-height: 95vh;
+
+  overflow: auto;
+
+  border-radius: 12px;
+
+  background: #ffffff;
+}
+
+.foto-modal-contenido img {
+  display: block;
+
+  width: 100%;
+  max-height: 80vh;
+
+  object-fit: contain;
+
+  background: #111827;
+}
+
+.foto-modal-cerrar {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 2;
+
+  width: 40px;
+  height: 40px;
+
+  border: none;
+  border-radius: 50%;
+
+  background: rgba(
+    0,
+    0,
+    0,
+    0.7
+  );
+
+  color: #ffffff;
+
+  font-size: 28px;
+  line-height: 1;
+
+  cursor: pointer;
+}
+
+.foto-modal-datos {
+  padding: 15px;
+}
+
+.foto-modal-datos p {
+  margin:
+    6px 0 0;
+}
+
+/*
+|--------------------------------------------------------------------------
+| PC
+|--------------------------------------------------------------------------
+*/
+
+@media (min-width: 768px) {
+  .galeria-fotos {
+    grid-template-columns:
+      repeat(
+        4,
+        minmax(0, 1fr)
+      );
+  }
+}

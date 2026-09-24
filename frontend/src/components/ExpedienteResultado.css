@@ -1,0 +1,262 @@
+.expediente-fila {
+  display: grid;
+
+  grid-template-columns:
+    120px
+    1.15fr
+    1.5fr
+    1.35fr
+    170px
+    28px;
+
+  align-items: center;
+
+  gap: 14px;
+
+  min-height: 66px;
+
+  padding:
+    10px 8px;
+
+  border-bottom:
+    1px solid
+    rgba(
+      127,
+      127,
+      127,
+      0.18
+    );
+
+  cursor: pointer;
+
+  transition:
+    background
+    0.15s ease;
+}
+
+.expediente-fila:hover {
+  background:
+    rgba(
+      127,
+      127,
+      127,
+      0.08
+    );
+}
+
+.expediente-fila:focus-visible {
+  outline:
+    2px solid
+    currentColor;
+
+  outline-offset:
+    -2px;
+}
+
+
+/* =========================================================
+   COLUMNAS
+========================================================= */
+
+.expediente-columna {
+  min-width: 0;
+
+  font-size:
+    0.88rem;
+}
+
+.expediente-columna strong {
+  font-size:
+    0.9rem;
+}
+
+.expediente-columna span {
+  overflow-wrap:
+    anywhere;
+}
+
+.expediente-columna-direccion,
+.expediente-columna-coincidencia {
+  opacity:
+    0.78;
+}
+
+.expediente-estado-texto {
+  display:
+    inline-flex;
+
+  align-items:
+    center;
+
+  min-height:
+    28px;
+
+  padding:
+    4px 8px;
+
+  border:
+    1px solid
+    rgba(
+      127,
+      127,
+      127,
+      0.28
+    );
+
+  border-radius:
+    999px;
+
+  font-size:
+    0.76rem;
+
+  font-weight:
+    800;
+
+  line-height:
+    1.2;
+}
+
+
+/* =========================================================
+   FLECHA
+========================================================= */
+
+.expediente-flecha {
+  font-size:
+    1.5rem;
+
+  opacity:
+    0.45;
+
+  text-align:
+    center;
+}
+
+
+/* =========================================================
+   LABEL CELULAR
+========================================================= */
+
+.expediente-mobile-label {
+  display:
+    none;
+
+  margin-bottom:
+    2px;
+
+  font-size:
+    0.63rem;
+
+  font-weight:
+    900;
+
+  letter-spacing:
+    0.06em;
+
+  text-transform:
+    uppercase;
+
+  opacity:
+    0.5;
+}
+
+
+/* =========================================================
+   TABLET
+========================================================= */
+
+@media (
+  max-width:
+    1000px
+) {
+  .expediente-fila {
+    grid-template-columns:
+      105px
+      1fr
+      1.35fr
+      1.15fr
+      145px
+      20px;
+
+    gap:
+      10px;
+  }
+}
+
+
+/* =========================================================
+   CELULAR
+========================================================= */
+
+@media (
+  max-width:
+    700px
+) {
+  .expediente-fila {
+    position:
+      relative;
+
+    display:
+      grid;
+
+    grid-template-columns:
+      1fr;
+
+    gap:
+      7px;
+
+    min-height:
+      auto;
+
+    padding:
+      14px 34px
+      14px 4px;
+  }
+
+  .expediente-mobile-label {
+    display:
+      block;
+  }
+
+  .expediente-columna {
+    font-size:
+      0.88rem;
+  }
+
+  .expediente-columna-reclamo {
+    font-size:
+      1rem;
+  }
+
+  .expediente-columna-tipo {
+    font-weight:
+      700;
+  }
+
+  .expediente-columna-direccion,
+  .expediente-columna-coincidencia {
+    opacity:
+      1;
+  }
+
+  .expediente-flecha {
+    position:
+      absolute;
+
+    right:
+      8px;
+
+    top:
+      50%;
+
+    transform:
+      translateY(
+        -50%
+      );
+  }
+
+  .expediente-estado-texto {
+    white-space:
+      normal;
+  }
+}

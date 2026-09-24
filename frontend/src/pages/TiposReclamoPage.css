@@ -1,0 +1,277 @@
+.tipos-page {
+  width: 100%;
+}
+
+.tipos-header {
+  display: flex;
+  flex-direction: column;
+
+  gap: 12px;
+
+  margin-bottom: 18px;
+}
+
+.tipos-header h1 {
+  margin: 0;
+
+  font-size: 24px;
+}
+
+.tipos-header p {
+  margin: 5px 0 0;
+
+  color: #6b7280;
+
+  font-size: 11px;
+}
+
+.tipos-header > button {
+  align-self: flex-start;
+
+  min-height: 40px;
+
+  border: none;
+  border-radius: 8px;
+
+  padding: 8px 14px;
+
+  background: #1f2937;
+  color: #ffffff;
+
+  cursor: pointer;
+
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.tipos-resumen {
+  display: grid;
+  grid-template-columns:
+    repeat(3, minmax(0, 1fr));
+
+  gap: 8px;
+
+  margin-bottom: 14px;
+}
+
+.tipos-resumen > div {
+  display: flex;
+  flex-direction: column;
+
+  padding: 12px;
+
+  border: 1px solid #e5e7eb;
+  border-radius: 9px;
+
+  background: #ffffff;
+}
+
+.tipos-resumen strong {
+  font-size: 20px;
+}
+
+.tipos-resumen span {
+  margin-top: 2px;
+
+  color: #6b7280;
+
+  font-size: 9px;
+}
+
+.tipos-buscador {
+  margin-bottom: 12px;
+}
+
+.tipos-buscador input {
+  width: 100%;
+  max-width: 450px;
+
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+
+  padding: 10px 12px;
+
+  background: #ffffff;
+
+  outline: none;
+
+  font-size: 12px;
+}
+
+.tipos-lista {
+  display: flex;
+  flex-direction: column;
+
+  gap: 7px;
+}
+
+.tipo-reclamo-item {
+  display: grid;
+  grid-template-columns:
+    auto minmax(0, 1fr);
+
+  align-items: center;
+
+  gap: 9px;
+
+  padding: 12px;
+
+  border: 1px solid #e5e7eb;
+  border-radius: 9px;
+
+  background: #ffffff;
+}
+
+.tipo-reclamo-item.inactivo {
+  opacity: 0.65;
+}
+
+.tipo-reclamo-estado {
+  color: #16a34a;
+
+  font-size: 16px;
+}
+
+.tipo-reclamo-item.inactivo
+  .tipo-reclamo-estado {
+  color: #9ca3af;
+}
+
+.tipo-reclamo-info {
+  display: flex;
+  flex-direction: column;
+
+  min-width: 0;
+}
+
+.tipo-reclamo-info strong {
+  font-size: 12px;
+}
+
+.tipo-reclamo-info span {
+  margin-top: 2px;
+
+  overflow: hidden;
+
+  color: #6b7280;
+
+  font-size: 9px;
+
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tipo-reclamo-badge {
+  grid-column: 2;
+
+  justify-self: start;
+
+  padding: 3px 7px;
+
+  border-radius: 20px;
+
+  background: #f3f4f6;
+  color: #4b5563;
+
+  font-size: 8px;
+  font-weight: 700;
+}
+
+.tipo-reclamo-editar {
+  grid-column: 2;
+
+  justify-self: start;
+
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+
+  padding: 6px 10px;
+
+  background: #ffffff;
+
+  cursor: pointer;
+
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.tipos-mensaje,
+.tipos-error {
+  padding: 25px;
+
+  border: 1px solid #e5e7eb;
+  border-radius: 9px;
+
+  background: #ffffff;
+
+  color: #6b7280;
+
+  font-size: 11px;
+
+  text-align: center;
+}
+
+.tipos-error {
+  color: #b91c1c;
+}
+
+.tipos-error button {
+  margin-left: 10px;
+}
+
+.tipos-modal {
+  position: fixed;
+  z-index: 3000;
+
+  inset: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 15px;
+
+  background:
+    rgba(17, 24, 39, 0.55);
+}
+
+.tipos-modal-contenido {
+  width: 100%;
+  max-width: 500px;
+
+  max-height: 90vh;
+
+  overflow-y: auto;
+
+  border-radius: 12px;
+
+  background: #ffffff;
+
+  padding: 18px;
+}
+
+@media (min-width: 700px) {
+  .tipos-header {
+    flex-direction: row;
+
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .tipos-header > button {
+    align-self: auto;
+  }
+
+  .tipo-reclamo-item {
+    grid-template-columns:
+      auto minmax(0, 1fr)
+      auto auto;
+  }
+
+  .tipo-reclamo-badge,
+  .tipo-reclamo-editar {
+    grid-column: auto;
+
+    justify-self: auto;
+  }
+}

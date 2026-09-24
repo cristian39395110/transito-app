@@ -1,0 +1,904 @@
+/* =========================================================
+   APP LAYOUT
+   Sistema de Tránsito y Vía Pública
+   ========================================================= */
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  min-height: 100%;
+  margin: 0;
+}
+
+body {
+  overflow-x: hidden;
+}
+
+
+/* =========================================================
+   ESTRUCTURA GENERAL
+   ========================================================= */
+
+.app-layout {
+  width: 100%;
+  min-height: 100vh;
+
+  display: flex;
+
+  background: #f4f6f8;
+}
+
+
+/* =========================================================
+   SIDEBAR - PC
+   ========================================================= */
+
+.app-sidebar {
+  position: fixed;
+
+  top: 0;
+  left: 0;
+  bottom: 0;
+
+  width: 250px;
+
+  display: flex;
+  flex-direction: column;
+
+  background: #ffffff;
+
+  border-right: 1px solid #dfe3e8;
+
+  z-index: 100;
+}
+
+
+/* =========================================================
+   MARCA
+   ========================================================= */
+
+.app-marca {
+  min-height: 76px;
+
+  padding: 14px 18px;
+
+  display: flex;
+  align-items: center;
+
+  gap: 12px;
+
+  flex-shrink: 0;
+
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.app-logo {
+  width: 44px;
+  height: 44px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  flex-shrink: 0;
+
+  border-radius: 10px;
+
+  background: #b71c1c;
+  color: #ffffff;
+
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.app-marca > div:last-child {
+  min-width: 0;
+
+  display: flex;
+  flex-direction: column;
+}
+
+.app-marca strong {
+  color: #1f2937;
+
+  font-size: 18px;
+  line-height: 1.2;
+}
+
+.app-marca span {
+  margin-top: 3px;
+
+  color: #6b7280;
+
+  font-size: 12px;
+}
+
+
+/* =========================================================
+   MENÚ LATERAL
+   ========================================================= */
+
+.app-menu {
+  flex: 1;
+
+  min-height: 0;
+
+  padding: 12px 10px;
+
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.app-menu-link {
+  width: 100%;
+  min-height: 46px;
+
+  margin-bottom: 3px;
+  padding: 8px 10px;
+
+  display: flex;
+  align-items: center;
+
+  gap: 11px;
+
+  border-radius: 8px;
+
+  color: #374151;
+
+  text-decoration: none;
+
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
+}
+
+.app-menu-link:hover {
+  background: #f3f4f6;
+}
+
+.app-menu-link.activo {
+  background: #fbe9e7;
+  color: #b71c1c;
+
+  font-weight: 700;
+}
+
+.app-menu-icono {
+  width: 27px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  flex-shrink: 0;
+
+  font-size: 19px;
+}
+
+.app-menu-texto {
+  flex: 1;
+
+  min-width: 0;
+
+  overflow: hidden;
+
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  font-size: 14px;
+}
+
+
+/* =========================================================
+   CONTADORES
+   ========================================================= */
+
+.app-menu-contador {
+  min-width: 24px;
+  height: 24px;
+
+  padding: 0 7px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  flex-shrink: 0;
+
+  border-radius: 999px;
+
+  background: #c62828;
+  color: #ffffff;
+
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+
+/* =========================================================
+   USUARIO - PARTE INFERIOR DEL SIDEBAR
+   ========================================================= */
+
+.app-usuario {
+  min-height: 72px;
+
+  padding: 11px 12px;
+
+  display: flex;
+  align-items: center;
+
+  gap: 10px;
+
+  flex-shrink: 0;
+
+  background: #ffffff;
+
+  border-top: 1px solid #e5e7eb;
+}
+
+.app-avatar {
+  width: 38px;
+  height: 38px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  flex-shrink: 0;
+
+  border-radius: 50%;
+
+  background: #eeeeee;
+  color: #333333;
+
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.app-usuario-info {
+  flex: 1;
+
+  min-width: 0;
+
+  display: flex;
+  flex-direction: column;
+}
+
+.app-usuario-info strong {
+  overflow: hidden;
+
+  color: #1f2937;
+
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  font-size: 13px;
+}
+
+.app-usuario-info span {
+  margin-top: 2px;
+
+  overflow: hidden;
+
+  color: #6b7280;
+
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  font-size: 11px;
+}
+
+.app-usuario > button {
+  width: 36px;
+  height: 36px;
+
+  padding: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  flex-shrink: 0;
+
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+
+  background: #ffffff;
+  color: #4b5563;
+
+  font-size: 18px;
+
+  cursor: pointer;
+}
+
+.app-usuario > button:hover {
+  background: #f3f4f6;
+}
+
+
+/* =========================================================
+   CONTENIDO PRINCIPAL
+   ========================================================= */
+
+.app-contenido {
+  width: calc(100% - 250px);
+  min-width: 0;
+  min-height: 100vh;
+
+  margin-left: 250px;
+}
+
+.app-pagina {
+  width: 100%;
+
+  padding: 22px;
+}
+
+
+/* =========================================================
+   TOPBAR CELULAR
+   ========================================================= */
+
+.app-topbar-mobile {
+  display: none;
+}
+
+
+/* =========================================================
+   BARRA INFERIOR CELULAR
+   ========================================================= */
+
+.app-menu-mobile {
+  display: none;
+}
+
+
+/* =========================================================
+   PANEL "MÁS"
+   ========================================================= */
+
+.app-menu-mas-fondo,
+.app-menu-mas-panel {
+  display: none;
+}
+
+
+/* =========================================================
+   TABLET / CELULAR
+   ========================================================= */
+
+@media (max-width: 768px) {
+
+  /* -------------------------------------------------------
+     ESTRUCTURA
+     ------------------------------------------------------- */
+
+  .app-layout {
+    display: block;
+
+    min-height: 100dvh;
+  }
+
+  .app-sidebar {
+    display: none;
+  }
+
+  .app-contenido {
+    width: 100%;
+    min-height: 100dvh;
+
+    margin-left: 0;
+
+    padding-top: 58px;
+    padding-bottom: 66px;
+  }
+
+
+  /* -------------------------------------------------------
+     TOPBAR
+     ------------------------------------------------------- */
+
+  .app-topbar-mobile {
+    position: fixed;
+
+    top: 0;
+    left: 0;
+    right: 0;
+
+    height: 58px;
+
+    padding:
+      7px
+      max(
+        12px,
+        env(safe-area-inset-right)
+      )
+      7px
+      max(
+        12px,
+        env(safe-area-inset-left)
+      );
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 12px;
+
+    background: #ffffff;
+
+    border-bottom: 1px solid #dfe3e8;
+
+    z-index: 900;
+  }
+
+  .app-topbar-mobile > div {
+    min-width: 0;
+
+    display: flex;
+    flex-direction: column;
+  }
+
+  .app-topbar-mobile strong {
+    color: #1f2937;
+
+    font-size: 16px;
+    line-height: 1.2;
+  }
+
+  .app-topbar-mobile span {
+    margin-top: 2px;
+
+    overflow: hidden;
+
+    color: #6b7280;
+
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    font-size: 11px;
+  }
+
+  .app-topbar-mobile button {
+    min-height: 36px;
+
+    padding: 0 13px;
+
+    flex-shrink: 0;
+
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+
+    background: #ffffff;
+    color: #374151;
+
+    font-size: 13px;
+    font-weight: 600;
+
+    cursor: pointer;
+  }
+
+
+  /* -------------------------------------------------------
+     CONTENIDO
+     ------------------------------------------------------- */
+
+  .app-pagina {
+    width: 100%;
+
+    padding: 12px;
+
+    overflow-x: hidden;
+  }
+
+
+  /* -------------------------------------------------------
+     BARRA INFERIOR
+     ------------------------------------------------------- */
+
+  .app-menu-mobile {
+    position: fixed;
+
+    left: 0;
+    right: 0;
+    bottom: 0;
+
+    height:
+      calc(
+        64px +
+        env(safe-area-inset-bottom)
+      );
+
+    padding:
+      4px
+      max(
+        4px,
+        env(safe-area-inset-right)
+      )
+      env(safe-area-inset-bottom)
+      max(
+        4px,
+        env(safe-area-inset-left)
+      );
+
+    display: flex;
+    align-items: stretch;
+
+    background: #ffffff;
+
+    border-top: 1px solid #d9dde3;
+
+    z-index: 1200;
+  }
+
+  .app-menu-mobile > a,
+  .app-menu-mobile > button {
+    min-width: 0;
+
+    padding: 5px 2px;
+
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
+    gap: 4px;
+
+    position: relative;
+
+    appearance: none;
+
+    border: 0;
+
+    background: transparent;
+    color: #6b7280;
+
+    text-decoration: none;
+
+    font-family: inherit;
+
+    cursor: pointer;
+  }
+
+  .app-menu-mobile > a.activo,
+  .app-menu-mobile > button.activo {
+    color: #b71c1c;
+  }
+
+  .app-menu-mobile-icono {
+    position: relative;
+
+    min-width: 26px;
+    height: 23px;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    font-size: 20px;
+    line-height: 1;
+  }
+
+  .app-menu-mobile small {
+    width: 100%;
+
+    display: block;
+
+    overflow: hidden;
+
+    text-align: center;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    font-size: 9px;
+    font-weight: 600;
+    line-height: 1.1;
+  }
+
+
+  /* -------------------------------------------------------
+     CONTADOR CELULAR
+     ------------------------------------------------------- */
+
+  .app-menu-mobile-contador {
+    position: absolute;
+
+    top: -7px;
+    right: -12px;
+
+    min-width: 18px;
+    height: 18px;
+
+    padding: 0 4px;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    border: 2px solid #ffffff;
+    border-radius: 999px;
+
+    background: #c62828;
+    color: #ffffff;
+
+    font-size: 9px;
+    font-weight: 800;
+    line-height: 1;
+  }
+
+
+  /* -------------------------------------------------------
+     FONDO DEL MENÚ "MÁS"
+     ------------------------------------------------------- */
+
+  .app-menu-mas-fondo {
+    position: fixed;
+
+    inset: 0;
+
+    display: block;
+
+    padding: 0;
+
+    border: 0;
+
+    background: rgba(
+      0,
+      0,
+      0,
+      0.38
+    );
+
+    z-index: 1050;
+  }
+
+
+  /* -------------------------------------------------------
+     PANEL "MÁS"
+     ------------------------------------------------------- */
+
+  .app-menu-mas-panel {
+    position: fixed;
+
+    left: 0;
+    right: 0;
+
+    bottom:
+      calc(
+        64px +
+        env(safe-area-inset-bottom)
+      );
+
+    max-height:
+      calc(
+        100dvh -
+        100px
+      );
+
+    display: flex;
+    flex-direction: column;
+
+    overflow: hidden;
+
+    background: #ffffff;
+
+    border-top: 1px solid #d1d5db;
+
+    border-top-left-radius: 16px;
+    border-top-right-radius: 16px;
+
+    box-shadow:
+      0 -8px 24px
+      rgba(
+        0,
+        0,
+        0,
+        0.16
+      );
+
+    z-index: 1100;
+  }
+
+
+  /* -------------------------------------------------------
+     CABECERA DEL PANEL "MÁS"
+     ------------------------------------------------------- */
+
+  .app-menu-mas-cabecera {
+    min-height: 62px;
+
+    padding: 10px 14px;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 12px;
+
+    flex-shrink: 0;
+
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  .app-menu-mas-cabecera > div {
+    min-width: 0;
+
+    display: flex;
+    flex-direction: column;
+  }
+
+  .app-menu-mas-cabecera strong {
+    color: #1f2937;
+
+    font-size: 16px;
+  }
+
+  .app-menu-mas-cabecera span {
+    margin-top: 2px;
+
+    color: #6b7280;
+
+    font-size: 11px;
+  }
+
+  .app-menu-mas-cabecera button {
+    width: 38px;
+    height: 38px;
+
+    padding: 0;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    flex-shrink: 0;
+
+    border: 0;
+    border-radius: 50%;
+
+    background: #f3f4f6;
+    color: #374151;
+
+    font-size: 25px;
+    line-height: 1;
+
+    cursor: pointer;
+  }
+
+
+  /* -------------------------------------------------------
+     LISTA DEL PANEL "MÁS"
+     ------------------------------------------------------- */
+
+  .app-menu-mas-lista {
+    min-height: 0;
+
+    padding: 4px 0;
+
+    display: flex;
+    flex-direction: column;
+
+    overflow-y: auto;
+
+    overscroll-behavior: contain;
+  }
+
+  .app-menu-mas-link {
+    width: 100%;
+    min-height: 54px;
+
+    padding: 8px 15px;
+
+    display: flex;
+    align-items: center;
+
+    gap: 12px;
+
+    flex-shrink: 0;
+
+    color: #374151;
+
+    text-decoration: none;
+
+    border-bottom: 1px solid #eeeeee;
+  }
+
+  .app-menu-mas-link:last-child {
+    border-bottom: 0;
+  }
+
+  .app-menu-mas-link.activo {
+    background: #fbe9e7;
+    color: #b71c1c;
+
+    font-weight: 700;
+  }
+
+  .app-menu-mas-icono {
+    width: 30px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    flex-shrink: 0;
+
+    font-size: 20px;
+  }
+
+  .app-menu-mas-texto {
+    flex: 1;
+
+    min-width: 0;
+
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    font-size: 14px;
+  }
+
+
+  /* -------------------------------------------------------
+     BOTÓN MÁS
+     ------------------------------------------------------- */
+
+  .app-menu-mobile-mas {
+    appearance: none;
+  }
+}
+
+
+/* =========================================================
+   CELULARES MUY CHICOS
+   ========================================================= */
+
+@media (max-width: 380px) {
+  .app-pagina {
+    padding: 9px;
+  }
+
+  .app-menu-mobile small {
+    font-size: 8px;
+  }
+
+  .app-menu-mobile-icono {
+    font-size: 18px;
+  }
+
+  .app-menu-mobile-contador {
+    right: -10px;
+  }
+}
+
+
+/* =========================================================
+   PC GRANDE
+   ========================================================= */
+
+@media (min-width: 1200px) {
+  .app-sidebar {
+    width: 260px;
+  }
+
+  .app-contenido {
+    width:
+      calc(
+        100% - 260px
+      );
+
+    margin-left: 260px;
+  }
+
+  .app-pagina {
+    padding: 26px;
+  }
+}

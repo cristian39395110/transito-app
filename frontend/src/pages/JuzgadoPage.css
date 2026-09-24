@@ -1,0 +1,1282 @@
+/* =========================================================
+   JUZGADO
+   ========================================================= */
+
+.juzgado-page {
+  width: 100%;
+  max-width: 1450px;
+  margin: 0 auto;
+  padding: 22px;
+  box-sizing: border-box;
+  color: #172033;
+}
+
+
+/* =========================================================
+   ENCABEZADO
+   ========================================================= */
+
+.juzgado-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+
+  margin-bottom: 22px;
+  padding-bottom: 18px;
+
+  border-bottom: 1px solid #dfe4ea;
+}
+
+.juzgado-superior {
+  display: block;
+
+  margin-bottom: 4px;
+
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+
+  color: #64748b;
+}
+
+.juzgado-header h1 {
+  margin: 0;
+
+  font-size: 30px;
+  line-height: 1.15;
+
+  color: #172033;
+}
+
+.juzgado-header p {
+  max-width: 760px;
+
+  margin: 8px 0 0;
+
+  font-size: 15px;
+  line-height: 1.5;
+
+  color: #64748b;
+}
+
+.juzgado-actualizar {
+  min-height: 42px;
+
+  padding: 0 16px;
+
+  border: 1px solid #cbd5e1;
+  border-radius: 7px;
+
+  background: #ffffff;
+
+  color: #334155;
+
+  font-size: 14px;
+  font-weight: 700;
+
+  cursor: pointer;
+}
+
+.juzgado-actualizar:hover {
+  background: #f8fafc;
+}
+
+
+/* =========================================================
+   MENSAJES
+   ========================================================= */
+
+.juzgado-error,
+.juzgado-exito {
+  margin-bottom: 18px;
+  padding: 13px 15px;
+
+  border-radius: 6px;
+
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+.juzgado-error {
+  border: 1px solid #fecaca;
+  background: #fef2f2;
+  color: #991b1b;
+}
+
+.juzgado-exito {
+  border: 1px solid #bbf7d0;
+  background: #f0fdf4;
+  color: #166534;
+}
+
+
+/* =========================================================
+   SECCIONES PRINCIPALES
+   MULTAS / ÓRDENES
+   ========================================================= */
+
+.juzgado-secciones {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+
+  margin-bottom: 16px;
+
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+
+  overflow: hidden;
+}
+
+.juzgado-secciones button {
+  min-height: 58px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+
+  padding: 10px 16px;
+
+  border: 0;
+  border-right: 1px solid #cbd5e1;
+
+  background: #ffffff;
+
+  color: #475569;
+
+  font-size: 15px;
+  font-weight: 800;
+
+  cursor: pointer;
+}
+
+.juzgado-secciones button:last-child {
+  border-right: 0;
+}
+
+.juzgado-secciones button:hover {
+  background: #f8fafc;
+}
+
+.juzgado-secciones button.activa {
+  background: #172033;
+  color: #ffffff;
+}
+
+.juzgado-secciones button strong {
+  min-width: 24px;
+  height: 24px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 0 7px;
+
+  border-radius: 999px;
+
+  background: #dc2626;
+  color: #ffffff;
+
+  font-size: 12px;
+  font-weight: 800;
+}
+
+
+/* =========================================================
+   SUBPESTAÑAS
+   ========================================================= */
+
+.juzgado-pestañas {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+
+  margin-bottom: 16px;
+
+  border-bottom: 1px solid #dbe1e8;
+
+  overflow-x: auto;
+}
+
+.juzgado-pestañas button {
+  min-height: 45px;
+
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  padding: 0 15px;
+
+  border: 0;
+  border-bottom: 3px solid transparent;
+
+  background: transparent;
+
+  color: #64748b;
+
+  font-size: 14px;
+  font-weight: 700;
+
+  white-space: nowrap;
+
+  cursor: pointer;
+}
+
+.juzgado-pestañas button:hover {
+  color: #172033;
+}
+
+.juzgado-pestañas button.activa {
+  border-bottom-color: #dc2626;
+  color: #172033;
+}
+
+.juzgado-pestañas button strong {
+  min-width: 22px;
+  height: 22px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 0 6px;
+
+  border-radius: 999px;
+
+  background: #e2e8f0;
+
+  color: #334155;
+
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.juzgado-pestañas button.activa strong {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+
+/* =========================================================
+   AVISOS
+   ========================================================= */
+
+.juzgado-aviso {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  margin-bottom: 16px;
+  padding: 12px 15px;
+
+  border-left: 4px solid;
+
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.juzgado-aviso strong {
+  font-size: 14px;
+}
+
+.juzgado-aviso span {
+  color: #475569;
+}
+
+.aviso-naranja {
+  border-color: #f59e0b;
+  background: #fffbeb;
+}
+
+.aviso-azul {
+  border-color: #2563eb;
+  background: #eff6ff;
+}
+
+.aviso-violeta {
+  border-color: #7c3aed;
+  background: #f5f3ff;
+}
+
+
+/* =========================================================
+   BUSCADOR
+   ========================================================= */
+
+.juzgado-busqueda {
+  width: 100%;
+
+  display: flex;
+  align-items: center;
+
+  margin-bottom: 18px;
+
+  border: 1px solid #cbd5e1;
+  border-radius: 7px;
+
+  background: #ffffff;
+
+  overflow: hidden;
+}
+
+.juzgado-busqueda:focus-within {
+  border-color: #64748b;
+}
+
+.juzgado-busqueda span {
+  padding-left: 14px;
+
+  color: #64748b;
+
+  font-size: 20px;
+}
+
+.juzgado-busqueda input {
+  width: 100%;
+  min-height: 46px;
+
+  padding: 0 14px;
+
+  border: 0;
+  outline: none;
+
+  background: transparent;
+
+  color: #172033;
+
+  font-size: 14px;
+}
+
+
+/* =========================================================
+   LISTADO
+   ========================================================= */
+
+.juzgado-listado {
+  width: 100%;
+
+  border-top: 1px solid #dbe1e8;
+}
+
+.juzgado-fila {
+  display: grid;
+
+  grid-template-columns:
+    minmax(0, 1fr)
+    240px
+    180px;
+
+  grid-template-areas:
+    "datos estado acciones";
+
+  gap: 24px;
+
+  align-items: center;
+
+  padding: 20px 16px;
+
+  border-bottom: 1px solid #dbe1e8;
+
+  background: #ffffff;
+}
+
+.juzgado-fila:hover {
+  background: #fafbfc;
+}
+
+
+/* =========================================================
+   DATOS PRINCIPALES
+   ========================================================= */
+
+.juzgado-fila-principal {
+  grid-area: datos;
+
+  min-width: 0;
+
+  display: grid;
+
+  grid-template-columns:
+    minmax(110px, 0.8fr)
+    minmax(130px, 0.9fr)
+    minmax(130px, 0.9fr)
+    minmax(240px, 1.8fr);
+
+  gap: 12px 24px;
+}
+
+.juzgado-fila-principal > div {
+  min-width: 0;
+
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.juzgado-etiqueta {
+  font-size: 11px;
+  font-weight: 800;
+
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+
+  color: #94a3b8;
+}
+
+.juzgado-fila-principal strong {
+  overflow-wrap: anywhere;
+
+  color: #1e293b;
+
+  font-size: 14px;
+  line-height: 1.35;
+}
+
+.juzgado-reclamo-numero {
+  font-size: 15px !important;
+}
+
+.juzgado-fila-principal small {
+  margin-top: 2px;
+
+  color: #64748b;
+
+  font-size: 12px;
+}
+
+
+/* =========================================================
+   ESTADO
+   ========================================================= */
+
+.juzgado-fila-estado {
+  grid-area: estado;
+
+  min-width: 0;
+
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+
+  gap: 7px;
+
+  padding: 12px 14px;
+
+  border-left: 4px solid #f59e0b;
+
+  background: #fffbeb;
+
+  font-size: 13px;
+}
+
+.juzgado-fila-estado > span {
+  font-weight: 800;
+}
+
+.juzgado-fila-estado small {
+  color: #64748b;
+
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.estado-pendiente {
+  display: block;
+
+  color: #92400e;
+
+  font-size: 14px;
+  font-weight: 900;
+
+  line-height: 1.3;
+}
+
+.estado-ok {
+  color: #15803d;
+}
+
+.estado-no {
+  color: #b91c1c;
+}
+
+
+/* =========================================================
+   MOTIVO DE LA ORDEN
+   ========================================================= */
+
+.juzgado-motivo {
+  width: 100%;
+
+  margin-top: 4px;
+  padding: 8px 10px;
+
+  border-left: 3px solid #cbd5e1;
+
+  background: #f8fafc;
+}
+
+.juzgado-motivo strong,
+.juzgado-motivo span {
+  display: block;
+}
+
+.juzgado-motivo strong {
+  margin-bottom: 2px;
+
+  color: #475569;
+
+  font-size: 11px;
+
+  text-transform: uppercase;
+}
+
+.juzgado-motivo span {
+  color: #334155;
+
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+
+/* =========================================================
+   ACCIONES
+   ========================================================= */
+
+.juzgado-fila-acciones {
+  grid-area: acciones;
+
+  width: 180px;
+  min-width: 180px;
+
+  display: flex;
+  flex-direction: column;
+
+  gap: 8px;
+}
+
+.juzgado-fila-acciones button {
+  width: 100%;
+  min-height: 38px;
+
+  padding: 7px 12px;
+
+  border-radius: 6px;
+
+  font-size: 13px;
+  font-weight: 800;
+
+  cursor: pointer;
+}
+
+.accion-enviar {
+  border: 1px solid #dc2626;
+  background: #dc2626;
+  color: #ffffff;
+}
+
+.accion-enviar:hover {
+  background: #b91c1c;
+}
+
+.accion-respuesta {
+  border: 1px solid #7c3aed;
+  background: #7c3aed;
+  color: #ffffff;
+}
+
+.accion-respuesta:hover {
+  background: #6d28d9;
+}
+
+.accion-expediente {
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #334155;
+}
+
+.accion-expediente:hover {
+  background: #f8fafc;
+}
+
+
+/* =========================================================
+   LISTA VACÍA / CARGANDO
+   ========================================================= */
+
+.juzgado-mensaje {
+  padding: 45px 20px;
+
+  border-top: 1px solid #dbe1e8;
+  border-bottom: 1px solid #dbe1e8;
+
+  text-align: center;
+
+  color: #64748b;
+
+  font-size: 14px;
+}
+
+
+/* =========================================================
+   MODAL
+   ========================================================= */
+
+.juzgado-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 20px;
+
+  background: rgba(
+    15,
+    23,
+    42,
+    0.62
+  );
+}
+
+.juzgado-modal-contenido {
+  width: 100%;
+  max-width: 620px;
+  max-height: calc(100vh - 40px);
+
+  overflow-y: auto;
+
+  padding: 24px;
+
+  border-radius: 9px;
+
+  background: #ffffff;
+}
+
+.juzgado-modal-respuesta {
+  max-width: 700px;
+}
+
+.juzgado-modal-contenido h2 {
+  margin: 0 0 20px;
+
+  color: #172033;
+
+  font-size: 22px;
+  line-height: 1.25;
+}
+
+
+/* =========================================================
+   RESUMEN MODAL
+   ========================================================= */
+
+.juzgado-modal-resumen {
+  display: grid;
+  grid-template-columns:
+    minmax(100px, auto)
+    minmax(0, 1fr);
+
+  gap: 7px 14px;
+
+  margin-bottom: 20px;
+  padding: 13px 15px;
+
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+
+  background: #f8fafc;
+}
+
+.juzgado-modal-resumen span {
+  color: #64748b;
+
+  font-size: 13px;
+}
+
+.juzgado-modal-resumen strong {
+  color: #1e293b;
+
+  font-size: 13px;
+
+  overflow-wrap: anywhere;
+}
+
+
+/* =========================================================
+   CAMPOS
+   ========================================================= */
+
+.juzgado-campo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  margin-bottom: 17px;
+}
+
+.juzgado-campo label {
+  color: #334155;
+
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.juzgado-campo input,
+.juzgado-campo textarea {
+  width: 100%;
+
+  box-sizing: border-box;
+
+  padding: 11px 12px;
+
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+
+  outline: none;
+
+  background: #ffffff;
+
+  color: #172033;
+
+  font: inherit;
+
+  font-size: 14px;
+}
+
+.juzgado-campo textarea {
+  resize: vertical;
+}
+
+.juzgado-campo input:focus,
+.juzgado-campo textarea:focus {
+  border-color: #64748b;
+}
+
+
+/* =========================================================
+   INFORMACIÓN IMPORTANTE
+   ========================================================= */
+
+.juzgado-modal-importante {
+  margin-bottom: 18px;
+  padding: 12px 14px;
+
+  border-left: 4px solid #f59e0b;
+
+  background: #fffbeb;
+
+  color: #78350f;
+
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+
+/* =========================================================
+   RESPUESTA DEL JUZGADO
+   ========================================================= */
+
+.juzgado-pregunta {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+
+  margin-bottom: 20px;
+}
+
+.juzgado-pregunta > strong {
+  margin-bottom: 2px;
+
+  color: #172033;
+
+  font-size: 16px;
+}
+
+.opcion-juzgado {
+  width: 100%;
+
+  display: flex;
+  align-items: center;
+  gap: 13px;
+
+  padding: 14px;
+
+  border: 2px solid #dbe1e8;
+  border-radius: 7px;
+
+  background: #ffffff;
+
+  color: #334155;
+
+  text-align: left;
+
+  cursor: pointer;
+}
+
+.opcion-juzgado:hover {
+  border-color: #94a3b8;
+  background: #f8fafc;
+}
+
+.opcion-juzgado.seleccionada {
+  border-color: #172033;
+  background: #f8fafc;
+}
+
+.opcion-juzgado > span {
+  width: 35px;
+  height: 35px;
+
+  flex: 0 0 35px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 50%;
+
+  background: #e2e8f0;
+
+  font-size: 18px;
+  font-weight: 900;
+}
+
+.opcion-juzgado.seleccionada
+  > span {
+  background: #172033;
+  color: #ffffff;
+}
+
+.opcion-juzgado div {
+  min-width: 0;
+
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.opcion-juzgado strong {
+  font-size: 14px;
+}
+
+.opcion-juzgado small {
+  color: #64748b;
+
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+
+/* =========================================================
+   FOTO DE LA ORDEN
+   ========================================================= */
+
+.juzgado-orden-foto {
+  margin-bottom: 20px;
+  padding: 16px;
+
+  border: 1px solid #cbd5e1;
+  border-radius: 7px;
+
+  background: #f8fafc;
+}
+
+.juzgado-orden-foto h3 {
+  margin: 0 0 5px;
+
+  color: #172033;
+
+  font-size: 15px;
+}
+
+.juzgado-orden-foto > p {
+  margin: 0 0 14px;
+
+  color: #64748b;
+
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.juzgado-foto-ok {
+  margin-top: 10px;
+  padding: 9px 11px;
+
+  border: 1px solid #bbf7d0;
+  border-radius: 5px;
+
+  background: #f0fdf4;
+
+  color: #166534;
+
+  font-size: 13px;
+  font-weight: 800;
+}
+
+
+/* =========================================================
+   PRÓXIMO PASO
+   ========================================================= */
+
+.juzgado-destino-director {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+
+  margin-bottom: 18px;
+  padding: 12px 14px;
+
+  border-left: 4px solid #2563eb;
+
+  background: #eff6ff;
+}
+
+.juzgado-destino-director strong {
+  color: #1e3a8a;
+
+  font-size: 13px;
+}
+
+.juzgado-destino-director span {
+  color: #334155;
+
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+
+/* =========================================================
+   BOTONES MODAL
+   ========================================================= */
+
+.juzgado-modal-botones {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+
+  margin-top: 20px;
+  padding-top: 16px;
+
+  border-top: 1px solid #e2e8f0;
+}
+
+.juzgado-modal-botones button {
+  min-height: 42px;
+
+  padding: 0 17px;
+
+  border-radius: 6px;
+
+  font-size: 14px;
+  font-weight: 800;
+
+  cursor: pointer;
+}
+
+.boton-cancelar {
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #475569;
+}
+
+.boton-cancelar:hover {
+  background: #f8fafc;
+}
+
+.boton-confirmar {
+  border: 1px solid #dc2626;
+  background: #dc2626;
+  color: #ffffff;
+}
+
+.boton-confirmar:hover:not(
+    :disabled
+  ) {
+  background: #b91c1c;
+}
+
+.juzgado-modal-botones
+  button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+
+/* =========================================================
+   TABLET
+   ========================================================= */
+
+@media (
+  max-width: 1100px
+) {
+  .juzgado-fila {
+    grid-template-columns:
+      minmax(0, 1fr)
+      minmax(170px, 0.4fr);
+  }
+
+  .juzgado-fila-principal {
+    grid-template-columns:
+      repeat(
+        2,
+        minmax(0, 1fr)
+      );
+  }
+
+  .juzgado-fila-estado {
+    grid-column: 1;
+  }
+
+  .juzgado-fila-acciones {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+
+    align-self: stretch;
+    justify-content: center;
+  }
+}
+
+
+/* =========================================================
+   CELULAR
+   ========================================================= */
+
+@media (
+  max-width: 700px
+) {
+  .juzgado-page {
+    padding: 14px 12px 90px;
+  }
+
+  .juzgado-header {
+    flex-direction: column;
+
+    gap: 14px;
+
+    margin-bottom: 16px;
+  }
+
+  .juzgado-header h1 {
+    font-size: 25px;
+  }
+
+  .juzgado-header p {
+    font-size: 13px;
+  }
+
+  .juzgado-actualizar {
+    width: 100%;
+  }
+
+  /*
+  Secciones principales
+  */
+
+  .juzgado-secciones {
+    grid-template-columns: 1fr;
+  }
+
+  .juzgado-secciones button {
+    justify-content: space-between;
+
+    min-height: 50px;
+
+    border-right: 0;
+    border-bottom: 1px solid #cbd5e1;
+
+    text-align: left;
+  }
+
+  .juzgado-secciones
+    button:last-child {
+    border-bottom: 0;
+  }
+
+  /*
+  Pestañas
+  */
+
+  .juzgado-pestañas {
+    gap: 0;
+  }
+
+  .juzgado-pestañas button {
+    padding: 0 12px;
+
+    font-size: 13px;
+  }
+
+  /*
+  Avisos
+  */
+
+  .juzgado-aviso {
+    padding: 11px 12px;
+
+    font-size: 13px;
+  }
+
+  /*
+  Listado
+  */
+
+  .juzgado-listado {
+    border-top: 0;
+  }
+
+  .juzgado-fila {
+    display: block;
+
+    padding: 17px 0;
+
+    border-bottom: 2px solid #dbe1e8;
+  }
+
+  .juzgado-fila:hover {
+    background: #ffffff;
+  }
+
+  .juzgado-fila-principal {
+    grid-template-columns:
+      repeat(
+        2,
+        minmax(0, 1fr)
+      );
+
+    gap: 14px 10px;
+  }
+
+  .juzgado-fila-principal
+    > div:last-child {
+    grid-column: 1 / -1;
+  }
+
+  .juzgado-fila-estado {
+    margin-top: 15px;
+    padding-top: 13px;
+
+    border-top: 1px solid #edf0f3;
+  }
+
+  .juzgado-motivo {
+    box-sizing: border-box;
+  }
+
+  .juzgado-fila-acciones {
+    width: 100%;
+    min-width: 0;
+
+    margin-top: 15px;
+
+    flex-direction: column;
+  }
+
+  .juzgado-fila-acciones
+    button {
+    min-height: 44px;
+
+    font-size: 14px;
+  }
+
+  /*
+  Modal
+  */
+
+  .juzgado-modal {
+    align-items: flex-end;
+
+    padding: 0;
+  }
+
+  .juzgado-modal-contenido {
+    max-width: none;
+    max-height: 92vh;
+
+    padding: 19px 15px 22px;
+
+    border-radius:
+      12px 12px 0 0;
+  }
+
+  .juzgado-modal-contenido
+    h2 {
+    font-size: 20px;
+  }
+
+  .juzgado-modal-resumen {
+    grid-template-columns: 1fr;
+
+    gap: 2px;
+
+    padding: 11px 12px;
+  }
+
+  .juzgado-modal-resumen
+    strong {
+    margin-bottom: 8px;
+  }
+
+  .opcion-juzgado {
+    min-height: 65px;
+
+    padding: 12px;
+  }
+
+  .juzgado-orden-foto {
+    padding: 13px 11px;
+  }
+
+  .juzgado-modal-botones {
+    display: grid;
+    grid-template-columns: 1fr;
+
+    gap: 8px;
+  }
+
+  .juzgado-modal-botones
+    button {
+    width: 100%;
+    min-height: 47px;
+  }
+
+  .boton-confirmar {
+    grid-row: 1;
+  }
+
+  .boton-cancelar {
+    grid-row: 2;
+  }
+}
+
+
+/* =========================================================
+   CELULARES CHICOS
+   ========================================================= */
+
+@media (
+  max-width: 420px
+) {
+  .juzgado-page {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+
+  .juzgado-fila-principal {
+    grid-template-columns: 1fr;
+  }
+
+  .juzgado-fila-principal
+    > div:last-child {
+    grid-column: auto;
+  }
+
+  .juzgado-pestañas button {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+}

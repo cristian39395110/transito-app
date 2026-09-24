@@ -1,0 +1,157 @@
+.constatacion-form {
+  display: flex;
+  flex-direction: column;
+
+  gap: 15px;
+}
+
+.constatacion-form label {
+  display: flex;
+  flex-direction: column;
+
+  gap: 6px;
+
+  color: #374151;
+
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.constatacion-form select,
+.constatacion-form textarea {
+  width: 100%;
+
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+
+  padding: 10px;
+
+  background: #ffffff;
+  color: #111827;
+
+  font-size: 15px;
+  outline: none;
+}
+
+.constatacion-form select {
+  min-height: 44px;
+}
+
+.constatacion-form textarea {
+  resize: vertical;
+}
+
+.constatacion-form select:focus,
+.constatacion-form textarea:focus {
+  border-color: #4b5563;
+
+  box-shadow:
+    0 0 0 3px
+    rgba(75, 85, 99, 0.1);
+}
+
+.constatacion-gps {
+  display: flex;
+  flex-direction: column;
+
+  gap: 12px;
+
+  padding: 14px;
+
+  border-radius: 10px;
+
+  background: #f9fafb;
+}
+
+.constatacion-gps > div {
+  display: flex;
+  flex-direction: column;
+
+  gap: 3px;
+}
+
+.constatacion-gps strong {
+  color: #111827;
+
+  font-size: 13px;
+}
+
+.constatacion-gps span {
+  color: #4b5563;
+
+  font-size: 12px;
+}
+
+.constatacion-gps small {
+  color: #9ca3af;
+
+  font-size: 10px;
+}
+
+.constatacion-gps button {
+  min-height: 43px;
+
+  border: 1px solid #374151;
+  border-radius: 8px;
+
+  background: #ffffff;
+  color: #1f2937;
+
+  font-weight: 700;
+
+  cursor: pointer;
+}
+
+.constatacion-gps button:disabled {
+  opacity: 0.6;
+}
+
+.constatacion-error,
+.constatacion-ok {
+  padding: 10px;
+
+  border-radius: 8px;
+
+  font-size: 12px;
+}
+
+.constatacion-error {
+  background: #fef2f2;
+  color: #991b1b;
+}
+
+.constatacion-ok {
+  background: #ecfdf5;
+  color: #047857;
+}
+
+.constatacion-guardar {
+  min-height: 48px;
+
+  border: none;
+  border-radius: 8px;
+
+  background: #1f2937;
+  color: #ffffff;
+
+  font-size: 14px;
+  font-weight: 700;
+
+  cursor: pointer;
+}
+
+.constatacion-guardar:disabled {
+  opacity: 0.6;
+}
+
+@media (min-width: 600px) {
+  .constatacion-gps {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .constatacion-gps button {
+    padding: 8px 15px;
+  }
+}

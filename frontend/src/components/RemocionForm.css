@@ -1,0 +1,160 @@
+.remocion-form {
+  display: flex;
+  flex-direction: column;
+
+  gap: 14px;
+}
+
+.remocion-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+
+  gap: 10px;
+}
+
+.remocion-header > div {
+  display: flex;
+  flex-direction: column;
+}
+
+.remocion-header span {
+  color: #9ca3af;
+
+  font-size: 9px;
+  font-weight: 700;
+
+  letter-spacing: 0.04em;
+}
+
+.remocion-header h3 {
+  margin: 2px 0 0;
+
+  font-size: 18px;
+}
+
+.remocion-header > strong {
+  padding: 6px 9px;
+
+  border-radius: 7px;
+
+  background: #f3f4f6;
+
+  font-size: 13px;
+}
+
+.remocion-aviso {
+  padding: 11px;
+
+  border-radius: 8px;
+
+  background: #fff7ed;
+  color: #9a3412;
+
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.remocion-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+
+  gap: 12px;
+}
+
+.remocion-form label {
+  display: flex;
+  flex-direction: column;
+
+  gap: 5px;
+
+  color: #374151;
+
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.remocion-form input,
+.remocion-form textarea {
+  width: 100%;
+
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+
+  padding: 10px;
+
+  background: #ffffff;
+  color: #111827;
+
+  font-size: 14px;
+
+  outline: none;
+}
+
+.remocion-form input {
+  min-height: 43px;
+}
+
+.remocion-form textarea {
+  resize: vertical;
+}
+
+.remocion-form input:focus,
+.remocion-form textarea:focus {
+  border-color: #4b5563;
+
+  box-shadow:
+    0 0 0 3px
+    rgba(75, 85, 99, 0.1);
+}
+
+.remocion-error,
+.remocion-ok {
+  padding: 10px;
+
+  border-radius: 8px;
+
+  font-size: 12px;
+}
+
+.remocion-error {
+  background: #fef2f2;
+  color: #991b1b;
+}
+
+.remocion-ok {
+  background: #ecfdf5;
+  color: #047857;
+}
+
+.remocion-guardar {
+  min-height: 47px;
+
+  border: none;
+  border-radius: 8px;
+
+  background: #991b1b;
+  color: #ffffff;
+
+  font-weight: 700;
+
+  cursor: pointer;
+}
+
+.remocion-guardar:disabled {
+  opacity: 0.6;
+}
+
+@media (min-width: 650px) {
+  .remocion-grid {
+    grid-template-columns:
+      repeat(
+        2,
+        minmax(0, 1fr)
+      );
+  }
+
+  .remocion-destino {
+    grid-column: 1 / -1;
+  }
+}

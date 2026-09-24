@@ -1,0 +1,130 @@
+.egreso-predio-form {
+  display: flex;
+  flex-direction: column;
+
+  gap: 14px;
+}
+
+.egreso-header {
+  display: flex;
+  flex-direction: column;
+
+  gap: 2px;
+}
+
+.egreso-header > span {
+  color: #9ca3af;
+
+  font-size: 9px;
+  font-weight: 700;
+
+  letter-spacing: 0.04em;
+}
+
+.egreso-header h3 {
+  margin: 0;
+
+  font-size: 19px;
+}
+
+.egreso-header p {
+  margin: 5px 0 0;
+
+  color: #6b7280;
+
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.egreso-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+
+  gap: 12px;
+}
+
+.egreso-predio-form label {
+  display: flex;
+  flex-direction: column;
+
+  gap: 5px;
+
+  color: #374151;
+
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.egreso-predio-form input,
+.egreso-predio-form select,
+.egreso-predio-form textarea {
+  width: 100%;
+
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+
+  padding: 10px;
+
+  background: #ffffff;
+  color: #111827;
+
+  font-size: 14px;
+
+  outline: none;
+}
+
+.egreso-predio-form input,
+.egreso-predio-form select {
+  min-height: 43px;
+}
+
+.egreso-predio-form textarea {
+  resize: vertical;
+}
+
+.egreso-error,
+.egreso-ok {
+  padding: 10px;
+
+  border-radius: 8px;
+
+  font-size: 12px;
+}
+
+.egreso-error {
+  background: #fef2f2;
+  color: #991b1b;
+}
+
+.egreso-ok {
+  background: #ecfdf5;
+  color: #047857;
+}
+
+.egreso-guardar {
+  min-height: 47px;
+
+  border: none;
+  border-radius: 8px;
+
+  background: #1f2937;
+  color: #ffffff;
+
+  font-weight: 700;
+
+  cursor: pointer;
+}
+
+.egreso-guardar:disabled {
+  opacity: 0.6;
+}
+
+@media (min-width: 650px) {
+  .egreso-grid {
+    grid-template-columns:
+      repeat(
+        2,
+        minmax(0, 1fr)
+      );
+  }
+}

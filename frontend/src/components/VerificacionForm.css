@@ -1,0 +1,135 @@
+.verificacion-form {
+  display: flex;
+  flex-direction: column;
+
+  gap: 13px;
+}
+
+.verificacion-form label {
+  display: flex;
+  flex-direction: column;
+
+  gap: 5px;
+
+  color: #374151;
+
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.verificacion-form select,
+.verificacion-form textarea {
+  width: 100%;
+
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+
+  padding: 10px;
+
+  background: #ffffff;
+  color: #111827;
+
+  font-size: 14px;
+
+  outline: none;
+}
+
+.verificacion-form select {
+  min-height: 43px;
+}
+
+.verificacion-form textarea {
+  resize: vertical;
+}
+
+.verificacion-gps {
+  display: flex;
+  flex-direction: column;
+
+  gap: 10px;
+
+  padding: 12px;
+
+  border-radius: 8px;
+
+  background: #f9fafb;
+}
+
+.verificacion-gps > div {
+  display: flex;
+  flex-direction: column;
+
+  gap: 3px;
+}
+
+.verificacion-gps strong {
+  font-size: 12px;
+}
+
+.verificacion-gps span {
+  color: #4b5563;
+
+  font-size: 11px;
+}
+
+.verificacion-gps small {
+  color: #9ca3af;
+
+  font-size: 9px;
+}
+
+.verificacion-gps button {
+  min-height: 41px;
+
+  border: 1px solid #374151;
+  border-radius: 8px;
+
+  background: #ffffff;
+  color: #1f2937;
+
+  font-weight: 700;
+
+  cursor: pointer;
+}
+
+.verificacion-error {
+  padding: 10px;
+
+  border-radius: 8px;
+
+  background: #fef2f2;
+  color: #991b1b;
+
+  font-size: 12px;
+}
+
+.verificacion-guardar {
+  min-height: 45px;
+
+  border: none;
+  border-radius: 8px;
+
+  background: #1f2937;
+  color: #ffffff;
+
+  font-weight: 700;
+
+  cursor: pointer;
+}
+
+.verificacion-guardar:disabled,
+.verificacion-gps button:disabled {
+  opacity: 0.6;
+}
+
+@media (min-width: 600px) {
+  .verificacion-gps {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .verificacion-gps button {
+    padding: 8px 14px;
+  }
+}
