@@ -245,7 +245,7 @@ const AppLayout = () => {
         "miGuardia",
 
       roles: [
-        "administrador",
+        
         "jefe_guardia",
       ],
     },
@@ -258,7 +258,7 @@ const AppLayout = () => {
         "misTrabajos",
 
       roles: [
-        "administrador",
+       
         "inspector",
       ],
     },
