@@ -153,6 +153,11 @@ const InspeccionPage = () => {
     setTomandoGPS,
   ] = useState(false);
 
+  const [
+  gpsFallo,
+  setGpsFallo,
+] = useState(false);
+
 
     /*
   |--------------------------------------------------------------------------
@@ -390,9 +395,10 @@ const InspeccionPage = () => {
   |--------------------------------------------------------------------------
   */
 
-  const tomarUbicacion = () => {
-    setError("");
-    setMensaje("");
+const tomarUbicacion = () => {
+  setError("");
+  setMensaje("");
+  setGpsFallo(false);
 
     if (!navigator.geolocation) {
       setError(
@@ -420,20 +426,21 @@ const InspeccionPage = () => {
           )
         );
 
-        setTomandoGPS(false);
+    setTomandoGPS(false);
+setGpsFallo(false);
 
-        setMensaje(
-          "Ubicación tomada correctamente."
-        );
+setMensaje(
+  "Ubicación GPS tomada correctamente."
+);
       },
+(err) => {
+  console.error(
+    "Error GPS:",
+    err
+  );
 
-      (err) => {
-        console.error(
-          "Error GPS:",
-          err
-        );
-
-        setTomandoGPS(false);
+  setTomandoGPS(false);
+  setGpsFallo(true);
 
         if (
           err.code ===
@@ -480,6 +487,35 @@ const InspeccionPage = () => {
       }
     );
   };
+
+
+  const usarUbicacionReclamo = () => {
+  if (
+    !reclamo?.latitudDenunciada ||
+    !reclamo?.longitudDenunciada
+  ) {
+    setError(
+      "Este reclamo no tiene una ubicación registrada."
+    );
+    return;
+  }
+
+  setLatitud(
+    Number(reclamo.latitudDenunciada)
+  );
+
+  setLongitud(
+    Number(reclamo.longitudDenunciada)
+  );
+
+  setPrecision("");
+
+  setError("");
+
+  setMensaje(
+    "Se utilizó la ubicación informada en el reclamo."
+  );
+};
 
   /*
   |--------------------------------------------------------------------------
@@ -2009,6 +2045,18 @@ const guardarVisita =
                   ? "📍 Actualizar ubicación"
                   : "📍 Tomar ubicación"}
             </button>
+
+            {gpsFallo &&
+  reclamo?.latitudDenunciada &&
+  reclamo?.longitudDenunciada && (
+    <button
+      type="button"
+      className="inspeccion-boton-secundario"
+      onClick={usarUbicacionReclamo}
+    >
+      📌 Usar ubicación del reclamo
+    </button>
+  )}
 
           </section>
 
