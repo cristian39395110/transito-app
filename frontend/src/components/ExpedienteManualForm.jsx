@@ -334,6 +334,11 @@ const [
   ] = useState("");
 
   const [
+  numeroOficio,
+  setNumeroOficio,
+] = useState("");
+
+  const [
     observacionesEgreso,
     setObservacionesEgreso,
   ] = useState("");
@@ -602,26 +607,12 @@ const validar = () => {
   }
 
 
-  /*
-  |--------------------------------------------------------------------------
-  | PREDIO SOLAMENTE CUANDO CORRESPONDE
-  |--------------------------------------------------------------------------
-  */
-
-  if (
-    (
-      situacionActual ===
-        "EN_PREDIO" ||
-      situacionActual ===
-        "TRASLADADO"
-    ) &&
-    !predioId
-  ) {
-    return situacionActual ===
-      "TRASLADADO"
-      ? "Seleccioná el predio de origen."
-      : "Seleccioná el predio donde se encuentra el vehículo.";
-  }
+  if (!predioId) {
+  return situacionActual ===
+    "EN_PREDIO"
+    ? "Seleccioná el predio donde se encuentra el vehículo."
+    : "Seleccioná el predio de origen.";
+}
 
 
   /*
@@ -1033,38 +1024,30 @@ ordenJudicialRemocion: {
 |
 | Solamente mandamos predio cuando realmente corresponde.
 */
-
 predioId:
-  (
-    situacionActual ===
-      "EN_PREDIO" ||
-    situacionActual ===
-      "TRASLADADO"
-  ) &&
   predioId
     ? Number(predioId)
     : null,
 
 fechaIngreso:
-  situacionActual === "TRASLADADO"
+  mostrarEgreso
     ? fechaIngreso || null
     : null,
 
 sector:
-  situacionActual === "TRASLADADO"
+  mostrarEgreso
     ? sector.trim() || null
     : null,
 
 posicion:
-  situacionActual === "TRASLADADO"
+  mostrarEgreso
     ? posicion.trim() || null
     : null,
 
 observacionesIngreso:
-  situacionActual === "TRASLADADO"
+  mostrarEgreso
     ? observacionesIngreso.trim() || null
     : null,
-
 /*
 |--------------------------------------------------------------------------
 | SALIDA
@@ -1101,6 +1084,15 @@ dniPersona:
     ? dniPersona
         .trim() ||
       null
+    : null,
+
+numeroOficio:
+  [
+    "ENTREGADO",
+    "TRASLADADO",
+    "COMPACTADO",
+  ].includes(situacionActual)
+    ? numeroOficio.trim() || null
     : null,
 
 observacionesEgreso:
@@ -2886,302 +2878,640 @@ observacionesEgreso:
 |--------------------------------------------------------------------------
 */}
 
+{/*
+|--------------------------------------------------------------------------
+| 4 - UBICACIÓN / SITUACIÓN ACTUAL
+|--------------------------------------------------------------------------
+*/}
+
 <section className="exp-manual-seccion">
-  <button
-    type="button"
-    className="exp-manual-seccion-cabecera"
-    onClick={() =>
-      alternarSeccion(
-        "predio"
-      )
-    }
-  >
-    <div className="exp-manual-paso">
-      4
-    </div>
 
-    <div className="exp-manual-seccion-titulo">
-      <strong>
-        Ubicación y situación del vehículo
-      </strong>
-
-      <span>
-        Indicá qué ocurrió con el vehículo
+  <div className="exp-manual-seccion-titulo">
+    <div>
+      <span className="exp-manual-seccion-numero">
+        4
       </span>
+
+      <div>
+        <h2>
+          Situación actual del vehículo
+        </h2>
+
+        <p>
+          Indicá qué ocurrió finalmente con el vehículo
+          según la documentación del expediente.
+        </p>
+      </div>
+    </div>
+  </div>
+
+
+  {/*
+  |--------------------------------------------------------------------------
+  | SITUACIÓN
+  |--------------------------------------------------------------------------
+  */}
+
+  <div className="exp-manual-campo">
+
+    <label>
+      ¿Qué ocurrió con el vehículo?
+      <b>*</b>
+    </label>
+
+    <div className="exp-manual-opciones">
+
+      <label className="exp-manual-opcion">
+
+        <input
+          type="radio"
+          name="situacionActual"
+          value="EN_PREDIO"
+          checked={
+            situacionActual ===
+            "EN_PREDIO"
+          }
+          disabled={Boolean(resultado)}
+          onChange={(event) => {
+            const valor =
+              event.target.value;
+
+            setSituacionActual(
+              valor
+            );
+
+            setPredioDestinoId(
+              ""
+            );
+
+            setDestinoPersona(
+              ""
+            );
+
+            setDniPersona(
+              ""
+            );
+
+            setNumeroOficio(
+              ""
+            );
+          }}
+        />
+
+        <div>
+          <strong>
+            🏛️ Está actualmente en un predio
+          </strong>
+
+          <span>
+            El vehículo continúa físicamente
+            en un predio municipal.
+          </span>
+        </div>
+
+      </label>
+
+
+      <label className="exp-manual-opcion">
+
+        <input
+          type="radio"
+          name="situacionActual"
+          value="ENTREGADO"
+          checked={
+            situacionActual ===
+            "ENTREGADO"
+          }
+          disabled={Boolean(resultado)}
+          onChange={(event) => {
+            const valor =
+              event.target.value;
+
+            setSituacionActual(
+              valor
+            );
+
+            setPredioDestinoId(
+              ""
+            );
+          }}
+        />
+
+        <div>
+          <strong>
+            🤝 Fue entregado
+          </strong>
+
+          <span>
+            El vehículo estuvo en un predio
+            y luego fue entregado a su dueño
+            o a una persona autorizada.
+          </span>
+        </div>
+
+      </label>
+
+
+      <label className="exp-manual-opcion">
+
+        <input
+          type="radio"
+          name="situacionActual"
+          value="TRASLADADO"
+          checked={
+            situacionActual ===
+            "TRASLADADO"
+          }
+          disabled={Boolean(resultado)}
+          onChange={(event) => {
+            const valor =
+              event.target.value;
+
+            setSituacionActual(
+              valor
+            );
+
+            setDestinoPersona(
+              ""
+            );
+
+            setDniPersona(
+              ""
+            );
+          }}
+        />
+
+        <div>
+          <strong>
+            🚚 Fue trasladado
+          </strong>
+
+          <span>
+            Salió de un predio y fue llevado
+            a otro predio.
+          </span>
+        </div>
+
+      </label>
+
+
+      <label className="exp-manual-opcion">
+
+        <input
+          type="radio"
+          name="situacionActual"
+          value="COMPACTADO"
+          checked={
+            situacionActual ===
+            "COMPACTADO"
+          }
+          disabled={Boolean(resultado)}
+          onChange={(event) => {
+            const valor =
+              event.target.value;
+
+            setSituacionActual(
+              valor
+            );
+
+            setPredioDestinoId(
+              ""
+            );
+
+            setDestinoPersona(
+              ""
+            );
+
+            setDniPersona(
+              ""
+            );
+          }}
+        />
+
+        <div>
+          <strong>
+            ♻️ Fue compactado
+          </strong>
+
+          <span>
+            El vehículo salió definitivamente
+            del predio para compactación.
+          </span>
+        </div>
+
+      </label>
+
+
+      <label className="exp-manual-opcion">
+
+        <input
+          type="radio"
+          name="situacionActual"
+          value="OTRO"
+          checked={
+            situacionActual ===
+            "OTRO"
+          }
+          disabled={Boolean(resultado)}
+          onChange={(event) => {
+            const valor =
+              event.target.value;
+
+            setSituacionActual(
+              valor
+            );
+
+            setPredioDestinoId(
+              ""
+            );
+
+            setDestinoPersona(
+              ""
+            );
+
+            setDniPersona(
+              ""
+            );
+
+            setNumeroOficio(
+              ""
+            );
+          }}
+        />
+
+        <div>
+          <strong>
+            📦 Otro egreso
+          </strong>
+
+          <span>
+            El vehículo salió del predio
+            por otro motivo.
+          </span>
+        </div>
+
+      </label>
+
     </div>
 
-    <span className="exp-manual-chevron">
-      {secciones.predio
-        ? "−"
-        : "+"}
-    </span>
-  </button>
+  </div>
 
 
-  {secciones.predio && (
-    <div className="exp-manual-seccion-contenido">
-      <div className="exp-manual-subtitulo">
-        ¿Dónde está hoy?
+  {/*
+  |--------------------------------------------------------------------------
+  | EN PREDIO ACTUALMENTE
+  |--------------------------------------------------------------------------
+  */}
+
+  {situacionActual ===
+    "EN_PREDIO" && (
+    <>
+
+      <div className="exp-manual-documentos-aviso exp-manual-margen-arriba">
+
+        <strong>
+          🏛️ El vehículo está actualmente en un predio
+        </strong>
+
+        <span>
+          Indicá en qué predio se encuentra.
+          El personal de Predio deberá confirmar
+          físicamente su ingreso.
+        </span>
+
+      </div>
+
+
+      <div className="exp-manual-grid exp-manual-grid-2">
+
+        <div className="exp-manual-campo">
+
+          <label>
+            ¿En qué predio se encuentra actualmente?
+            <b>*</b>
+          </label>
+
+          <select
+            value={predioId}
+            disabled={Boolean(resultado)}
+            onChange={(event) =>
+              setPredioId(
+                event.target.value
+              )
+            }
+          >
+
+            <option value="">
+              Seleccionar predio…
+            </option>
+
+            {predios.map(
+              (predio) => (
+                <option
+                  key={predio.id}
+                  value={predio.id}
+                >
+                  {nombrePredio(
+                    predio
+                  )}
+                </option>
+              )
+            )}
+
+          </select>
+
+          <small>
+            Este vehículo quedará pendiente
+            de recepción y confirmación por Predio.
+          </small>
+
+        </div>
+
+      </div>
+
+    </>
+  )}
+
+
+  {/*
+  |--------------------------------------------------------------------------
+  | VEHÍCULO QUE YA SALIÓ DE UN PREDIO
+  |--------------------------------------------------------------------------
+  */}
+
+  {mostrarEgreso && (
+    <div className="exp-manual-margen-arriba">
+
+
+      {/*
+      |--------------------------------------------------------------------------
+      | EXPLICACIÓN SEGÚN SITUACIÓN
+      |--------------------------------------------------------------------------
+      */}
+
+      <div className="exp-manual-documentos-aviso">
+
+        <strong>
+
+          {situacionActual === "ENTREGADO"
+            ? "🤝 El vehículo ya fue entregado"
+            : situacionActual === "TRASLADADO"
+              ? "🚚 El vehículo salió de un predio y fue trasladado"
+              : situacionActual === "COMPACTADO"
+                ? "♻️ El vehículo ya fue compactado"
+                : "📦 El vehículo ya salió del predio"}
+
+        </strong>
+
+        <span>
+
+          {situacionActual === "ENTREGADO"
+            ? "Indicá de qué predio fue retirado antes de ser entregado."
+            : situacionActual === "TRASLADADO"
+              ? "Indicá de qué predio salió y a qué predio fue trasladado."
+              : situacionActual === "COMPACTADO"
+                ? "Indicá en qué predio estaba antes de salir para compactación."
+                : "Indicá de qué predio salió el vehículo."}
+
+        </span>
+
       </div>
 
 
       {/*
       |--------------------------------------------------------------------------
-      | OPCIONES
+      | PREDIO ANTERIOR
       |--------------------------------------------------------------------------
       */}
 
-      <div className="exp-manual-situaciones">
-        {[
-          {
-            value:
-              "EN_PREDIO",
+      <div className="exp-manual-grid exp-manual-grid-2">
 
-            icon:
-              "🏛️",
+        <div className="exp-manual-campo">
 
-            titulo:
-              "En predio",
+          <label>
 
-            texto:
-              "El vehículo continúa en un predio municipal.",
-          },
+            {situacionActual === "ENTREGADO"
+              ? "¿De qué predio fue entregado?"
+              : situacionActual === "TRASLADADO"
+                ? "¿De qué predio salió?"
+                : situacionActual === "COMPACTADO"
+                  ? "¿En qué predio estaba antes de ser compactado?"
+                  : "¿De qué predio salió?"}
 
-          {
-            value:
-              "ENTREGADO",
+            <b>*</b>
 
-            icon:
-              "🤝",
+          </label>
 
-            titulo:
-              "Entregado",
+          <select
+            value={predioId}
+            disabled={Boolean(resultado)}
+            onChange={(event) =>
+              setPredioId(
+                event.target.value
+              )
+            }
+          >
 
-            texto:
-              "El vehículo fue retirado por el dueño o una persona autorizada.",
-          },
+            <option value="">
+              Seleccionar predio…
+            </option>
 
-          {
-            value:
-              "TRASLADADO",
+            {predios.map(
+              (predio) => (
+                <option
+                  key={predio.id}
+                  value={predio.id}
+                >
+                  {nombrePredio(
+                    predio
+                  )}
+                </option>
+              )
+            )}
 
-            icon:
-              "🚚",
+          </select>
 
-            titulo:
-              "Trasladado",
+          <small>
+            Este dato indica dónde estuvo el vehículo.
+            No significa que todavía se encuentre allí.
+          </small>
 
-            texto:
-              "El vehículo pasó de un predio municipal a otro.",
-          },
-
-          {
-            value:
-              "COMPACTADO",
-
-            icon:
-              "♻️",
-
-            titulo:
-              "Compactado",
-
-            texto:
-              "El vehículo ya fue compactado.",
-          },
-
-          {
-            value:
-              "OTRO",
-
-            icon:
-              "📦",
-
-            titulo:
-              "Otro",
-
-            texto:
-              "El vehículo tuvo otro tipo de egreso.",
-          },
-        ].map(
-          (opcion) => (
-            <label
-              key={
-                opcion.value
-              }
-              className={`exp-manual-situacion ${
-                situacionActual ===
-                opcion.value
-                  ? "activa"
-                  : ""
-              }`}
-            >
-              <input
-                type="radio"
-                name="situacionActual"
-                value={
-                  opcion.value
-                }
-                checked={
-                  situacionActual ===
-                  opcion.value
-                }
-                disabled={
-                  Boolean(
-                    resultado
-                  )
-                }
-                onChange={(
-                  event
-                ) => {
-                  const valor =
-                    event.target
-                      .value;
-
-                  setSituacionActual(
-                    valor
-                  );
+        </div>
 
 
-                  /*
-                  Limpiamos datos que
-                  ya no corresponden.
-                  */
+        <div className="exp-manual-campo">
 
-                  if (
-                    valor !==
-                      "EN_PREDIO" &&
-                    valor !==
-                      "TRASLADADO"
-                  ) {
-                    setPredioId(
-                      ""
-                    );
+          <label>
+            Fecha de ingreso al predio
+          </label>
 
-                    setFechaIngreso(
-                      ""
-                    );
+          <input
+            type="datetime-local"
+            value={fechaIngreso}
+            disabled={Boolean(resultado)}
+            onChange={(event) =>
+              setFechaIngreso(
+                event.target.value
+              )
+            }
+          />
 
-                    setSector(
-                      ""
-                    );
+          <small>
+            Dejalo vacío si no consta.
+          </small>
 
-                    setPosicion(
-                      ""
-                    );
+        </div>
 
-                    setObservacionesIngreso(
-                      ""
-                    );
-                  }
-
-
-                  if (
-                    valor !==
-                    "TRASLADADO"
-                  ) {
-                    setPredioDestinoId(
-                      ""
-                    );
-                  }
-
-
-                  if (
-                    valor !==
-                    "ENTREGADO"
-                  ) {
-                    setDestinoPersona(
-                      ""
-                    );
-
-                    setDniPersona(
-                      ""
-                    );
-                  }
-                }}
-              />
-
-              <span className="exp-manual-situacion-icono">
-                {opcion.icon}
-              </span>
-
-              <div>
-                <strong>
-                  {opcion.titulo}
-                </strong>
-
-                <small>
-                  {opcion.texto}
-                </small>
-              </div>
-            </label>
-          )
-        )}
       </div>
 
 
       {/*
       |--------------------------------------------------------------------------
-      | EN PREDIO
+      | DATOS DEL INGRESO HISTÓRICO
       |--------------------------------------------------------------------------
       */}
 
-    {situacionActual ===
-  "EN_PREDIO" && (
-  <>
-    <div className="exp-manual-documentos-aviso exp-manual-margen-arriba">
-      <strong>
-        🏛️ El vehículo se encuentra en la Granja
-      </strong>
+      <div className="exp-manual-grid exp-manual-grid-2">
 
-      <span>
-        Seleccioná el predio correspondiente.
-        El personal de Predio confirmará el ingreso
-        y cargará sector, posición/precinto y foto.
-      </span>
-    </div>
+        <div className="exp-manual-campo">
 
-    <div className="exp-manual-grid exp-manual-grid-2">
+          <label>
+            Sector
+          </label>
+
+          <input
+            type="text"
+            value={sector}
+            disabled={Boolean(resultado)}
+            onChange={(event) =>
+              setSector(
+                event.target.value
+              )
+            }
+            placeholder="Si consta"
+          />
+
+        </div>
+
+
+        <div className="exp-manual-campo">
+
+          <label>
+            Posición / precinto
+          </label>
+
+          <input
+            type="text"
+            value={posicion}
+            disabled={Boolean(resultado)}
+            onChange={(event) =>
+              setPosicion(
+                event.target.value
+              )
+            }
+            placeholder="Si consta"
+          />
+
+        </div>
+
+      </div>
+
+
       <div className="exp-manual-campo">
+
         <label>
-          Predio
-          <b>*</b>
+          Observaciones del ingreso al predio
         </label>
 
-        <select
-          value={predioId}
+        <textarea
+          rows="2"
+          value={observacionesIngreso}
           disabled={Boolean(resultado)}
           onChange={(event) =>
-            setPredioId(
+            setObservacionesIngreso(
               event.target.value
             )
           }
-        >
-          <option value="">
-            Seleccionar predio…
-          </option>
+          placeholder="Información que conste sobre el ingreso al predio…"
+        />
 
-          {predios.map(
-            (predio) => (
-              <option
-                key={predio.id}
-                value={predio.id}
-              >
-                {nombrePredio(
-                  predio
-                )}
-              </option>
-            )
-          )}
-        </select>
-
-        <small>
-          Después de crear el expediente aparecerá
-          como pendiente de recepción en Predio.
-        </small>
       </div>
-    </div>
-  </>
-)}
+
+
+      {/*
+      |--------------------------------------------------------------------------
+      | EGRESO
+      |--------------------------------------------------------------------------
+      */}
+
+      <div className="exp-manual-subtitulo">
+        Salida del predio
+      </div>
+
+
+      <div className="exp-manual-grid exp-manual-grid-2">
+
+        <div className="exp-manual-campo">
+
+          <label>
+            Fecha de salida
+          </label>
+
+          <input
+            type="datetime-local"
+            value={fechaEgreso}
+            disabled={Boolean(resultado)}
+            onChange={(event) =>
+              setFechaEgreso(
+                event.target.value
+              )
+            }
+          />
+
+          <small>
+            Dejala vacía si no consta.
+          </small>
+
+        </div>
+
+
+        {[
+          "ENTREGADO",
+          "TRASLADADO",
+          "COMPACTADO",
+        ].includes(
+          situacionActual
+        ) && (
+
+          <div className="exp-manual-campo">
+
+            <label>
+              N.º de oficio
+            </label>
+
+            <input
+              type="text"
+              value={numeroOficio}
+              disabled={Boolean(resultado)}
+              onChange={(event) =>
+                setNumeroOficio(
+                  event.target.value
+                )
+              }
+              placeholder="Ej. 1548/24"
+            />
+
+            <small>
+              Opcional. Completalo solamente
+              si existe un oficio relacionado
+              con la salida.
+            </small>
+
+          </div>
+
+        )}
+
+      </div>
 
 
       {/*
@@ -3193,79 +3523,51 @@ observacionesEgreso:
       {situacionActual ===
         "ENTREGADO" && (
         <>
-          <div className="exp-manual-documentos-aviso exp-manual-margen-arriba">
+
+          <div className="exp-manual-subtitulo">
+            Persona que retiró el vehículo
+          </div>
+
+
+          <div className="exp-manual-documentos-aviso">
+
             <strong>
-              🤝 Vehículo entregado
+              👤 Datos de la entrega
             </strong>
 
             <span>
-              No es necesario indicar un predio.
-              Si conocés quién lo retiró, cargá los datos.
+              Si consta en el expediente,
+              indicá quién retiró el vehículo.
             </span>
+
           </div>
 
 
           <div className="exp-manual-grid exp-manual-grid-2">
-            <div className="exp-manual-campo">
-              <label>
-                Fecha de entrega
-              </label>
-
-              <input
-                type="datetime-local"
-                value={
-                  fechaEgreso
-                }
-                disabled={
-                  Boolean(
-                    resultado
-                  )
-                }
-                onChange={(
-                  event
-                ) =>
-                  setFechaEgreso(
-                    event.target
-                      .value
-                  )
-                }
-              />
-
-              <small>
-                Opcional.
-              </small>
-            </div>
-
 
             <div className="exp-manual-campo">
+
               <label>
-                Entregado a
+                Nombre y apellido
               </label>
 
               <input
                 type="text"
-                value={
-                  destinoPersona
-                }
-                disabled={
-                  Boolean(
-                    resultado
-                  )
-                }
-                onChange={(
-                  event
-                ) =>
+                value={destinoPersona}
+                disabled={Boolean(resultado)}
+                onChange={(event) =>
                   setDestinoPersona(
-                    event.target
-                      .value
+                    event.target.value
                   )
                 }
-                placeholder="Nombre y apellido si consta"
+                placeholder="Ej. Juan Pérez"
               />
+
             </div>
 
 
             <div className="exp-manual-campo">
+
               <label>
                 DNI
               </label>
@@ -3273,54 +3575,20 @@ observacionesEgreso:
               <input
                 type="text"
                 inputMode="numeric"
-                value={
-                  dniPersona
-                }
-                disabled={
-                  Boolean(
-                    resultado
-                  )
-                }
-                onChange={(
-                  event
-                ) =>
+                value={dniPersona}
+                disabled={Boolean(resultado)}
+                onChange={(event) =>
                   setDniPersona(
-                    event.target
-                      .value
+                    event.target.value
                   )
                 }
-                placeholder="Si consta"
+                placeholder="Ej. 30123456"
               />
+
             </div>
+
           </div>
 
-
-          <div className="exp-manual-campo">
-            <label>
-              Observaciones de la entrega
-            </label>
-
-            <textarea
-              rows="3"
-              value={
-                observacionesEgreso
-              }
-              disabled={
-                Boolean(
-                  resultado
-                )
-              }
-              onChange={(
-                event
-              ) =>
-                setObservacionesEgreso(
-                  event.target
-                    .value
-                )
-              }
-              placeholder="Ej. Retirado por propietario según documentación existente…"
-            />
-          </div>
         </>
       )}
 
@@ -3334,427 +3602,96 @@ observacionesEgreso:
       {situacionActual ===
         "TRASLADADO" && (
         <>
-          <div className="exp-manual-documentos-aviso exp-manual-margen-arriba">
-            <strong>
-              🚚 Traslado entre predios
-            </strong>
 
-            <span>
-              Indicá de qué predio salió y a cuál fue trasladado.
-            </span>
+          <div className="exp-manual-subtitulo">
+            Destino del traslado
           </div>
 
 
-          <div className="exp-manual-grid exp-manual-grid-2">
-            <div className="exp-manual-campo">
-              <label>
-                Predio de origen
-                <b>
-                  *
-                </b>
-              </label>
+          <div className="exp-manual-campo">
 
-              <select
-                value={
-                  predioId
-                }
-                disabled={
-                  Boolean(
-                    resultado
-                  )
-                }
-                onChange={(
-                  event
-                ) =>
-                  setPredioId(
-                    event.target
-                      .value
-                  )
-                }
-              >
-                <option value="">
-                  Seleccionar…
-                </option>
+            <label>
+              ¿A qué predio fue trasladado?
+              <b>*</b>
+            </label>
 
-                {predios.map(
-                  (predio) => (
-                    <option
-                      key={
-                        predio.id
-                      }
-                      value={
-                        predio.id
-                      }
-                    >
-                      {nombrePredio(
-                        predio
-                      )}
-                    </option>
-                  )
-                )}
-              </select>
-            </div>
+            <select
+              value={predioDestinoId}
+              disabled={Boolean(resultado)}
+              onChange={(event) =>
+                setPredioDestinoId(
+                  event.target.value
+                )
+              }
+            >
 
+              <option value="">
+                Seleccionar predio de destino…
+              </option>
 
-            <div className="exp-manual-campo">
-              <label>
-                Predio de destino
-                <b>
-                  *
-                </b>
-              </label>
-
-              <select
-                value={
-                  predioDestinoId
-                }
-                disabled={
-                  Boolean(
-                    resultado
-                  )
-                }
-                onChange={(
-                  event
-                ) =>
-                  setPredioDestinoId(
-                    event.target
-                      .value
-                  )
-                }
-              >
-                <option value="">
-                  Seleccionar…
-                </option>
-
-                {predios
-                  .filter(
-                    (
-                      item
-                    ) =>
-                      Number(
-                        item.id
-                      ) !==
-                      Number(
-                        predioId
-                      )
-                  )
-                  .map(
-                    (
+              {predios.map(
+                (predio) => (
+                  <option
+                    key={predio.id}
+                    value={predio.id}
+                  >
+                    {nombrePredio(
                       predio
-                    ) => (
-                      <option
-                        key={
-                          predio.id
-                        }
-                        value={
-                          predio.id
-                        }
-                      >
-                        {nombrePredio(
-                          predio
-                        )}
-                      </option>
-                    )
-                  )}
-              </select>
-            </div>
-
-
-            <div className="exp-manual-campo">
-              <label>
-                Fecha de ingreso al predio anterior
-              </label>
-
-              <input
-                type="datetime-local"
-                value={
-                  fechaIngreso
-                }
-                disabled={
-                  Boolean(
-                    resultado
-                  )
-                }
-                onChange={(
-                  event
-                ) =>
-                  setFechaIngreso(
-                    event.target
-                      .value
-                  )
-                }
-              />
-            </div>
-
-
-            <div className="exp-manual-campo">
-              <label>
-                Fecha del traslado
-              </label>
-
-              <input
-                type="datetime-local"
-                value={
-                  fechaEgreso
-                }
-                disabled={
-                  Boolean(
-                    resultado
-                  )
-                }
-                onChange={(
-                  event
-                ) =>
-                  setFechaEgreso(
-                    event.target
-                      .value
-                  )
-                }
-              />
-            </div>
-
-
-            <div className="exp-manual-campo">
-              <label>
-                Sector anterior
-              </label>
-
-              <input
-                type="text"
-                value={sector}
-                disabled={
-                  Boolean(
-                    resultado
-                  )
-                }
-                onChange={(
-                  event
-                ) =>
-                  setSector(
-                    event.target
-                      .value
-                  )
-                }
-              />
-            </div>
-
-
-            <div className="exp-manual-campo">
-              <label>
-                Posición / precinto anterior
-              </label>
-
-              <input
-                type="text"
-                value={
-                  posicion
-                }
-                disabled={
-                  Boolean(
-                    resultado
-                  )
-                }
-                onChange={(
-                  event
-                ) =>
-                  setPosicion(
-                    event.target
-                      .value
-                  )
-                }
-              />
-            </div>
-          </div>
-
-
-          <div className="exp-manual-campo">
-            <label>
-              Observaciones del traslado
-            </label>
-
-            <textarea
-              rows="3"
-              value={
-                observacionesEgreso
-              }
-              disabled={
-                Boolean(
-                  resultado
+                    )}
+                  </option>
                 )
-              }
-              onChange={(
-                event
-              ) =>
-                setObservacionesEgreso(
-                  event.target
-                    .value
-                )
-              }
-            />
-          </div>
-        </>
-      )}
+              )}
 
-
-      {/*
-      |--------------------------------------------------------------------------
-      | COMPACTADO
-      |--------------------------------------------------------------------------
-      */}
-
-      {situacionActual ===
-        "COMPACTADO" && (
-        <>
-          <div className="exp-manual-documentos-aviso exp-manual-margen-arriba">
-            <strong>
-              ♻️ Vehículo compactado
-            </strong>
-
-            <span>
-              No hace falta indicar un predio si esa información
-              no consta en la documentación.
-            </span>
-          </div>
-
-
-          <div className="exp-manual-campo">
-            <label>
-              Fecha de compactación
-            </label>
-
-            <input
-              type="datetime-local"
-              value={
-                fechaEgreso
-              }
-              disabled={
-                Boolean(
-                  resultado
-                )
-              }
-              onChange={(
-                event
-              ) =>
-                setFechaEgreso(
-                  event.target
-                    .value
-                )
-              }
-            />
+            </select>
 
             <small>
-              Opcional.
+              Este es el nuevo predio al que
+              fue llevado el vehículo.
             </small>
+
           </div>
 
-
-          <div className="exp-manual-campo">
-            <label>
-              Observaciones
-            </label>
-
-            <textarea
-              rows="3"
-              value={
-                observacionesEgreso
-              }
-              disabled={
-                Boolean(
-                  resultado
-                )
-              }
-              onChange={(
-                event
-              ) =>
-                setObservacionesEgreso(
-                  event.target
-                    .value
-                )
-              }
-              placeholder="Información que figure en la documentación…"
-            />
-          </div>
         </>
       )}
 
 
       {/*
       |--------------------------------------------------------------------------
-      | OTRO
+      | OBSERVACIONES DEL EGRESO
       |--------------------------------------------------------------------------
       */}
 
-      {situacionActual ===
-        "OTRO" && (
-        <>
-          <div className="exp-manual-documentos-aviso exp-manual-margen-arriba">
-            <strong>
-              📦 Otro tipo de egreso
-            </strong>
+      <div className="exp-manual-campo">
 
-            <span>
-              Describí qué ocurrió con el vehículo.
-            </span>
-          </div>
+        <label>
+          Observaciones de la salida
+        </label>
 
+        <textarea
+          rows="3"
+          value={observacionesEgreso}
+          disabled={Boolean(resultado)}
+          onChange={(event) =>
+            setObservacionesEgreso(
+              event.target.value
+            )
+          }
+          placeholder={
+            situacionActual === "ENTREGADO"
+              ? "Información sobre la entrega del vehículo…"
+              : situacionActual === "TRASLADADO"
+                ? "Información sobre el traslado…"
+                : situacionActual === "COMPACTADO"
+                  ? "Información sobre la compactación…"
+                  : "Información sobre la salida del vehículo…"
+          }
+        />
 
-          <div className="exp-manual-campo">
-            <label>
-              Fecha
-            </label>
+      </div>
 
-            <input
-              type="datetime-local"
-              value={
-                fechaEgreso
-              }
-              disabled={
-                Boolean(
-                  resultado
-                )
-              }
-              onChange={(
-                event
-              ) =>
-                setFechaEgreso(
-                  event.target
-                    .value
-                )
-              }
-            />
-          </div>
-
-
-          <div className="exp-manual-campo">
-            <label>
-              ¿Qué ocurrió?
-            </label>
-
-            <textarea
-              rows="4"
-              value={
-                observacionesEgreso
-              }
-              disabled={
-                Boolean(
-                  resultado
-                )
-              }
-              onChange={(
-                event
-              ) =>
-                setObservacionesEgreso(
-                  event.target
-                    .value
-                )
-              }
-              placeholder="Describí el destino o situación final del vehículo…"
-            />
-          </div>
-        </>
-      )}
     </div>
   )}
+
 </section>
       
         {/*

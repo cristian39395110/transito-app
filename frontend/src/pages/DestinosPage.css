@@ -1,213 +1,618 @@
+/* =========================================================
+   DESTINOS / PREDIOS
+   MOBILE FIRST
+   ========================================================= */
+
 .destinos-page {
   width: 100%;
   max-width: 1200px;
+
   margin: 0 auto;
+
+  padding: 14px;
+
+  box-sizing: border-box;
+
+  color: #1f2937;
 }
+
+.destinos-page *,
+.destinos-page *::before,
+.destinos-page *::after {
+  box-sizing: border-box;
+}
+
+
+/* =========================================================
+   HEADER
+   ========================================================= */
 
 .destinos-header {
   display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 20px;
-  margin-bottom: 24px;
+  flex-direction: column;
+
+  gap: 14px;
+
+  margin-bottom: 18px;
 }
 
 .destinos-header h1 {
-  margin: 0 0 6px;
-  font-size: 28px;
+  margin: 0 0 5px;
+
+  font-size: 24px;
+  line-height: 1.2;
+
+  color: #172033;
 }
 
 .destinos-header p {
   margin: 0;
-  color: #64748b;
+
+  max-width: 600px;
+
+  font-size: 14px;
   line-height: 1.5;
+
+  color: #64748b;
 }
 
-.destinos-boton-nuevo,
-.destinos-boton-guardar {
-  border: 0;
-  border-radius: 8px;
-  padding: 11px 16px;
-  background: #1d4ed8;
-  color: #ffffff;
-  font-size: 14px;
-  font-weight: 700;
-  cursor: pointer;
-}
+
+/* =========================================================
+   BOTÓN NUEVO
+   ========================================================= */
 
 .destinos-boton-nuevo {
-  flex-shrink: 0;
-}
+  width: 100%;
+  min-height: 48px;
 
-.destinos-boton-nuevo:hover,
-.destinos-boton-guardar:hover {
-  background: #1e40af;
-}
+  padding: 11px 18px;
 
-.destinos-boton-nuevo:disabled,
-.destinos-boton-guardar:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
+  border: 0;
+  border-radius: 10px;
 
-.destinos-boton-secundario {
-  border: 1px solid #cbd5e1;
-  border-radius: 8px;
-  padding: 10px 16px;
-  background: #ffffff;
-  color: #334155;
-  font-weight: 700;
+  background: #1f4e78;
+  color: #ffffff;
+
+  font-size: 15px;
+  font-weight: 800;
+
   cursor: pointer;
+
+  transition:
+    transform 0.15s ease,
+    opacity 0.15s ease;
 }
+
+.destinos-boton-nuevo:active {
+  transform: scale(0.98);
+}
+
+
+/* =========================================================
+   MENSAJES
+   ========================================================= */
+
+.destinos-mensaje {
+  width: 100%;
+
+  margin-bottom: 14px;
+
+  padding: 12px 14px;
+
+  border-radius: 10px;
+
+  font-size: 14px;
+  font-weight: 600;
+
+  line-height: 1.4;
+}
+
+.destinos-mensaje.exito {
+  border: 1px solid #bbf7d0;
+
+  background: #f0fdf4;
+  color: #166534;
+}
+
+.destinos-mensaje.error {
+  border: 1px solid #fecaca;
+
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+
+/* =========================================================
+   FORMULARIO
+   ========================================================= */
 
 .destinos-formulario {
-  margin-bottom: 28px;
-  padding: 20px;
-  border: 1px solid #cbd5e1;
-  border-radius: 10px;
+  width: 100%;
+
+  margin-bottom: 20px;
+
+  padding: 16px;
+
+  border: 1px solid #dbe3ec;
+  border-radius: 14px;
+
   background: #ffffff;
+
+  box-shadow:
+    0 4px 16px
+    rgba(15, 23, 42, 0.06);
 }
 
 .destinos-formulario-titulo {
-  margin-bottom: 18px;
+  display: flex;
+  flex-direction: column;
+
+  gap: 10px;
+
+  margin-bottom: 17px;
 }
 
 .destinos-formulario-titulo h2 {
   margin: 0 0 4px;
+
   font-size: 20px;
+  line-height: 1.25;
+
+  color: #172033;
 }
 
 .destinos-formulario-titulo p {
   margin: 0;
+
+  font-size: 13px;
+  line-height: 1.45;
+
   color: #64748b;
 }
 
+
+/* =========================================================
+   ETIQUETA EDITANDO
+   ========================================================= */
+
+.destinos-etiqueta-edicion {
+  display: inline-flex;
+  align-items: center;
+
+  align-self: flex-start;
+
+  min-height: 30px;
+
+  padding: 5px 10px;
+
+  border-radius: 999px;
+
+  background: #fff7ed;
+  color: #9a3412;
+
+  font-size: 12px;
+  font-weight: 800;
+}
+
+
+/* =========================================================
+   CAMPOS
+   ========================================================= */
+
 .destinos-campos {
   display: grid;
-  grid-template-columns:
-    repeat(2, minmax(0, 1fr));
-  gap: 16px;
+
+  grid-template-columns: 1fr;
+
+  gap: 14px;
+
+  width: 100%;
 }
 
-.destinos-campos label {
+.destinos-campos > label {
   display: flex;
   flex-direction: column;
-  gap: 7px;
+
+  gap: 6px;
+
+  min-width: 0;
 }
 
-.destinos-campos label > span {
+.destinos-campos > label > span {
   font-size: 14px;
   font-weight: 700;
-  color: #334155;
+
+  color: #374151;
 }
 
 .destinos-campos input,
-.destinos-campos textarea {
+.destinos-campos textarea,
+.destinos-campos select {
+  display: block;
+
   width: 100%;
-  box-sizing: border-box;
+  max-width: 100%;
+
+  padding: 12px;
+
   border: 1px solid #cbd5e1;
-  border-radius: 7px;
-  padding: 11px 12px;
+  border-radius: 10px;
+
   background: #ffffff;
-  font: inherit;
-  color: #0f172a;
+
+  color: #111827;
+
+  font-family: inherit;
+
+  /*
+   * 16px es importante para móvil.
+   * Evita zoom automático en varios navegadores.
+   */
+  font-size: 16px;
+
+  outline: none;
+
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.destinos-campos input {
+  min-height: 48px;
+}
+
+.destinos-campos textarea {
+  min-height: 95px;
+
+  resize: vertical;
 }
 
 .destinos-campos input:focus,
-.destinos-campos textarea:focus {
-  outline: 2px solid #bfdbfe;
-  border-color: #2563eb;
+.destinos-campos textarea:focus,
+.destinos-campos select:focus {
+  border-color: #1f4e78;
+
+  box-shadow:
+    0 0 0 3px
+    rgba(31, 78, 120, 0.1);
+}
+
+.destinos-campos input:disabled,
+.destinos-campos textarea:disabled,
+.destinos-campos select:disabled {
+  background: #f1f5f9;
+  color: #64748b;
+
+  cursor: not-allowed;
 }
 
 .destinos-campo-completo {
   grid-column: 1 / -1;
 }
 
+
+/* =========================================================
+   ESTADO AL EDITAR
+   ========================================================= */
+
+.destinos-estado-edicion {
+  display: flex;
+  flex-direction: column;
+
+  gap: 14px;
+
+  width: 100%;
+
+  padding: 14px;
+
+  border: 1px solid #e2e8f0;
+  border-radius: 11px;
+
+  background: #f8fafc;
+}
+
+.destinos-estado-edicion > div {
+  display: flex;
+  flex-direction: column;
+
+  gap: 4px;
+}
+
+.destinos-estado-edicion > div > strong {
+  font-size: 14px;
+
+  color: #1f2937;
+}
+
+.destinos-estado-edicion > div > span {
+  font-size: 12px;
+  line-height: 1.45;
+
+  color: #64748b;
+}
+
+
+/* =========================================================
+   SWITCH
+   ========================================================= */
+
+.destinos-switch {
+  display: flex;
+  align-items: center;
+
+  gap: 10px;
+
+  min-height: 44px;
+
+  cursor: pointer;
+}
+
+.destinos-switch input {
+  position: absolute;
+
+  width: 1px;
+  height: 1px;
+
+  opacity: 0;
+  pointer-events: none;
+}
+
+.destinos-switch-control {
+  position: relative;
+
+  display: block;
+
+  flex: 0 0 48px;
+
+  width: 48px;
+  height: 27px;
+
+  border-radius: 999px;
+
+  background: #cbd5e1;
+
+  transition:
+    background 0.2s ease;
+}
+
+.destinos-switch-control::after {
+  content: "";
+
+  position: absolute;
+
+  top: 3px;
+  left: 3px;
+
+  width: 21px;
+  height: 21px;
+
+  border-radius: 50%;
+
+  background: #ffffff;
+
+  box-shadow:
+    0 1px 4px
+    rgba(15, 23, 42, 0.25);
+
+  transition:
+    transform 0.2s ease;
+}
+
+.destinos-switch input:checked +
+.destinos-switch-control {
+  background: #15803d;
+}
+
+.destinos-switch input:checked +
+.destinos-switch-control::after {
+  transform:
+    translateX(21px);
+}
+
+.destinos-switch strong {
+  font-size: 14px;
+
+  color: #374151;
+}
+
+
+/* =========================================================
+   ACCIONES FORMULARIO
+   ========================================================= */
+
 .destinos-formulario-acciones {
   display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-  margin-top: 20px;
+  flex-direction: column-reverse;
+
+  gap: 9px;
+
+  margin-top: 18px;
 }
 
-.destinos-mensaje {
-  margin-bottom: 18px;
-  padding: 12px 14px;
-  border-radius: 7px;
-  font-weight: 600;
+.destinos-boton-secundario,
+.destinos-boton-guardar {
+  width: 100%;
+  min-height: 48px;
+
+  padding: 11px 16px;
+
+  border-radius: 10px;
+
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 800;
+
+  cursor: pointer;
 }
 
-.destinos-mensaje.exito {
-  background: #dcfce7;
-  color: #166534;
+.destinos-boton-secundario {
+  border: 1px solid #cbd5e1;
+
+  background: #ffffff;
+  color: #334155;
 }
 
-.destinos-mensaje.error {
-  background: #fee2e2;
-  color: #991b1b;
+.destinos-boton-guardar {
+  border: 1px solid #1f4e78;
+
+  background: #1f4e78;
+  color: #ffffff;
 }
+
+.destinos-boton-secundario:disabled,
+.destinos-boton-guardar:disabled,
+.destinos-boton-nuevo:disabled,
+.destinos-boton-editar:disabled {
+  opacity: 0.55;
+
+  cursor: not-allowed;
+}
+
+
+/* =========================================================
+   LISTADO
+   ========================================================= */
 
 .destinos-listado {
-  border-top: 1px solid #cbd5e1;
+  width: 100%;
+
+  margin-top: 18px;
 }
 
 .destinos-listado-cabecera {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 15px;
-  padding: 18px 0;
+
+  gap: 10px;
+
+  margin-bottom: 12px;
 }
 
 .destinos-listado-cabecera h2 {
   margin: 0;
-  font-size: 20px;
+
+  font-size: 18px;
+  line-height: 1.3;
+
+  color: #172033;
 }
 
 .destinos-listado-cabecera > span {
-  color: #64748b;
-  font-size: 14px;
+  flex: 0 0 auto;
+
+  padding: 5px 9px;
+
+  border-radius: 999px;
+
+  background: #eef2f7;
+
+  color: #475569;
+
+  font-size: 12px;
+  font-weight: 700;
 }
 
-.destinos-tabla {
-  display: grid;
-  grid-template-columns:
-    minmax(180px, 1.2fr)
-    minmax(180px, 1fr)
-    minmax(220px, 1.5fr)
-    100px;
-  gap: 18px;
-  align-items: center;
-}
+
+/* =========================================================
+   TABLA
+   En móvil se transforma en tarjetas
+   ========================================================= */
 
 .destinos-tabla-titulos {
-  padding: 10px 12px;
-  border-bottom: 2px solid #cbd5e1;
-  color: #64748b;
-  font-size: 12px;
-  font-weight: 800;
-  text-transform: uppercase;
+  display: none;
 }
 
 .destinos-fila {
-  padding: 15px 12px;
-  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  flex-direction: column;
+
+  gap: 13px;
+
+  width: 100%;
+
+  margin-bottom: 12px;
+
+  padding: 15px;
+
+  border: 1px solid #e2e8f0;
+  border-radius: 13px;
+
+  background: #ffffff;
+
+  box-shadow:
+    0 2px 8px
+    rgba(15, 23, 42, 0.04);
 }
 
 .destinos-fila > div {
+  display: flex;
+  flex-direction: column;
+
+  gap: 4px;
+
   min-width: 0;
 }
 
-.destinos-fila strong,
-.destinos-fila span {
+.destinos-fila > div > span:not(
+  .destinos-mobile-label
+):not(
+  .destinos-estado
+) {
   overflow-wrap: anywhere;
+
+  font-size: 14px;
+  line-height: 1.4;
+
+  color: #334155;
 }
+
+.destinos-fila strong {
+  overflow-wrap: anywhere;
+
+  font-size: 15px;
+  line-height: 1.4;
+
+  color: #172033;
+}
+
+
+/* =========================================================
+   LABELS MOBILE
+   ========================================================= */
+
+.destinos-mobile-label {
+  display: block;
+
+  margin-bottom: 1px;
+
+  font-size: 11px;
+  font-weight: 800;
+
+  letter-spacing: 0.04em;
+
+  text-transform: uppercase;
+
+  color: #94a3b8;
+}
+
+
+/* =========================================================
+   ESTADOS
+   ========================================================= */
 
 .destinos-estado {
   display: inline-flex;
-  width: fit-content;
-  border-radius: 999px;
+  align-items: center;
+
+  align-self: flex-start;
+
+  min-height: 28px;
+
   padding: 4px 9px;
+
+  border-radius: 999px;
+
   font-size: 12px;
   font-weight: 800;
 }
@@ -218,20 +623,77 @@
 }
 
 .destinos-estado.inactivo {
-  background: #e2e8f0;
-  color: #475569;
+  background: #fee2e2;
+  color: #991b1b;
 }
 
-.destinos-mobile-label {
-  display: none;
+
+/* =========================================================
+   EDITAR
+   ========================================================= */
+
+.destinos-acciones {
+  width: 100%;
+
+  padding-top: 3px;
 }
+
+.destinos-boton-editar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  gap: 7px;
+
+  width: 100%;
+  min-height: 46px;
+
+  padding: 10px 14px;
+
+  border: 1px solid #1f4e78;
+  border-radius: 9px;
+
+  background: #ffffff;
+  color: #1f4e78;
+
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 800;
+
+  cursor: pointer;
+
+  transition:
+    background 0.15s ease,
+    color 0.15s ease,
+    transform 0.15s ease;
+}
+
+.destinos-boton-editar:active {
+  transform: scale(0.98);
+}
+
+
+/* =========================================================
+   VACÍO / CARGANDO
+   ========================================================= */
 
 .destinos-vacio {
   display: flex;
   flex-direction: column;
-  gap: 5px;
-  padding: 30px 12px;
-  border-top: 1px solid #e2e8f0;
+
+  gap: 4px;
+
+  width: 100%;
+
+  padding: 28px 16px;
+
+  border: 1px dashed #cbd5e1;
+  border-radius: 12px;
+
+  text-align: center;
+
+  background: #f8fafc;
+
   color: #64748b;
 }
 
@@ -239,56 +701,171 @@
   color: #334155;
 }
 
-@media (max-width: 760px) {
+
+/* =========================================================
+   TABLET
+   ========================================================= */
+
+@media (min-width: 700px) {
+
   .destinos-page {
-    padding-bottom: 20px;
+    padding: 20px;
   }
 
   .destinos-header {
-    flex-direction: column;
+    flex-direction: row;
+
+    align-items: center;
+    justify-content: space-between;
   }
 
   .destinos-boton-nuevo {
-    width: 100%;
+    width: auto;
+    min-width: 165px;
+  }
+
+  .destinos-formulario {
+    padding: 20px;
+  }
+
+  .destinos-formulario-titulo {
+    flex-direction: row;
+
+    align-items: flex-start;
+    justify-content: space-between;
   }
 
   .destinos-campos {
-    grid-template-columns: 1fr;
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
   }
 
-  .destinos-campo-completo {
-    grid-column: auto;
+  .destinos-estado-edicion {
+    flex-direction: row;
+
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .destinos-estado-edicion > div {
+    max-width: 520px;
   }
 
   .destinos-formulario-acciones {
-    flex-direction: column-reverse;
+    flex-direction: row;
+
+    justify-content: flex-end;
   }
 
-  .destinos-formulario-acciones button {
-    width: 100%;
+  .destinos-boton-secundario,
+  .destinos-boton-guardar {
+    width: auto;
+
+    min-width: 150px;
   }
+
+}
+
+
+/* =========================================================
+   PC
+   ========================================================= */
+
+@media (min-width: 900px) {
+
+  .destinos-page {
+    padding: 24px;
+  }
+
+  .destinos-header h1 {
+    font-size: 28px;
+  }
+
+
+  /*
+   * Sin acciones:
+   * Destino | Dirección | Descripción | Estado
+   */
+
+  .destinos-tabla {
+    display: grid;
+
+    grid-template-columns:
+      1.2fr
+      1.3fr
+      1.7fr
+      0.7fr;
+
+    gap: 14px;
+
+    align-items: center;
+  }
+
+
+  /*
+   * Administrador:
+   * agrega columna Acciones
+   */
+
+  .destinos-tabla.con-acciones {
+    grid-template-columns:
+      1.15fr
+      1.2fr
+      1.5fr
+      0.65fr
+      0.9fr;
+  }
+
 
   .destinos-tabla-titulos {
-    display: none;
+    padding: 10px 14px;
+
+    border-bottom:
+      1px solid #e2e8f0;
+
+    color: #64748b;
+
+    font-size: 12px;
+    font-weight: 800;
+
+    text-transform: uppercase;
   }
+
 
   .destinos-fila {
-    grid-template-columns: 1fr;
-    gap: 12px;
-    padding: 16px 4px;
+    margin-bottom: 0;
+
+    padding: 14px;
+
+    border: 0;
+    border-bottom:
+      1px solid #e2e8f0;
+
+    border-radius: 0;
+
+    box-shadow: none;
   }
 
-  .destinos-fila > div {
-    display: flex;
-    flex-direction: column;
-    gap: 3px;
+  .destinos-fila:hover {
+    background: #f8fafc;
   }
 
   .destinos-mobile-label {
-    display: block;
-    color: #64748b;
-    font-size: 11px;
-    font-weight: 800;
-    text-transform: uppercase;
+    display: none;
   }
+
+  .destinos-boton-editar {
+    width: auto;
+    min-width: 125px;
+
+    min-height: 40px;
+
+    padding: 8px 12px;
+  }
+
+  .destinos-boton-editar:hover {
+    background: #1f4e78;
+    color: #ffffff;
+  }
+
 }

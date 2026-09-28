@@ -40,6 +40,8 @@ import JuzgadoPage from "./pages/JuzgadoPage";
 
 import ExpedientesPage from "./pages/ExpedientesPage";
 
+import CargaManualPage from "./pages/CargaManualPage";
+
 
 const InicioPorRol = () => {
   const {
@@ -212,6 +214,20 @@ const App = () => {
       ]}
     >
       <ExpedientesPage />
+    </ProtectedRoute>
+  }
+/>
+
+<Route
+  path="carga-manual"
+  element={
+    <ProtectedRoute
+      roles={[
+        "administrador",
+        "secretaria_reclamos",
+      ]}
+    >
+      <CargaManualPage />
     </ProtectedRoute>
   }
 />

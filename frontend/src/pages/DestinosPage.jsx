@@ -1,6 +1,7 @@
 import {
   useCallback,
   useEffect,
+  useMemo,
   useState,
 } from "react";
 
@@ -8,7 +9,14 @@ import api from "../api/api";
 
 import "./DestinosPage.css";
 
+
 const DestinosPage = () => {
+  /*
+  |--------------------------------------------------------------------------
+  | DATOS
+  |--------------------------------------------------------------------------
+  */
+
   const [
     predios,
     setPredios,
@@ -24,10 +32,22 @@ const DestinosPage = () => {
     setGuardando,
   ] = useState(false);
 
+
+  /*
+  |--------------------------------------------------------------------------
+  | FORMULARIO
+  |--------------------------------------------------------------------------
+  */
+
   const [
     mostrarFormulario,
     setMostrarFormulario,
   ] = useState(false);
+
+  const [
+    predioEditando,
+    setPredioEditando,
+  ] = useState(null);
 
   const [
     nombre,
@@ -45,6 +65,18 @@ const DestinosPage = () => {
   ] = useState("");
 
   const [
+    activo,
+    setActivo,
+  ] = useState(true);
+
+
+  /*
+  |--------------------------------------------------------------------------
+  | MENSAJES
+  |--------------------------------------------------------------------------
+  */
+
+  const [
     error,
     setError,
   ] = useState("");
@@ -54,58 +86,196 @@ const DestinosPage = () => {
     setMensaje,
   ] = useState("");
 
-  const cargarPredios =
-    useCallback(async () => {
-      try {
-        setCargando(true);
-        setError("");
 
-        const respuesta =
-          await api.get(
-            "/predios"
+  /*
+  |--------------------------------------------------------------------------
+  | ROL
+  |--------------------------------------------------------------------------
+  |
+  | Esto solamente controla lo que se muestra.
+  | La seguridad real está en el backend.
+  |
+  */
+
+  const rolUsuario =
+    useMemo(() => {
+      try {
+        const usuarioGuardado =
+          localStorage.getItem(
+            "usuario"
           );
 
-        setPredios(
-          respuesta.data
-            ?.predios ||
-            []
-        );
-      } catch (err) {
-        console.error(
-          "Error cargando destinos:",
-          err
-        );
+        if (
+          usuarioGuardado
+        ) {
+          const usuario =
+            JSON.parse(
+              usuarioGuardado
+            );
 
-        setError(
-          err.response?.data
-            ?.mensaje ||
-            "No se pudieron cargar los destinos."
+          return (
+            usuario?.rol ||
+            usuario?.role ||
+            ""
+          );
+        }
+
+        return (
+          localStorage.getItem(
+            "rol"
+          ) ||
+          ""
         );
-      } finally {
-        setCargando(false);
+      } catch {
+        return "";
       }
     }, []);
+
+
+  const esAdministrador =
+    rolUsuario ===
+      "administrador" ||
+    rolUsuario ===
+      "superadmin";
+
+
+  /*
+  |--------------------------------------------------------------------------
+  | CARGAR PREDIOS
+  |--------------------------------------------------------------------------
+  */
+
+  const cargarPredios =
+    useCallback(
+      async () => {
+        try {
+          setCargando(true);
+          setError("");
+
+          const respuesta =
+            await api.get(
+              "/predios"
+            );
+
+          setPredios(
+            respuesta.data
+              ?.predios ||
+              []
+          );
+        } catch (err) {
+          console.error(
+            "Error cargando destinos:",
+            err
+          );
+
+          setError(
+            err.response?.data
+              ?.mensaje ||
+              "No se pudieron cargar los destinos."
+          );
+        } finally {
+          setCargando(false);
+        }
+      },
+      []
+    );
+
 
   useEffect(() => {
     cargarPredios();
   }, [cargarPredios]);
+
+
+  /*
+  |--------------------------------------------------------------------------
+  | LIMPIAR FORMULARIO
+  |--------------------------------------------------------------------------
+  */
 
   const limpiarFormulario =
     () => {
       setNombre("");
       setDireccion("");
       setDescripcion("");
+      setActivo(true);
+      setPredioEditando(null);
     };
 
-  const abrirFormulario =
+
+  /*
+  |--------------------------------------------------------------------------
+  | NUEVO
+  |--------------------------------------------------------------------------
+  */
+
+  const abrirFormularioNuevo =
     () => {
       limpiarFormulario();
+
       setError("");
       setMensaje("");
+
       setMostrarFormulario(
         true
       );
+
+      window.scrollTo({
+        top: 0,
+        behavior: "smooth",
+      });
     };
+
+
+  /*
+  |--------------------------------------------------------------------------
+  | EDITAR
+  |--------------------------------------------------------------------------
+  */
+
+  const abrirFormularioEditar =
+    (predio) => {
+      setPredioEditando(
+        predio
+      );
+
+      setNombre(
+        predio.nombre || ""
+      );
+
+      setDireccion(
+        predio.direccion ||
+          ""
+      );
+
+      setDescripcion(
+        predio.descripcion ||
+          ""
+      );
+
+      setActivo(
+        predio.activo !==
+          false
+      );
+
+      setError("");
+      setMensaje("");
+
+      setMostrarFormulario(
+        true
+      );
+
+      window.scrollTo({
+        top: 0,
+        behavior: "smooth",
+      });
+    };
+
+
+  /*
+  |--------------------------------------------------------------------------
+  | CERRAR
+  |--------------------------------------------------------------------------
+  */
 
   const cerrarFormulario =
     () => {
@@ -114,11 +284,20 @@ const DestinosPage = () => {
       }
 
       limpiarFormulario();
+
       setError("");
+
       setMostrarFormulario(
         false
       );
     };
+
+
+  /*
+  |--------------------------------------------------------------------------
+  | GUARDAR
+  |--------------------------------------------------------------------------
+  */
 
   const guardarDestino =
     async (event) => {
@@ -137,28 +316,62 @@ const DestinosPage = () => {
 
       try {
         setGuardando(true);
+
         setError("");
         setMensaje("");
 
-        await api.post(
-          "/predios",
-          {
-            nombre:
-              nombreLimpio,
+        const datos = {
+          nombre:
+            nombreLimpio,
 
-            direccion:
-              direccion.trim() ||
-              null,
+          direccion:
+            direccion.trim() ||
+            null,
 
-            descripcion:
-              descripcion.trim() ||
-              null,
-          }
-        );
+          descripcion:
+            descripcion.trim() ||
+            null,
 
-        setMensaje(
-          "Destino creado correctamente."
-        );
+          activo,
+        };
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | EDITAR
+        |--------------------------------------------------------------------------
+        */
+
+        if (
+          predioEditando?.id
+        ) {
+          await api.put(
+            `/predios/${predioEditando.id}`,
+            datos
+          );
+
+          setMensaje(
+            "Destino actualizado correctamente."
+          );
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | CREAR
+        |--------------------------------------------------------------------------
+        */
+
+        else {
+          await api.post(
+            "/predios",
+            datos
+          );
+
+          setMensaje(
+            "Destino creado correctamente."
+          );
+        }
+
 
         limpiarFormulario();
 
@@ -169,22 +382,40 @@ const DestinosPage = () => {
         await cargarPredios();
       } catch (err) {
         console.error(
-          "Error creando destino:",
+          predioEditando
+            ? "Error actualizando destino:"
+            : "Error creando destino:",
           err
         );
 
         setError(
           err.response?.data
             ?.mensaje ||
-            "No se pudo crear el destino."
+            (
+              predioEditando
+                ? "No se pudo actualizar el destino."
+                : "No se pudo crear el destino."
+            )
         );
       } finally {
         setGuardando(false);
       }
     };
 
+
+  /*
+  |--------------------------------------------------------------------------
+  | RENDER
+  |--------------------------------------------------------------------------
+  */
+
   return (
     <div className="destinos-page">
+
+      {/* =====================================================
+          CABECERA
+          ===================================================== */}
+
       <div className="destinos-header">
         <div>
           <h1>
@@ -199,22 +430,30 @@ const DestinosPage = () => {
           </p>
         </div>
 
-        <button
-          type="button"
-          className="destinos-boton-nuevo"
-          onClick={
-            abrirFormulario
-          }
-        >
-          + Nuevo destino
-        </button>
+        {esAdministrador && (
+          <button
+            type="button"
+            className="destinos-boton-nuevo"
+            onClick={
+              abrirFormularioNuevo
+            }
+          >
+            + Nuevo destino
+          </button>
+        )}
       </div>
+
+
+      {/* =====================================================
+          MENSAJE
+          ===================================================== */}
 
       {mensaje && (
         <div className="destinos-mensaje exito">
           {mensaje}
         </div>
       )}
+
 
       {error &&
         !mostrarFormulario && (
@@ -223,140 +462,233 @@ const DestinosPage = () => {
           </div>
         )}
 
-      {mostrarFormulario && (
-        <form
-          className="destinos-formulario"
-          onSubmit={
-            guardarDestino
-          }
-        >
-          <div className="destinos-formulario-titulo">
-            <div>
-              <h2>
-                Nuevo destino
-              </h2>
 
-              <p>
-                Este destino
-                aparecerá al
-                registrar un
-                traslado.
-              </p>
+      {/* =====================================================
+          FORMULARIO
+          ===================================================== */}
+
+      {mostrarFormulario &&
+        esAdministrador && (
+          <form
+            className="destinos-formulario"
+            onSubmit={
+              guardarDestino
+            }
+          >
+
+            <div className="destinos-formulario-titulo">
+              <div>
+                <h2>
+                  {predioEditando
+                    ? "Editar destino"
+                    : "Nuevo destino"}
+                </h2>
+
+                <p>
+                  {predioEditando
+                    ? "Modificá los datos del destino seleccionado."
+                    : "Este destino aparecerá al registrar un traslado."}
+                </p>
+              </div>
+
+              {predioEditando && (
+                <span className="destinos-etiqueta-edicion">
+                  Editando
+                </span>
+              )}
             </div>
-          </div>
 
-          {error && (
-            <div className="destinos-mensaje error">
-              {error}
+
+            {error && (
+              <div className="destinos-mensaje error">
+                {error}
+              </div>
+            )}
+
+
+            <div className="destinos-campos">
+
+              {/* NOMBRE */}
+
+              <label>
+                <span>
+                  Nombre *
+                </span>
+
+                <input
+                  type="text"
+                  value={nombre}
+                  onChange={(
+                    event
+                  ) =>
+                    setNombre(
+                      event.target
+                        .value
+                    )
+                  }
+                  placeholder="Ej. Granja La Amalia"
+                  disabled={
+                    guardando
+                  }
+                  autoFocus
+                />
+              </label>
+
+
+              {/* DIRECCIÓN */}
+
+              <label>
+                <span>
+                  Dirección
+                </span>
+
+                <input
+                  type="text"
+                  value={
+                    direccion
+                  }
+                  onChange={(
+                    event
+                  ) =>
+                    setDireccion(
+                      event.target
+                        .value
+                    )
+                  }
+                  placeholder="Dirección del lugar"
+                  disabled={
+                    guardando
+                  }
+                />
+              </label>
+
+
+              {/* DESCRIPCIÓN */}
+
+              <label className="destinos-campo-completo">
+                <span>
+                  Descripción
+                </span>
+
+                <textarea
+                  value={
+                    descripcion
+                  }
+                  onChange={(
+                    event
+                  ) =>
+                    setDescripcion(
+                      event.target
+                        .value
+                    )
+                  }
+                  placeholder="Información adicional del destino"
+                  rows={3}
+                  disabled={
+                    guardando
+                  }
+                />
+              </label>
+
+
+              {/* ESTADO - SOLO AL EDITAR */}
+
+              {predioEditando && (
+                <div className="destinos-campo-completo">
+                  <div className="destinos-estado-edicion">
+
+                    <div>
+                      <strong>
+                        Estado del destino
+                      </strong>
+
+                      <span>
+                        Si lo desactivás,
+                        seguirá existiendo
+                        en el historial,
+                        pero quedará marcado
+                        como inactivo.
+                      </span>
+                    </div>
+
+                    <label className="destinos-switch">
+                      <input
+                        type="checkbox"
+                        checked={
+                          activo
+                        }
+                        onChange={(
+                          event
+                        ) =>
+                          setActivo(
+                            event.target
+                              .checked
+                          )
+                        }
+                        disabled={
+                          guardando
+                        }
+                      />
+
+                      <span className="destinos-switch-control" />
+
+                      <strong>
+                        {activo
+                          ? "Activo"
+                          : "Inactivo"}
+                      </strong>
+                    </label>
+
+                  </div>
+                </div>
+              )}
+
             </div>
-          )}
 
-          <div className="destinos-campos">
-            <label>
-              <span>
-                Nombre *
-              </span>
 
-              <input
-                type="text"
-                value={nombre}
-                onChange={(
-                  event
-                ) =>
-                  setNombre(
-                    event.target
-                      .value
-                  )
+            {/* ACCIONES */}
+
+            <div className="destinos-formulario-acciones">
+
+              <button
+                type="button"
+                className="destinos-boton-secundario"
+                onClick={
+                  cerrarFormulario
                 }
-                placeholder="Ej. Granja La Amalia"
                 disabled={
                   guardando
                 }
-                autoFocus
-              />
-            </label>
+              >
+                Cancelar
+              </button>
 
-            <label>
-              <span>
-                Dirección
-              </span>
-
-              <input
-                type="text"
-                value={
-                  direccion
-                }
-                onChange={(
-                  event
-                ) =>
-                  setDireccion(
-                    event.target
-                      .value
-                  )
-                }
-                placeholder="Dirección del lugar"
+              <button
+                type="submit"
+                className="destinos-boton-guardar"
                 disabled={
                   guardando
                 }
-              />
-            </label>
+              >
+                {guardando
+                  ? "Guardando..."
+                  : predioEditando
+                    ? "Guardar cambios"
+                    : "Guardar destino"}
+              </button>
 
-            <label className="destinos-campo-completo">
-              <span>
-                Descripción
-              </span>
+            </div>
 
-              <textarea
-                value={
-                  descripcion
-                }
-                onChange={(
-                  event
-                ) =>
-                  setDescripcion(
-                    event.target
-                      .value
-                  )
-                }
-                placeholder="Información adicional del destino"
-                rows={3}
-                disabled={
-                  guardando
-                }
-              />
-            </label>
-          </div>
+          </form>
+        )}
 
-          <div className="destinos-formulario-acciones">
-            <button
-              type="button"
-              className="destinos-boton-secundario"
-              onClick={
-                cerrarFormulario
-              }
-              disabled={
-                guardando
-              }
-            >
-              Cancelar
-            </button>
 
-            <button
-              type="submit"
-              className="destinos-boton-guardar"
-              disabled={
-                guardando
-              }
-            >
-              {guardando
-                ? "Guardando..."
-                : "Guardar destino"}
-            </button>
-          </div>
-        </form>
-      )}
+      {/* =====================================================
+          LISTADO
+          ===================================================== */}
 
       <section className="destinos-listado">
+
         <div className="destinos-listado-cabecera">
           <h2>
             Destinos registrados
@@ -364,11 +696,13 @@ const DestinosPage = () => {
 
           <span>
             {predios.length}{" "}
-            {predios.length === 1
+            {predios.length ===
+            1
               ? "destino"
               : "destinos"}
           </span>
         </div>
+
 
         {cargando ? (
           <div className="destinos-vacio">
@@ -389,7 +723,18 @@ const DestinosPage = () => {
           </div>
         ) : (
           <>
-            <div className="destinos-tabla destinos-tabla-titulos">
+
+            {/* CABECERA PC */}
+
+            <div
+              className={
+                `destinos-tabla destinos-tabla-titulos ${
+                  esAdministrador
+                    ? "con-acciones"
+                    : ""
+                }`
+              }
+            >
               <span>
                 Destino
               </span>
@@ -405,7 +750,16 @@ const DestinosPage = () => {
               <span>
                 Estado
               </span>
+
+              {esAdministrador && (
+                <span>
+                  Acciones
+                </span>
+              )}
             </div>
+
+
+            {/* FILAS */}
 
             {predios.map(
               (predio) => (
@@ -413,8 +767,17 @@ const DestinosPage = () => {
                   key={
                     predio.id
                   }
-                  className="destinos-tabla destinos-fila"
+                  className={
+                    `destinos-tabla destinos-fila ${
+                      esAdministrador
+                        ? "con-acciones"
+                        : ""
+                    }`
+                  }
                 >
+
+                  {/* DESTINO */}
+
                   <div>
                     <span className="destinos-mobile-label">
                       Destino
@@ -427,6 +790,9 @@ const DestinosPage = () => {
                     </strong>
                   </div>
 
+
+                  {/* DIRECCIÓN */}
+
                   <div>
                     <span className="destinos-mobile-label">
                       Dirección
@@ -438,6 +804,9 @@ const DestinosPage = () => {
                     </span>
                   </div>
 
+
+                  {/* DESCRIPCIÓN */}
+
                   <div>
                     <span className="destinos-mobile-label">
                       Descripción
@@ -448,6 +817,9 @@ const DestinosPage = () => {
                         "—"}
                     </span>
                   </div>
+
+
+                  {/* ESTADO */}
 
                   <div>
                     <span className="destinos-mobile-label">
@@ -468,14 +840,48 @@ const DestinosPage = () => {
                         : "Activo"}
                     </span>
                   </div>
+
+
+                  {/* EDITAR */}
+
+                  {esAdministrador && (
+                    <div className="destinos-acciones">
+
+                      <span className="destinos-mobile-label">
+                        Acciones
+                      </span>
+
+                      <button
+                        type="button"
+                        className="destinos-boton-editar"
+                        onClick={() =>
+                          abrirFormularioEditar(
+                            predio
+                          )
+                        }
+                      >
+                        <span aria-hidden="true">
+                          ✏️
+                        </span>
+
+                        Editar destino
+                      </button>
+
+                    </div>
+                  )}
+
                 </div>
               )
             )}
+
           </>
         )}
+
       </section>
+
     </div>
   );
 };
+
 
 export default DestinosPage;

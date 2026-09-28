@@ -2637,6 +2637,193 @@ if (!verTodos) {
       });
     }
   };
+
+
+  const actualizarPredio = async (
+  req,
+  res
+) => {
+  try {
+    const { id } = req.params;
+
+    const {
+      nombre,
+      direccion,
+      descripcion,
+      activo,
+    } = req.body;
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | VALIDAR ID
+    |--------------------------------------------------------------------------
+    */
+
+    const predioId =
+      Number(id);
+
+    if (
+      !Number.isInteger(
+        predioId
+      ) ||
+      predioId <= 0
+    ) {
+      return res
+        .status(400)
+        .json({
+          ok: false,
+          mensaje:
+            "El predio indicado no es válido.",
+        });
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | BUSCAR PREDIO
+    |--------------------------------------------------------------------------
+    */
+
+    const predio =
+      await Predio.findByPk(
+        predioId
+      );
+
+    if (!predio) {
+      return res
+        .status(404)
+        .json({
+          ok: false,
+          mensaje:
+            "El predio no existe.",
+        });
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | VALIDAR NOMBRE
+    |--------------------------------------------------------------------------
+    */
+
+    const nombreLimpio =
+      nombre?.trim();
+
+    if (!nombreLimpio) {
+      return res
+        .status(400)
+        .json({
+          ok: false,
+          mensaje:
+            "Debe indicar el nombre del predio.",
+        });
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | EVITAR NOMBRES DUPLICADOS
+    |--------------------------------------------------------------------------
+    */
+
+    const predioExistente =
+      await Predio.findOne({
+        where: {
+          nombre:
+            nombreLimpio,
+        },
+      });
+
+    if (
+      predioExistente &&
+      Number(
+        predioExistente.id
+      ) !== predioId
+    ) {
+      return res
+        .status(400)
+        .json({
+          ok: false,
+          mensaje:
+            "Ya existe otro predio con ese nombre.",
+        });
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | ACTUALIZAR
+    |--------------------------------------------------------------------------
+    */
+
+    predio.nombre =
+      nombreLimpio;
+
+    predio.direccion =
+      direccion?.trim() ||
+      null;
+
+    predio.descripcion =
+      descripcion?.trim() ||
+      null;
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | ESTADO
+    |--------------------------------------------------------------------------
+    |
+    | Solo se modifica si el frontend lo envía.
+    |
+    */
+
+    if (
+      typeof activo ===
+      "boolean"
+    ) {
+      predio.activo =
+        activo;
+    }
+
+
+    await predio.save();
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | RESPUESTA
+    |--------------------------------------------------------------------------
+    */
+
+    return res.json({
+      ok: true,
+
+      mensaje:
+        "Predio actualizado correctamente.",
+
+      predio,
+    });
+  } catch (error) {
+    console.error(
+      "Error actualizando predio:",
+      error
+    );
+
+    return res
+      .status(500)
+      .json({
+        ok: false,
+
+        mensaje:
+          "No se pudo actualizar el predio.",
+
+        error:
+          error.message,
+      });
+  }
+};
+  
 module.exports = {
   listarPredios,
   crearPredio,
@@ -2644,5 +2831,6 @@ module.exports = {
   registrarEgreso,
   listarVehiculosEnPredio,
   listarPendientesIngreso,
-  listarHistorialPredio
+  listarHistorialPredio,
+  actualizarPredio 
 };

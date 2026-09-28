@@ -254,6 +254,16 @@ const puede = (
         "secretaria_predio",
       ],
     },
+    {
+  to: "/carga-manual",
+  texto: "Carga manual",
+  icono: "✎",
+
+  roles: [
+    "administrador",
+    "secretaria_reclamos",
+  ],
+},
 
     {
       to: "/mi-guardia",

@@ -1412,6 +1412,7 @@ const crearExpedienteManual = async (req, res) => {
       referencia,
       observaciones,
 
+
       /*
       |--------------------------------------------------------------------------
       | VEHÍCULO
@@ -1460,6 +1461,7 @@ ordenJudicialRemocion = null,
       predioDestinoId,
       destinoPersona,
       dniPersona,
+      numeroOficio,
       observacionesEgreso,
     } = req.body;
 
@@ -1493,9 +1495,13 @@ ordenJudicialRemocion = null,
     }
 
 
-    const requierePredio =
-      situacionActual === "EN_PREDIO" ||
-      situacionActual === "TRASLADADO";
+const requierePredio = [
+  "EN_PREDIO",
+  "ENTREGADO",
+  "TRASLADADO",
+  "COMPACTADO",
+  "OTRO",
+].includes(situacionActual);
 
     const esTraslado =
       situacionActual === "TRASLADADO";
@@ -1503,8 +1509,11 @@ ordenJudicialRemocion = null,
 const esPendienteIngresoPredio =
   situacionActual === "EN_PREDIO";
 
-const estaActualmenteEnPredio =
+const esTrasladoEntrePredios =
   situacionActual === "TRASLADADO";
+
+const estaActualmenteEnPredio =
+  esTrasladoEntrePredios;
 
 
     /*
@@ -1722,17 +1731,58 @@ const estaActualmenteEnPredio =
     let predio = null;
 
     if (requierePredio) {
-      if (!predioId) {
-        await transaction.rollback();
+    if (!predioId) {
+  await transaction.rollback();
 
-        return res.status(400).json({
-          ok: false,
-          mensaje:
-            esTraslado
-              ? "Debe indicar el predio de origen del traslado"
-              : "Debe indicar el predio donde se encuentra el vehículo",
-        });
-      }
+  let mensajePredio =
+    "Debe indicar el predio";
+
+  if (
+    situacionActual ===
+    "EN_PREDIO"
+  ) {
+    mensajePredio =
+      "Debe indicar el predio donde se encuentra actualmente el vehículo";
+  }
+
+  if (
+    situacionActual ===
+    "ENTREGADO"
+  ) {
+    mensajePredio =
+      "Debe indicar de qué predio fue entregado el vehículo";
+  }
+
+  if (
+    situacionActual ===
+    "TRASLADADO"
+  ) {
+    mensajePredio =
+      "Debe indicar el predio de origen del traslado";
+  }
+
+  if (
+    situacionActual ===
+    "COMPACTADO"
+  ) {
+    mensajePredio =
+      "Debe indicar en qué predio estaba el vehículo antes de ser compactado";
+  }
+
+  if (
+    situacionActual ===
+    "OTRO"
+  ) {
+    mensajePredio =
+      "Debe indicar de qué predio salió el vehículo";
+  }
+
+  return res.status(400).json({
+    ok: false,
+    mensaje:
+      mensajePredio,
+  });
+}
 
       predio =
         await Predio.findOne({
@@ -2617,6 +2667,10 @@ anulada:
 
             dniPersona:
               null,
+              numeroOficio:
+  numeroOficio
+    ?.trim() ||
+  null,
 
             observaciones:
               observacionesEgreso
@@ -2666,95 +2720,243 @@ anulada:
     }
 
 
-    /*
-    |--------------------------------------------------------------------------
-    | ENTREGADO / COMPACTADO / OTRO
-    |--------------------------------------------------------------------------
-    */
+   /*
+|--------------------------------------------------------------------------
+| ENTREGADO / COMPACTADO / OTRO
+|--------------------------------------------------------------------------
+|
+| Para expedientes históricos:
+|
+| 1. Reconstruimos el ingreso al predio de origen.
+| 2. Registramos el egreso real.
+| 3. Guardamos el número de oficio, si consta.
+|
+| De esta manera el movimiento queda correctamente
+| registrado en ingresos_predio y egresos_predio.
+|--------------------------------------------------------------------------
+*/
+
+if (
+  [
+    "ENTREGADO",
+    "COMPACTADO",
+    "OTRO",
+  ].includes(
+    situacionActual
+  )
+) {
+  /*
+  |--------------------------------------------------------------------------
+  | CREAR INGRESO HISTÓRICO
+  |--------------------------------------------------------------------------
+  */
+
+  ingreso =
+    await IngresoPredio.create(
+      {
+        reclamoId:
+          nuevoReclamo.id,
+
+        vehiculoId:
+          nuevoVehiculo.id,
+
+        remocionId:
+          null,
+
+        predioId:
+          predio.id,
+
+        registradoPorId:
+          req.usuario.id,
+
+        fechaHora:
+          fechaIngreso ||
+          null,
+
+        sector:
+          sector?.trim() ||
+          null,
+
+        posicion:
+          posicion?.trim() ||
+          null,
+
+        observaciones:
+          observacionesIngreso
+            ?.trim() ||
+          "Ingreso reconstruido desde expediente anterior",
+      },
+      {
+        transaction,
+      }
+    );
+
+
+  /*
+  |--------------------------------------------------------------------------
+  | CREAR EGRESO HISTÓRICO
+  |--------------------------------------------------------------------------
+  */
+
+  egreso =
+    await EgresoPredio.create(
+      {
+        reclamoId:
+          nuevoReclamo.id,
+
+        vehiculoId:
+          nuevoVehiculo.id,
+
+        ingresoPredioId:
+          ingreso.id,
+
+        registradoPorId:
+          req.usuario.id,
+
+        fechaHora:
+          fechaEgreso ||
+          null,
+
+        tipoEgreso:
+          situacionActual,
+
+        /*
+        ENTREGADO / COMPACTADO / OTRO
+        no generan un nuevo ingreso
+        en otro predio municipal.
+        */
+        predioDestinoId:
+          null,
+
+        /*
+        En ENTREGADO se puede guardar
+        quién retiró el vehículo.
+
+        En COMPACTADO u OTRO también
+        dejamos disponible el campo por
+        si la documentación histórica
+        informa un destinatario.
+        */
+        destinoPersona:
+          destinoPersona
+            ?.trim() ||
+          null,
+
+        dniPersona:
+          dniPersona
+            ?.trim() ||
+          null,
+
+        /*
+        Oficio judicial que autorizó
+        o respaldó el egreso.
+        */
+        numeroOficio:
+          numeroOficio
+            ?.trim() ||
+          null,
+
+        observaciones:
+          observacionesEgreso
+            ?.trim() ||
+          null,
+      },
+      {
+        transaction,
+      }
+    );
+
+
+  /*
+  |--------------------------------------------------------------------------
+  | DETALLE DE RESOLUCIÓN
+  |--------------------------------------------------------------------------
+  */
+
+  const detalles = [];
+
+
+  if (
+    situacionActual ===
+    "ENTREGADO"
+  ) {
+    detalles.push(
+      "Vehículo entregado."
+    );
 
     if (
-      [
-        "ENTREGADO",
-        "COMPACTADO",
-        "OTRO",
-      ].includes(
-        situacionActual
-      )
+      destinoPersona?.trim()
     ) {
-      const detalles = [];
-
-      if (
-        situacionActual ===
-        "ENTREGADO"
-      ) {
-        detalles.push(
-          "Vehículo entregado."
-        );
-
-        if (
-          destinoPersona?.trim()
-        ) {
-          detalles.push(
-            `Retirado por: ${destinoPersona.trim()}.`
-          );
-        }
-
-        if (
-          dniPersona?.trim()
-        ) {
-          detalles.push(
-            `DNI: ${dniPersona.trim()}.`
-          );
-        }
-      }
-
-      if (
-        situacionActual ===
-        "COMPACTADO"
-      ) {
-        detalles.push(
-          "Vehículo compactado."
-        );
-      }
-
-      if (
-        situacionActual ===
-        "OTRO"
-      ) {
-        detalles.push(
-          "El vehículo registra otro tipo de egreso."
-        );
-      }
-
-      if (fechaEgreso) {
-        detalles.push(
-          `Fecha registrada: ${fechaEgreso}.`
-        );
-      }
-
-      if (
-        observacionesEgreso
-          ?.trim()
-      ) {
-        detalles.push(
-          observacionesEgreso.trim()
-        );
-      }
-
-      nuevoReclamo.detalleResolucion =
-        detalles.join(" ");
-
-      await nuevoReclamo.save({
-        transaction,
-      });
+      detalles.push(
+        `Retirado por: ${destinoPersona.trim()}.`
+      );
     }
 
+    if (
+      dniPersona?.trim()
+    ) {
+      detalles.push(
+        `DNI: ${dniPersona.trim()}.`
+      );
+    }
+  }
 
-    /*
-    |--------------------------------------------------------------------------
-    | ESTADO FINAL VEHÍCULO
-    |--------------------------------------------------------------------------
-    */
+
+  if (
+    situacionActual ===
+    "COMPACTADO"
+  ) {
+    detalles.push(
+      "Vehículo compactado."
+    );
+  }
+
+
+  if (
+    situacionActual ===
+    "OTRO"
+  ) {
+    detalles.push(
+      "El vehículo registra otro tipo de egreso."
+    );
+  }
+
+
+  if (
+    numeroOficio?.trim()
+  ) {
+    detalles.push(
+      `Oficio N.º ${numeroOficio.trim()}.`
+    );
+  }
+
+
+  if (fechaEgreso) {
+    detalles.push(
+      `Fecha registrada: ${fechaEgreso}.`
+    );
+  }
+
+
+  if (
+    observacionesEgreso
+      ?.trim()
+  ) {
+    detalles.push(
+      observacionesEgreso.trim()
+    );
+  }
+
+
+  nuevoReclamo.detalleResolucion =
+    detalles.join(" ");
+
+
+  await nuevoReclamo.save({
+    transaction,
+  });
+}
+
 
  nuevoVehiculo.estadoActual =
   esPendienteIngresoPredio

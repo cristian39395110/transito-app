@@ -1,13 +1,13 @@
 const express = require("express");
-
 const {
   listarPredios,
   crearPredio,
+  actualizarPredio,
   registrarIngreso,
   registrarEgreso,
   listarVehiculosEnPredio,
   listarPendientesIngreso,
-   listarHistorialPredio,
+  listarHistorialPredio,
 } = require(
   "../controllers/predioController"
 );
@@ -153,6 +153,14 @@ router.post(
     "secretaria_predio"
   ),
   registrarEgreso
+);
+
+router.put(
+  "/:id",
+  permitirRoles(
+    "administrador"
+  ),
+  actualizarPredio
 );
 
 module.exports = router;

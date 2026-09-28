@@ -12,8 +12,7 @@ import {
   useAuth,
 } from "../context/AuthContext";
 import ExpedienteResultado from "../components/ExpedienteResultado";
-import ExpedienteManualForm
-  from "../components/ExpedienteManualForm";
+
 
 import "./ExpedientesPage.css";
 
@@ -69,10 +68,7 @@ const esSuperadmin =
       useRef(true);
 
 
-      const [
-  mostrarCargaManual,
-  setMostrarCargaManual,
-] = useState(false);
+    
     /*
     |--------------------------------------------------------------------------
     | CARGAR EXPEDIENTES
@@ -388,58 +384,8 @@ const esSuperadmin =
 
   </header>
 
-  {mostrarCargaManual && (
-  <div className="expediente-manual-overlay">
-
-    <div className="expediente-manual-modal">
-
-      <ExpedienteManualForm
-        onCancelar={() =>
-          setMostrarCargaManual(false)
-        }
-
-     onCreado={async () => {
-  setMostrarCargaManual(false);
-
-  setTexto("");
-  setBusqueda("");
-
-  await cargarExpedientes(
-    1,
-    ""
-  );
-}}
-      />
-
-    </div>
-
-  </div>
-)}
 
 
-<section className="expedientes-acciones">
-
-  <div>
-    <strong>
-      Carga de expedientes
-    </strong>
-
-    <span>
-      Registrá vehículos y actuaciones anteriores al sistema.
-    </span>
-  </div>
-
-  <button
-    type="button"
-    className="expedientes-boton-carga"
-    onClick={() =>
-      setMostrarCargaManual(true)
-    }
-  >
-    + Cargar expediente anterior
-  </button>
-
-</section>
 
 
 <section className="expedientes-buscador">
