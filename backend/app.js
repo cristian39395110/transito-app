@@ -86,6 +86,11 @@ const juzgadoRoutes =
     "./routes/expedienteRoutes"
   );
 
+  const superadminRoutes =
+  require(
+    "./routes/superadminRoutes"
+  );
+
 
 
 /*
@@ -219,6 +224,10 @@ app.use(
   expedienteRoutes
 );
 
+app.use(
+  "/api/superadmin",
+  superadminRoutes
+);
 /*
 |--------------------------------------------------------------------------
 | HEALTH

@@ -1,3 +1,7 @@
+import {
+  Fragment,
+} from "react";
+
 const VehiculosEnPredio = ({
   items,
   onSeleccionar,
@@ -26,7 +30,9 @@ const VehiculosEnPredio = ({
   const formatearFecha = (fecha) => {
     if (!fecha) return "—";
 
-    return new Date(fecha).toLocaleDateString(
+    return new Date(
+      fecha
+    ).toLocaleDateString(
       "es-AR"
     );
   };
@@ -55,70 +61,119 @@ const VehiculosEnPredio = ({
             const ingreso =
               obtenerIngreso(item);
 
+            const coincidencias =
+              item?.coincidenciasBusqueda ||
+              ingreso?.coincidenciasBusqueda ||
+              [];
+
+            const key =
+              ingreso?.id ||
+              item?.ingresoPredioId ||
+              item?.id ||
+              vehiculo?.id;
+
             return (
-              <tr
-                key={
-                  ingreso?.id ||
-                  item?.ingresoPredioId ||
-                  item?.id ||
-                  vehiculo?.id
-                }
-              >
-                <td>
-                  <strong>
-                    {vehiculo.numeroInterno ||
-                      vehiculo.id ||
+              <Fragment key={key}>
+                <tr>
+                  <td>
+                    <strong>
+                      {vehiculo.numeroInterno ||
+                        vehiculo.id ||
+                        "—"}
+                    </strong>
+                  </td>
+
+                  <td>
+                    <strong>
+                      {vehiculo.dominio ||
+                        "Sin patente"}
+                    </strong>
+                  </td>
+
+                  <td>
+                    {[
+                      vehiculo.marca,
+                      vehiculo.modelo,
+                    ]
+                      .filter(Boolean)
+                      .join(" ") || "—"}
+                  </td>
+
+                  <td>
+                    {vehiculo.color ||
                       "—"}
-                  </strong>
-                </td>
+                  </td>
 
-                <td>
-                  <strong>
-                    {vehiculo.dominio ||
-                      "Sin patente"}
-                  </strong>
-                </td>
+                  <td>
+                    {ingreso.sector ||
+                      "—"}
+                  </td>
 
-                <td>
-                  {[
-                    vehiculo.marca,
-                    vehiculo.modelo,
-                  ]
-                    .filter(Boolean)
-                    .join(" ") || "—"}
-                </td>
+                  <td>
+                    {ingreso.posicion ||
+                      "—"}
+                  </td>
 
-                <td>
-                  {vehiculo.color || "—"}
-                </td>
+                  <td>
+                    {formatearFecha(
+                      ingreso.fechaHora ||
+                        ingreso.createdAt
+                    )}
+                  </td>
 
-                <td>
-                  {ingreso.sector || "—"}
-                </td>
+                  <td>
+                    <button
+                      type="button"
+                      className="predio-tabla-ver"
+                      onClick={() =>
+                        onSeleccionar(
+                          item
+                        )
+                      }
+                    >
+                      Ver ficha
+                    </button>
+                  </td>
+                </tr>
 
-                <td>
-                  {ingreso.posicion || "—"}
-                </td>
+                {coincidencias.length >
+                  0 && (
+                  <tr className="predio-fila-coincidencia">
+                    <td colSpan="8">
+                      <div className="predio-coincidencias">
+                        <strong className="predio-coincidencias-titulo">
+                          🔎 Coincidencia
+                          encontrada:
+                        </strong>
 
-                <td>
-                  {formatearFecha(
-                    ingreso.fechaHora ||
-                      ingreso.createdAt
-                  )}
-                </td>
-
-                <td>
-                  <button
-                    type="button"
-                    className="predio-tabla-ver"
-                    onClick={() =>
-                      onSeleccionar(item)
-                    }
-                  >
-                    Ver ficha
-                  </button>
-                </td>
-              </tr>
+                        <div className="predio-coincidencias-lista">
+                          {coincidencias.map(
+                            (
+                              coincidencia,
+                              index
+                            ) => (
+                              <span
+                                className="predio-coincidencia"
+                                key={`${coincidencia.tipo}-${coincidencia.valor}-${index}`}
+                              >
+                                {
+                                  coincidencia.etiqueta
+                                }
+                                :{" "}
+                                <strong>
+                                  {
+                                    coincidencia.valor
+                                  }
+                                </strong>
+                              </span>
+                            )
+                          )}
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                )}
+              </Fragment>
             );
           })}
         </tbody>

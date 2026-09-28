@@ -51,11 +51,20 @@ const ProtectedRoute = ({
     );
   }
 
-  if (
-    Array.isArray(roles) &&
-    roles.length > 0 &&
-    !roles.includes(rol)
-  ) {
+if (
+  Array.isArray(roles) &&
+  roles.length > 0
+) {
+  const tienePermiso =
+    roles.includes(rol) ||
+    (
+      rol === "superadmin" &&
+      roles.includes(
+        "administrador"
+      )
+    );
+
+  if (!tienePermiso) {
     return (
       <Navigate
         to="/no-autorizado"
@@ -63,7 +72,7 @@ const ProtectedRoute = ({
       />
     );
   }
-
+}
   return children;
 };
 

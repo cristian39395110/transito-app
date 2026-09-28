@@ -725,7 +725,7 @@ const historialFiltrado =
   setPaginaEnPredio(1);
   setPaginaHistorial(1);
 }}
-            placeholder="Buscar por Nº, patente, reclamo, marca o posición..."
+       placeholder="Buscar por Nº, patente, reclamo, acta, nombre o DNI..."
           />
 
           {buscar && (

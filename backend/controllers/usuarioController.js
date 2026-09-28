@@ -1,9 +1,51 @@
 const bcrypt = require("bcryptjs");
 
 const {
+  Op,
+} = require("sequelize");
+
+const {
   Usuario,
   Rol,
 } = require("../models");
+
+/*
+|--------------------------------------------------------------------------
+| UTILIDADES SUPERADMIN
+|--------------------------------------------------------------------------
+*/
+
+const obtenerNombreRolUsuario = (
+  req
+) => {
+  return String(
+    req.usuario?.rol || ""
+  )
+    .trim()
+    .toLowerCase();
+};
+
+const esSuperadminRequest = (
+  req
+) => {
+  return (
+    obtenerNombreRolUsuario(req) ===
+    "superadmin"
+  );
+};
+
+const esRolSuperadmin = (
+  rol
+) => {
+  return (
+    String(
+      rol?.nombre || ""
+    )
+      .trim()
+      .toLowerCase() ===
+    "superadmin"
+  );
+};
 
 /*
 |--------------------------------------------------------------------------
@@ -16,6 +58,9 @@ const listarUsuarios = async (
   res
 ) => {
   try {
+    const esSuperadmin =
+      esSuperadminRequest(req);
+
     const usuarios =
       await Usuario.findAll({
         attributes: {
@@ -26,11 +71,25 @@ const listarUsuarios = async (
           {
             model: Rol,
             as: "rol",
+
             attributes: [
               "id",
               "nombre",
               "descripcion",
             ],
+
+            ...(
+              !esSuperadmin
+                ? {
+                    where: {
+                      nombre: {
+                        [Op.ne]:
+                          "superadmin",
+                      },
+                    },
+                  }
+                : {}
+            ),
           },
         ],
 
@@ -89,13 +148,40 @@ const crearUsuario = async (
     }
 
     const rol =
-      await Rol.findByPk(rolId);
+      await Rol.findByPk(
+        rolId
+      );
 
-    if (!rol || !rol.activo) {
+    if (
+      !rol ||
+      !rol.activo
+    ) {
       return res.status(400).json({
         ok: false,
         mensaje:
           "El rol seleccionado no es válido",
+      });
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | PROTECCIÓN SUPERADMIN
+    |--------------------------------------------------------------------------
+    |
+    | Nadie puede crear otro superadmin desde esta API.
+    | Ni siquiera otro superadmin.
+    |
+    | El superadmin principal se crea manualmente/controladamente.
+    |
+    */
+
+    if (
+      esRolSuperadmin(rol)
+    ) {
+      return res.status(403).json({
+        ok: false,
+        mensaje:
+          "El rol superadmin no puede asignarse desde la administración de usuarios",
       });
     }
 
@@ -124,7 +210,8 @@ const crearUsuario = async (
       await Usuario.create({
         nombre,
         usuario,
-        password: passwordHash,
+        password:
+          passwordHash,
         rolId,
         activo: true,
       });
@@ -135,13 +222,18 @@ const crearUsuario = async (
         "Usuario creado correctamente",
 
       usuario: {
-        id: nuevoUsuario.id,
+        id:
+          nuevoUsuario.id,
+
         nombre:
           nuevoUsuario.nombre,
+
         usuario:
           nuevoUsuario.usuario,
+
         rolId:
           nuevoUsuario.rolId,
+
         activo:
           nuevoUsuario.activo,
       },
@@ -183,10 +275,33 @@ const actualizarUsuario = async (
       activo,
     } = req.body;
 
-    const usuarioEncontrado =
-      await Usuario.findByPk(id);
+    /*
+    |--------------------------------------------------------------------------
+    | BUSCAMOS USUARIO + ROL ACTUAL
+    |--------------------------------------------------------------------------
+    */
 
-    if (!usuarioEncontrado) {
+    const usuarioEncontrado =
+      await Usuario.findByPk(
+        id,
+        {
+          include: [
+            {
+              model: Rol,
+              as: "rol",
+
+              attributes: [
+                "id",
+                "nombre",
+              ],
+            },
+          ],
+        }
+      );
+
+    if (
+      !usuarioEncontrado
+    ) {
       return res.status(404).json({
         ok: false,
         mensaje:
@@ -194,23 +309,131 @@ const actualizarUsuario = async (
       });
     }
 
-    if (nombre !== undefined) {
+    const usuarioObjetivoEsSuperadmin =
+      esRolSuperadmin(
+        usuarioEncontrado.rol
+      );
+
+    const solicitanteEsSuperadmin =
+      esSuperadminRequest(req);
+
+    /*
+    |--------------------------------------------------------------------------
+    | PROTEGER CUENTA SUPERADMIN
+    |--------------------------------------------------------------------------
+    |
+    | Un administrador normal no puede modificar:
+    |
+    | - nombre
+    | - usuario
+    | - contraseña
+    | - rol
+    | - estado activo
+    |
+    | del superadmin.
+    |
+    */
+
+    if (
+      usuarioObjetivoEsSuperadmin &&
+      !solicitanteEsSuperadmin
+    ) {
+      return res.status(403).json({
+        ok: false,
+        mensaje:
+          "No tiene permisos para modificar este usuario",
+      });
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | CAMBIO DE ROL
+    |--------------------------------------------------------------------------
+    */
+
+    if (
+      rolId !== undefined
+    ) {
+      const rol =
+        await Rol.findByPk(
+          rolId
+        );
+
+      if (
+        !rol ||
+        !rol.activo
+      ) {
+        return res.status(400).json({
+          ok: false,
+          mensaje:
+            "El rol seleccionado no es válido",
+        });
+      }
+
+      /*
+      |--------------------------------------------------------------------------
+      | NADIE PUEDE CONVERTIR UNA CUENTA EN SUPERADMIN
+      |--------------------------------------------------------------------------
+      */
+
+      if (
+        esRolSuperadmin(rol) &&
+        !usuarioObjetivoEsSuperadmin
+      ) {
+        return res.status(403).json({
+          ok: false,
+          mensaje:
+            "El rol superadmin no puede asignarse desde la administración de usuarios",
+        });
+      }
+
+      /*
+      |--------------------------------------------------------------------------
+      | EL SUPERADMIN NO PUEDE QUITARSE SU PROPIO ROL DESDE ESTA API
+      |--------------------------------------------------------------------------
+      */
+
+      if (
+        usuarioObjetivoEsSuperadmin &&
+        !esRolSuperadmin(rol)
+      ) {
+        return res.status(403).json({
+          ok: false,
+          mensaje:
+            "No se puede quitar el rol superadmin desde la administración de usuarios",
+        });
+      }
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | ACTUALIZACIÓN NORMAL
+    |--------------------------------------------------------------------------
+    */
+
+    if (
+      nombre !== undefined
+    ) {
       usuarioEncontrado.nombre =
         nombre;
     }
 
-    if (usuario !== undefined) {
+    if (
+      usuario !== undefined
+    ) {
       const usuarioDuplicado =
         await Usuario.findOne({
           where: {
             usuario,
+            id: {
+              [Op.ne]:
+                usuarioEncontrado.id,
+            },
           },
         });
 
       if (
-        usuarioDuplicado &&
-        usuarioDuplicado.id !==
-          usuarioEncontrado.id
+        usuarioDuplicado
       ) {
         return res.status(400).json({
           ok: false,
@@ -223,23 +446,33 @@ const actualizarUsuario = async (
         usuario;
     }
 
-    if (rolId !== undefined) {
-      const rol =
-        await Rol.findByPk(rolId);
-
-      if (!rol || !rol.activo) {
-        return res.status(400).json({
-          ok: false,
-          mensaje:
-            "El rol seleccionado no es válido",
-        });
-      }
-
+    if (
+      rolId !== undefined
+    ) {
       usuarioEncontrado.rolId =
         rolId;
     }
 
-    if (activo !== undefined) {
+    if (
+      activo !== undefined
+    ) {
+      /*
+      |--------------------------------------------------------------------------
+      | NO DESACTIVAR SUPERADMIN
+      |--------------------------------------------------------------------------
+      */
+
+      if (
+        usuarioObjetivoEsSuperadmin &&
+        !Boolean(activo)
+      ) {
+        return res.status(403).json({
+          ok: false,
+          mensaje:
+            "El usuario superadmin no puede ser desactivado",
+        });
+      }
+
       usuarioEncontrado.activo =
         Boolean(activo);
     }
@@ -287,10 +520,24 @@ const listarRoles = async (
   res
 ) => {
   try {
+    const esSuperadmin =
+      esSuperadminRequest(req);
+
     const roles =
       await Rol.findAll({
         where: {
           activo: true,
+
+          ...(
+            !esSuperadmin
+              ? {
+                  nombre: {
+                    [Op.ne]:
+                      "superadmin",
+                  },
+                }
+              : {}
+          ),
         },
 
         order: [

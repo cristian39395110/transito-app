@@ -260,3 +260,61 @@
       normal;
   }
 }
+
+/* =========================================================
+   ACCIONES DEL EXPEDIENTE
+   ========================================================= */
+
+.expediente-acciones-resultado {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.expediente-boton-eliminar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 36px;
+  height: 36px;
+
+  padding: 0;
+
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+
+  background: #fff1f2;
+  color: #b91c1c;
+
+  font-size: 16px;
+
+  cursor: pointer;
+
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    transform 0.15s ease;
+}
+
+.expediente-boton-eliminar:hover {
+  background: #fee2e2;
+  border-color: #fca5a5;
+}
+
+.expediente-boton-eliminar:active {
+  transform: scale(0.95);
+}
+
+@media (max-width: 700px) {
+  .expediente-acciones-resultado {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  .expediente-boton-eliminar {
+    width: 40px;
+    height: 40px;
+  }
+}

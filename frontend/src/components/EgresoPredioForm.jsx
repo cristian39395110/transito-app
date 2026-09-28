@@ -19,6 +19,7 @@ const EgresoPredioForm = ({
       predioDestinoId: "",
       destinoPersona: "",
       dniPersona: "",
+      numeroOficio: "",
       observaciones: "",
     });
 
@@ -125,6 +126,13 @@ const EgresoPredioForm = ({
 
       dniPersona:
         "",
+
+      /*
+      El oficio NO se limpia.
+
+      El oficio autoriza la salida,
+      independientemente del destino.
+      */
     }));
   };
 
@@ -161,9 +169,36 @@ const EgresoPredioForm = ({
     setError("");
     setMensaje("");
 
+    /*
+    |--------------------------------------------------------------------------
+    | TIPO DE EGRESO
+    |--------------------------------------------------------------------------
+    */
+
     if (!form.tipoEgreso) {
       setError(
         "Seleccioná el tipo de egreso."
+      );
+
+      return;
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | NÚMERO DE OFICIO
+    |--------------------------------------------------------------------------
+    |
+    | Todo vehículo que sale del predio
+    | debe tener un oficio que autorice
+    | su salida.
+    |
+    */
+
+    if (
+      !form.numeroOficio.trim()
+    ) {
+      setError(
+        "Ingresá el número de oficio que autoriza la salida del vehículo."
       );
 
       return;
@@ -205,17 +240,29 @@ const EgresoPredioForm = ({
       return;
     }
 
+    /*
+    |--------------------------------------------------------------------------
+    | CONFIRMACIÓN
+    |--------------------------------------------------------------------------
+    */
+
     const confirmar =
       window.confirm(
         form.tipoEgreso ===
           "TRASLADADO"
-          ? "¿Confirmás el traslado del vehículo a otro destino?"
-          : "¿Confirmás el egreso del vehículo del predio?"
+          ? `¿Confirmás el traslado del vehículo por oficio N.º ${form.numeroOficio.trim()}?`
+          : `¿Confirmás el egreso del vehículo por oficio N.º ${form.numeroOficio.trim()}?`
       );
 
     if (!confirmar) {
       return;
     }
+
+    /*
+    |--------------------------------------------------------------------------
+    | GUARDAR
+    |--------------------------------------------------------------------------
+    */
 
     try {
       setGuardando(true);
@@ -237,6 +284,22 @@ const EgresoPredioForm = ({
           tipoEgreso:
             form.tipoEgreso,
 
+          /*
+          |--------------------------------------------------------------------------
+          | OFICIO
+          |--------------------------------------------------------------------------
+          */
+
+          numeroOficio:
+            form.numeroOficio
+              .trim(),
+
+          /*
+          |--------------------------------------------------------------------------
+          | DESTINO
+          |--------------------------------------------------------------------------
+          */
+
           predioDestinoId:
             form.tipoEgreso ===
               "TRASLADADO"
@@ -244,6 +307,12 @@ const EgresoPredioForm = ({
                   form.predioDestinoId
                 )
               : null,
+
+          /*
+          |--------------------------------------------------------------------------
+          | PERSONA QUE RETIRA
+          |--------------------------------------------------------------------------
+          */
 
           destinoPersona:
             form.tipoEgreso ===
@@ -260,6 +329,12 @@ const EgresoPredioForm = ({
                   .trim() ||
                 null
               : null,
+
+          /*
+          |--------------------------------------------------------------------------
+          | OBSERVACIONES
+          |--------------------------------------------------------------------------
+          */
 
           observaciones:
             form.observaciones
@@ -319,6 +394,39 @@ const EgresoPredioForm = ({
         </p>
       </div>
 
+      {/*
+      |--------------------------------------------------------------------------
+      | NÚMERO DE OFICIO
+      |--------------------------------------------------------------------------
+      */}
+
+      <label>
+        N.º de oficio *
+
+        <input
+          type="text"
+          name="numeroOficio"
+          value={
+            form.numeroOficio
+          }
+          onChange={cambiar}
+          placeholder="Ej.: 1548/2026"
+          autoComplete="off"
+          required
+        />
+
+        <small>
+          Oficio que autoriza la salida
+          del vehículo del predio.
+        </small>
+      </label>
+
+      {/*
+      |--------------------------------------------------------------------------
+      | TIPO DE EGRESO
+      |--------------------------------------------------------------------------
+      */}
+
       <label>
         ¿Qué pasó con el vehículo? *
 
@@ -339,9 +447,21 @@ const EgresoPredioForm = ({
             Trasladado a otro destino
           </option>
 
-        
+          <option value="COMPACTADO">
+            Enviado a compactación
+          </option>
+
+          <option value="OTRO">
+            Otro destino
+          </option>
         </select>
       </label>
+
+      {/*
+      |--------------------------------------------------------------------------
+      | ENTREGADO
+      |--------------------------------------------------------------------------
+      */}
 
       {form.tipoEgreso ===
         "ENTREGADO" && (
@@ -374,6 +494,12 @@ const EgresoPredioForm = ({
           </label>
         </div>
       )}
+
+      {/*
+      |--------------------------------------------------------------------------
+      | TRASLADADO
+      |--------------------------------------------------------------------------
+      */}
 
       {form.tipoEgreso ===
         "TRASLADADO" && (
@@ -410,15 +536,28 @@ const EgresoPredioForm = ({
         </label>
       )}
 
+      {/*
+      |--------------------------------------------------------------------------
+      | COMPACTADO
+      |--------------------------------------------------------------------------
+      */}
+
       {form.tipoEgreso ===
         "COMPACTADO" && (
         <div className="egreso-aviso">
           El vehículo quedará
           registrado como compactado.
+
           Detallá la actuación en
           observaciones.
         </div>
       )}
+
+      {/*
+      |--------------------------------------------------------------------------
+      | OTRO
+      |--------------------------------------------------------------------------
+      */}
 
       {form.tipoEgreso ===
         "OTRO" && (
@@ -427,6 +566,12 @@ const EgresoPredioForm = ({
           ocurrió con el vehículo.
         </div>
       )}
+
+      {/*
+      |--------------------------------------------------------------------------
+      | OBSERVACIONES
+      |--------------------------------------------------------------------------
+      */}
 
       <label>
         Observaciones
@@ -440,7 +585,7 @@ const EgresoPredioForm = ({
           onChange={cambiar}
           placeholder={
             form.tipoEgreso ===
-            "TRASLADADO"
+              "TRASLADADO"
               ? "Datos del traslado, autorización, observaciones..."
               : form.tipoEgreso ===
                   "ENTREGADO"
@@ -449,6 +594,12 @@ const EgresoPredioForm = ({
           }
         />
       </label>
+
+      {/*
+      |--------------------------------------------------------------------------
+      | MENSAJES
+      |--------------------------------------------------------------------------
+      */}
 
       {error && (
         <div className="egreso-error">
@@ -461,6 +612,12 @@ const EgresoPredioForm = ({
           {mensaje}
         </div>
       )}
+
+      {/*
+      |--------------------------------------------------------------------------
+      | GUARDAR
+      |--------------------------------------------------------------------------
+      */}
 
       <button
         type="submit"

@@ -131,6 +131,8 @@ const obtenerCoincidencia = (
 
 const ExpedienteResultado = ({
   expediente,
+  permitirEliminar = false,
+  onEliminar = null,
 }) => {
   const navigate =
     useNavigate();
@@ -173,6 +175,35 @@ const ExpedienteResultado = ({
 
         abrirExpediente();
       }
+    };
+
+  /*
+  |--------------------------------------------------------------------------
+  | ELIMINAR
+  |--------------------------------------------------------------------------
+  |
+  | Solamente aparece cuando permitirEliminar === true.
+  |
+  | stopPropagation evita que al tocar eliminar
+  | también se abra el expediente.
+  |
+  */
+
+  const manejarEliminar =
+    (
+      event
+    ) => {
+      event.preventDefault();
+      event.stopPropagation();
+
+      if (
+        !permitirEliminar ||
+        !onEliminar
+      ) {
+        return;
+      }
+
+      onEliminar();
     };
 
   return (
@@ -249,8 +280,25 @@ const ExpedienteResultado = ({
         </span>
       </div>
 
-      <div className="expediente-flecha">
-        ›
+      <div className="expediente-acciones-resultado">
+
+        {permitirEliminar && (
+          <button
+            type="button"
+            className="expediente-boton-eliminar"
+            onClick={
+              manejarEliminar
+            }
+            title="Eliminar expediente completo"
+          >
+            🗑
+          </button>
+        )}
+
+        <div className="expediente-flecha">
+          ›
+        </div>
+
       </div>
     </div>
   );

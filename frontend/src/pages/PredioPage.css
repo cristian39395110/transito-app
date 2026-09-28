@@ -455,3 +455,100 @@
     text-align: center;
   }
 }
+
+
+.predio-fila-coincidencia td {
+  padding: 0 12px 12px;
+  border-top: 0;
+}
+
+.predio-coincidencias {
+  padding: 10px 12px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+}
+
+.predio-coincidencias-titulo {
+  display: block;
+  margin-bottom: 6px;
+  color: #1e40af;
+}
+
+.predio-coincidencias-lista {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.predio-coincidencia {
+  display: inline-block;
+  padding: 4px 8px;
+  background: #ffffff;
+  border: 1px solid #dbeafe;
+  border-radius: 6px;
+  font-size: 0.9rem;
+}
+/* =========================================================
+   COINCIDENCIA DE BÚSQUEDA
+   ========================================================= */
+
+.ficha-coincidencias {
+  margin: 16px 0;
+  padding: 14px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 10px;
+}
+
+.ficha-coincidencias-titulo {
+  margin-bottom: 10px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #1e40af;
+}
+
+.ficha-coincidencias-lista {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.ficha-coincidencia {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  padding: 7px 10px;
+
+  background: #ffffff;
+  border: 1px solid #dbeafe;
+  border-radius: 8px;
+
+  font-size: 0.9rem;
+}
+
+.ficha-coincidencia span {
+  color: #475569;
+}
+
+.ficha-coincidencia strong {
+  color: #0f172a;
+}
+
+/* CELULAR */
+
+@media (max-width: 600px) {
+  .ficha-coincidencias {
+    padding: 12px;
+  }
+
+  .ficha-coincidencias-lista {
+    flex-direction: column;
+  }
+
+  .ficha-coincidencia {
+    width: 100%;
+    justify-content: space-between;
+  }
+}

@@ -70,11 +70,25 @@ const permitirRoles = (...roles) => {
       });
     }
 
-    if (
-      !roles.includes(
+    /*
+    |--------------------------------------------------------------------------
+    | SUPERADMIN HEREDA PERMISOS DE ADMINISTRADOR
+    |--------------------------------------------------------------------------
+    */
+
+    const tienePermiso =
+      roles.includes(
         req.usuario.rol
-      )
-    ) {
+      ) ||
+      (
+        req.usuario.rol ===
+          "superadmin" &&
+        roles.includes(
+          "administrador"
+        )
+      );
+
+    if (!tienePermiso) {
       return res.status(403).json({
         ok: false,
         mensaje:

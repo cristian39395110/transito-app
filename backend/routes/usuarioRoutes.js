@@ -36,7 +36,10 @@ router.use(
 
 router.get(
   "/roles",
-  permitirRoles("administrador"),
+  permitirRoles(
+    "administrador",
+    "superadmin"
+  ),
   listarRoles
 );
 
@@ -49,23 +52,28 @@ router.get(
 router.get(
   "/",
   permitirRoles(
+    "superadmin",
     "administrador",
     "director",
     "jefe_guardia"
   ),
   listarUsuarios
 );
-
 router.post(
   "/",
-  permitirRoles("administrador"),
+  permitirRoles(
+    "superadmin",
+    "administrador"
+  ),
   crearUsuario
 );
 
 router.put(
   "/:id",
-  permitirRoles("administrador"),
+  permitirRoles(
+    "superadmin",
+    "administrador"
+  ),
   actualizarUsuario
 );
-
 module.exports = router;

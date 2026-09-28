@@ -2540,21 +2540,7 @@ return lista.sort((a, b) => {
 
                   
                 
-                <div className="evento-fotos">
-      <strong>
-        📷 Evidencia de la visita
-      </strong>
-
-      <FotosReclamo
-        reclamoId={
-          reclamo.id
-        }
-        tipoReferencia="CONSTATACION"
-        permitirSubir={
-          false
-        }
-      />
-    </div>
+            
 
                   {acta && (
                     
@@ -3601,106 +3587,106 @@ return lista.sort((a, b) => {
     </>
   );
 }
+if (
+  evento.tipo ===
+  "EGRESO_PREDIO"
+) {
+  return (
+    <>
+      <span className="evento-etiqueta salida">
+        ✅ SALIDA / ENTREGA DEL VEHÍCULO
+      </span>
 
-            if (
-              evento.tipo ===
-              "EGRESO_PREDIO"
-            ) {
-              return (
-                <>
-                  <span className="evento-etiqueta salida">
-                    ✅ SALIDA / ENTREGA DEL VEHÍCULO
-                  </span>
+      <h3>
+        {nombresEgreso[
+          datos.tipoEgreso
+        ] ||
+          "Salida registrada"}
+      </h3>
 
-                  <h3>
-                    {nombresEgreso[
-                      datos
-                        .tipoEgreso
-                    ] ||
-                      "Salida registrada"}
-                  </h3>
+      <div className="evento-datos-linea">
+        {datos.tipoEgreso ===
+          "TRASLADADO" &&
+          datos.predioDestino
+            ?.nombre && (
+            <div>
+              <span>
+                Destino del traslado
+              </span>
 
-                <div className="evento-datos-linea">
-  {datos.tipoEgreso ===
-    "TRASLADADO" &&
-    datos.predioDestino
-      ?.nombre && (
-      <div>
-        <span>
-          Destino del traslado
-        </span>
+              <strong>
+                {
+                  datos
+                    .predioDestino
+                    .nombre
+                }
+              </strong>
+            </div>
+          )}
 
-        <strong>
-          {
-            datos
-              .predioDestino
-              .nombre
-          }
-        </strong>
+        {datos.destinoPersona && (
+          <div>
+            <span>
+              Entregado / destino
+            </span>
+
+            <strong>
+              {datos.destinoPersona}
+            </strong>
+          </div>
+        )}
+
+        {datos.dniPersona && (
+          <div>
+            <span>
+              DNI
+            </span>
+
+            <strong>
+              {datos.dniPersona}
+            </strong>
+          </div>
+        )}
+
+        {datos.numeroOficio && (
+          <div>
+            <span>
+              N.º de oficio
+            </span>
+
+            <strong>
+              {datos.numeroOficio}
+            </strong>
+          </div>
+        )}
+
+        <div>
+          <span>
+            Registrado por
+          </span>
+
+          <strong>
+            {nombreUsuario(
+              datos.registradoPor
+            )}
+          </strong>
+        </div>
       </div>
-  )}
 
-  {datos
-    .destinoPersona && (
-    <div>
-      <span>
-        Entregado / destino
-      </span>
+      {datos.observaciones && (
+        <div className="evento-texto">
+          <span>
+            Observaciones del egreso
+          </span>
 
-      <strong>
-        {
-          datos
-            .destinoPersona
-        }
-      </strong>
-    </div>
-  )}
-
-  {datos
-    .dniPersona && (
-    <div>
-      <span>
-        DNI
-      </span>
-
-      <strong>
-        {
-          datos
-            .dniPersona
-        }
-      </strong>
-    </div>
-  )}
-
-  <div>
-    <span>
-      Registrado por
-    </span>
-
-    <strong>
-      {nombreUsuario(
-        datos
-          .registradoPor
+          <p>
+            {datos.observaciones}
+          </p>
+        </div>
       )}
-    </strong>
-  </div>
-</div>
-
-{datos.observaciones && (
-  <div className="evento-texto">
-    <span>
-      Observaciones del egreso
-    </span>
-
-    <p>
-      {datos.observaciones}
-    </p>
-  </div>
-)}
-                </>
-              );
-            }
-
+    </>
+  );
+}
 
             return null;
           };

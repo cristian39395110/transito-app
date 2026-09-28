@@ -149,17 +149,35 @@ const AppLayout = () => {
   |--------------------------------------------------------------------------
   */
 
-  const puede = (
-    rolesPermitidos
-  ) => {
-    if (!rolesPermitidos) {
-      return true;
-    }
+const puede = (
+  rolesPermitidos
+) => {
+  if (!rolesPermitidos) {
+    return true;
+  }
 
-    return rolesPermitidos.includes(
-      rol
-    );
-  };
+  /*
+  |--------------------------------------------------------------------------
+  | SUPERADMIN
+  |--------------------------------------------------------------------------
+  |
+  | El superadmin ve todo lo que puede ver un administrador.
+  |
+  */
+
+  if (
+    rol === "superadmin" &&
+    rolesPermitidos.includes(
+      "administrador"
+    )
+  ) {
+    return true;
+  }
+
+  return rolesPermitidos.includes(
+    rol
+  );
+};
 
   /*
   |--------------------------------------------------------------------------

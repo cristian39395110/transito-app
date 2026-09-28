@@ -77,6 +77,11 @@
           allowNull: true,
         },
 
+        numeroOficio: {
+  type: DataTypes.STRING(100),
+  allowNull: true,
+},
+
         observaciones: {
           type: DataTypes.TEXT,
           allowNull: true,

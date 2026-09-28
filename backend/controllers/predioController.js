@@ -10,6 +10,8 @@ const {
   Remocion,
   IngresoPredio,
   EgresoPredio,
+  Acta,
+  Infraccion,
 } = require("../models");
 
 const {
@@ -833,8 +835,15 @@ const registrarEgreso =
         predioDestinoId,
         destinoPersona,
         dniPersona,
+        numeroOficio,
         observaciones,
       } = req.body;
+
+      /*
+      |--------------------------------------------------------------------------
+      | DATOS OBLIGATORIOS
+      |--------------------------------------------------------------------------
+      */
 
       if (
         !ingresoPredioId ||
@@ -848,6 +857,37 @@ const registrarEgreso =
             "Ingreso y tipo de egreso son obligatorios",
         });
       }
+
+      /*
+      |--------------------------------------------------------------------------
+      | NÚMERO DE OFICIO OBLIGATORIO PARA TODO EGRESO
+      |--------------------------------------------------------------------------
+      |
+      | Ningún vehículo puede salir del predio
+      | sin el oficio que autoriza su salida.
+      |
+      */
+
+      const numeroOficioLimpio =
+        String(
+          numeroOficio || ""
+        ).trim();
+
+      if (!numeroOficioLimpio) {
+        await transaction.rollback();
+
+        return res.status(400).json({
+          ok: false,
+          mensaje:
+            "Debe indicar el número de oficio que autoriza la salida del vehículo",
+        });
+      }
+
+      /*
+      |--------------------------------------------------------------------------
+      | VALIDAR TIPO DE EGRESO
+      |--------------------------------------------------------------------------
+      */
 
       const tiposValidos = [
         "ENTREGADO",
@@ -870,6 +910,12 @@ const registrarEgreso =
         });
       }
 
+      /*
+      |--------------------------------------------------------------------------
+      | BUSCAR INGRESO
+      |--------------------------------------------------------------------------
+      */
+
       const ingreso =
         await IngresoPredio.findByPk(
           ingresoPredioId,
@@ -887,6 +933,12 @@ const registrarEgreso =
             "Ingreso al predio no encontrado",
         });
       }
+
+      /*
+      |--------------------------------------------------------------------------
+      | EVITAR DOBLE EGRESO
+      |--------------------------------------------------------------------------
+      */
 
       const egresoExistente =
         await EgresoPredio.findOne({
@@ -907,6 +959,12 @@ const registrarEgreso =
             "Este vehículo ya tiene un egreso registrado",
         });
       }
+
+      /*
+      |--------------------------------------------------------------------------
+      | RECLAMO Y VEHÍCULO
+      |--------------------------------------------------------------------------
+      */
 
       const reclamo =
         await Reclamo.findByPk(
@@ -937,63 +995,76 @@ const registrarEgreso =
         });
       }
 
-       let predioDestino =
-  null;
+      /*
+      |--------------------------------------------------------------------------
+      | VALIDAR TRASLADO
+      |--------------------------------------------------------------------------
+      */
 
-if (
-  tipoEgreso ===
-  "TRASLADADO"
-) {
-  if (!predioDestinoId) {
-    await transaction.rollback();
+      let predioDestino = null;
 
-    return res.status(400).json({
-      ok: false,
-      mensaje:
-        "Debe seleccionar el destino del traslado",
-    });
-  }
+      if (
+        tipoEgreso ===
+        "TRASLADADO"
+      ) {
+        if (!predioDestinoId) {
+          await transaction.rollback();
 
-  predioDestino =
-    await Predio.findOne({
-      where: {
-        id:
+          return res.status(400).json({
+            ok: false,
+            mensaje:
+              "Debe seleccionar el destino del traslado",
+          });
+        }
+
+        predioDestino =
+          await Predio.findOne({
+            where: {
+              id:
+                Number(
+                  predioDestinoId
+                ),
+
+              activo: true,
+            },
+
+            transaction,
+          });
+
+        if (!predioDestino) {
+          await transaction.rollback();
+
+          return res.status(404).json({
+            ok: false,
+            mensaje:
+              "El destino seleccionado no existe o está inactivo",
+          });
+        }
+
+        if (
           Number(
-            predioDestinoId
-          ),
-        activo: true,
-      },
+            predioDestino.id
+          ) ===
+          Number(
+            ingreso.predioId
+          )
+        ) {
+          await transaction.rollback();
 
-      transaction,
-    });
+          return res.status(400).json({
+            ok: false,
+            mensaje:
+              "El destino del traslado no puede ser el mismo predio del que está saliendo",
+          });
+        }
+      }
 
-  if (!predioDestino) {
-    await transaction.rollback();
+      /*
+      |--------------------------------------------------------------------------
+      | FECHA
+      |--------------------------------------------------------------------------
+      */
 
-    return res.status(404).json({
-      ok: false,
-      mensaje:
-        "El destino seleccionado no existe o está inactivo",
-    });
-  }
-
-  if (
-    Number(
-      predioDestino.id
-    ) ===
-    Number(
-      ingreso.predioId
-    )
-  ) {
-    await transaction.rollback();
-
-    return res.status(400).json({
-      ok: false,
-      mensaje:
-        "El destino del traslado no puede ser el mismo predio del que está saliendo",
-    });
-  }
-}
       const fechaEgreso =
         fechaHora
           ? new Date(fechaHora)
@@ -1012,6 +1083,12 @@ if (
             "La fecha de egreso no es válida",
         });
       }
+
+      /*
+      |--------------------------------------------------------------------------
+      | CREAR EGRESO
+      |--------------------------------------------------------------------------
+      */
 
       const egreso =
         await EgresoPredio.create(
@@ -1032,27 +1109,37 @@ if (
               fechaEgreso,
 
             tipoEgreso,
-            
-            predioDestinoId:
-  tipoEgreso ===
-    "TRASLADADO"
-    ? predioDestino.id
-    : null,
-          destinoPersona:
-  tipoEgreso ===
-    "ENTREGADO"
-    ? destinoPersona
-        ?.trim() ||
-      null
-    : null,
 
-           dniPersona:
-  tipoEgreso ===
-    "ENTREGADO"
-    ? dniPersona
-        ?.trim() ||
-      null
-    : null,
+            predioDestinoId:
+              tipoEgreso ===
+              "TRASLADADO"
+                ? predioDestino.id
+                : null,
+
+            destinoPersona:
+              tipoEgreso ===
+              "ENTREGADO"
+                ? destinoPersona
+                    ?.trim() ||
+                  null
+                : null,
+
+            dniPersona:
+              tipoEgreso ===
+              "ENTREGADO"
+                ? dniPersona
+                    ?.trim() ||
+                  null
+                : null,
+
+            /*
+            |--------------------------------------------------------------------------
+            | OFICIO QUE AUTORIZA LA SALIDA
+            |--------------------------------------------------------------------------
+            */
+
+            numeroOficio:
+              numeroOficioLimpio,
 
             observaciones:
               observaciones
@@ -1064,12 +1151,24 @@ if (
           }
         );
 
+      /*
+      |--------------------------------------------------------------------------
+      | VEHÍCULO EGRESADO
+      |--------------------------------------------------------------------------
+      */
+
       vehiculo.estadoActual =
         "EGRESADO";
 
       await vehiculo.save({
         transaction,
       });
+
+      /*
+      |--------------------------------------------------------------------------
+      | HISTORIAL
+      |--------------------------------------------------------------------------
+      */
 
       await registrarHistorial({
         reclamoId:
@@ -1081,28 +1180,28 @@ if (
         accion:
           "EGRESO_PREDIO",
 
-     descripcion:
-  tipoEgreso ===
-    "TRASLADADO"
-    ? `Vehículo interno N.º ${
-        vehiculo.numeroInterno ||
-        vehiculo.id
-      } trasladado a ${
-        predioDestino.nombre
-      }`
-    : tipoEgreso ===
-        "ENTREGADO"
-      ? `Vehículo interno N.º ${
-          vehiculo.numeroInterno ||
-          vehiculo.id
-        } entregado a ${
-          destinoPersona?.trim() ||
-          "responsable"
-        }`
-      : `Vehículo interno N.º ${
-          vehiculo.numeroInterno ||
-          vehiculo.id
-        }: ${tipoEgreso}`,
+        descripcion:
+          tipoEgreso ===
+          "TRASLADADO"
+            ? `Vehículo interno N.º ${
+                vehiculo.numeroInterno ||
+                vehiculo.id
+              } trasladado a ${
+                predioDestino.nombre
+              } por oficio N.º ${numeroOficioLimpio}`
+            : tipoEgreso ===
+                "ENTREGADO"
+              ? `Vehículo interno N.º ${
+                  vehiculo.numeroInterno ||
+                  vehiculo.id
+                } entregado a ${
+                  destinoPersona?.trim() ||
+                  "responsable"
+                } por oficio N.º ${numeroOficioLimpio}`
+              : `Vehículo interno N.º ${
+                  vehiculo.numeroInterno ||
+                  vehiculo.id
+                }: ${tipoEgreso} por oficio N.º ${numeroOficioLimpio}`,
 
         estadoAnterior:
           reclamo.estado,
@@ -1114,12 +1213,9 @@ if (
       });
 
       /*
-      Puede haber más de un vehículo
-      asociado al mismo reclamo.
-
-      Por eso no resolvemos automáticamente
-      el reclamo hasta comprobar que todos
-      los vehículos asociados finalizaron.
+      |--------------------------------------------------------------------------
+      | VERIFICAR SI QUEDAN VEHÍCULOS PENDIENTES
+      |--------------------------------------------------------------------------
       */
 
       const vehiculosPendientes =
@@ -1153,6 +1249,12 @@ if (
         });
       }
 
+      /*
+      |--------------------------------------------------------------------------
+      | CONFIRMAR
+      |--------------------------------------------------------------------------
+      */
+
       await transaction.commit();
 
       return res.status(201).json({
@@ -1183,6 +1285,7 @@ if (
 
       return res.status(500).json({
         ok: false,
+
         mensaje:
           "Error al registrar el egreso del predio",
       });
@@ -1195,7 +1298,7 @@ if (
 |--------------------------------------------------------------------------
 */
 
-const listarHistorialPredio =
+ const listarHistorialPredio =
   async (req, res) => {
     try {
       const predioId =
@@ -1212,48 +1315,11 @@ const listarHistorialPredio =
       const offset =
         (pagina - 1) * limite;
 
+      const buscar =
+        String(
+          req.query.buscar || ""
+        ).trim();
 
-        const buscar =
-  String(
-    req.query.buscar || ""
-  ).trim();
-
-const whereVehiculo = {};
-
-if (buscar) {
-  whereVehiculo[Op.or] = [
-    {
-      numeroInterno: {
-        [Op.like]:
-          `%${buscar}%`,
-      },
-    },
-    {
-      dominio: {
-        [Op.like]:
-          `%${buscar}%`,
-      },
-    },
-    {
-      marca: {
-        [Op.like]:
-          `%${buscar}%`,
-      },
-    },
-    {
-      modelo: {
-        [Op.like]:
-          `%${buscar}%`,
-      },
-    },
-    {
-      color: {
-        [Op.like]:
-          `%${buscar}%`,
-      },
-    },
-  ];
-}
       if (!predioId) {
         return res
           .status(400)
@@ -1282,15 +1348,111 @@ if (buscar) {
           });
       }
 
+      /*
+      |--------------------------------------------------------------------------
+      | BÚSQUEDA GENERAL DEL HISTORIAL
+      |--------------------------------------------------------------------------
+      |
+      | Busca por:
+      |
+      | - número interno
+      | - patente
+      | - marca
+      | - modelo
+      | - color
+      | - número de reclamo
+      | - Acta de Vía Pública
+      | - Acta de Infracción
+      | - sector
+      | - posición
+      | - nombre de quien retiró
+      | - DNI de quien retiró
+      |
+      */
+
+      const whereIngreso = {
+        predioId: predio.id,
+      };
+
+      if (buscar) {
+        const patron =
+          `%${buscar}%`;
+
+        whereIngreso[Op.and] = [
+          sequelize.literal(`
+            (
+              EXISTS (
+                SELECT 1
+                FROM vehiculos v
+                WHERE
+                  v.id = IngresoPredio.vehiculoId
+                  AND (
+                    v.numeroInterno LIKE ${sequelize.escape(patron)}
+                    OR v.dominio LIKE ${sequelize.escape(patron)}
+                    OR v.marca LIKE ${sequelize.escape(patron)}
+                    OR v.modelo LIKE ${sequelize.escape(patron)}
+                    OR v.color LIKE ${sequelize.escape(patron)}
+                  )
+              )
+
+              OR EXISTS (
+                SELECT 1
+                FROM reclamos r
+                WHERE
+                  r.id = IngresoPredio.reclamoId
+                  AND r.numeroReclamo LIKE ${sequelize.escape(patron)}
+              )
+
+              OR EXISTS (
+                SELECT 1
+                FROM actas a
+                WHERE
+                  a.reclamoId = IngresoPredio.reclamoId
+                  AND a.numeroActa LIKE ${sequelize.escape(patron)}
+              )
+
+              OR EXISTS (
+                SELECT 1
+                FROM infracciones i
+                WHERE
+                  i.reclamoId = IngresoPredio.reclamoId
+                  AND i.numeroActa LIKE ${sequelize.escape(patron)}
+                  AND (
+                    i.anulada = 0
+                    OR i.anulada IS NULL
+                  )
+              )
+
+              OR EXISTS (
+                SELECT 1
+                FROM egresos_predio ep
+                WHERE
+                  ep.ingresoPredioId = IngresoPredio.id
+                  AND (
+                    ep.destinoPersona LIKE ${sequelize.escape(patron)}
+                    OR ep.dniPersona LIKE ${sequelize.escape(patron)}
+                  )
+              )
+
+              OR IngresoPredio.sector LIKE ${sequelize.escape(patron)}
+              OR IngresoPredio.posicion LIKE ${sequelize.escape(patron)}
+            )
+          `),
+        ];
+      }
+
+      /*
+      |--------------------------------------------------------------------------
+      | OBTENER INGRESOS
+      |--------------------------------------------------------------------------
+      */
+
       const {
         count,
         rows: ingresos,
       } =
         await IngresoPredio.findAndCountAll({
-          where: {
-            predioId:
-              predio.id,
-          },
+          where: whereIngreso,
 
           include: [
             {
@@ -1298,16 +1460,10 @@ if (buscar) {
               as: "predio",
             },
 
-         {
-  model: Vehiculo,
-  as: "vehiculo",
-  where:
-    buscar
-      ? whereVehiculo
-      : undefined,
-  required:
-    Boolean(buscar),
-},
+            {
+              model: Vehiculo,
+              as: "vehiculo",
+            },
 
             {
               model: Reclamo,
@@ -1323,10 +1479,17 @@ if (buscar) {
           ],
 
           limit: limite,
+
           offset,
 
           distinct: true,
         });
+
+      /*
+      |--------------------------------------------------------------------------
+      | OBTENER EGRESOS
+      |--------------------------------------------------------------------------
+      */
 
       const ingresoIds =
         ingresos.map(
@@ -1366,37 +1529,290 @@ if (buscar) {
           )
         );
 
+      /*
+      |--------------------------------------------------------------------------
+      | ARMAR HISTORIAL + COINCIDENCIAS
+      |--------------------------------------------------------------------------
+      */
+
       const historial =
-        ingresos.map(
-          (ingreso) => {
-            const egreso =
-              mapaEgresos.get(
-                Number(
-                  ingreso.id
-                )
-              ) || null;
+        await Promise.all(
+          ingresos.map(
+            async (ingreso) => {
+              const ingresoPlano =
+                ingreso.toJSON();
 
-            return {
-              ingreso,
-              egreso,
+              const egresoModelo =
+                mapaEgresos.get(
+                  Number(
+                    ingreso.id
+                  )
+                ) || null;
 
-              vehiculo:
-                ingreso.vehiculo,
+              const egreso =
+                egresoModelo
+                  ? egresoModelo.toJSON()
+                  : null;
 
-              reclamo:
-                ingreso.reclamo,
+              const coincidencias =
+                [];
 
-              predio:
-                ingreso.predio,
+              /*
+              |--------------------------------------------------------------------------
+              | SI HAY BÚSQUEDA, MOSTRAMOS POR QUÉ COINCIDIÓ
+              |--------------------------------------------------------------------------
+              */
 
-              estaActualmente:
-                !egreso &&
-                ingreso.vehiculo
-                  ?.estadoActual ===
-                  "EN_PREDIO",
-            };
-          }
+              if (buscar) {
+                const termino =
+                  buscar.toLowerCase();
+
+                const agregarCoincidencia =
+                  (
+                    tipo,
+                    etiqueta,
+                    valor
+                  ) => {
+                    if (
+                      valor !== null &&
+                      valor !== undefined &&
+                      String(valor)
+                        .toLowerCase()
+                        .includes(
+                          termino
+                        )
+                    ) {
+                      coincidencias.push({
+                        tipo,
+                        etiqueta,
+                        valor:
+                          String(
+                            valor
+                          ),
+                      });
+                    }
+                  };
+
+                /*
+                |--------------------------------------------------------------------------
+                | VEHÍCULO
+                |--------------------------------------------------------------------------
+                */
+
+                agregarCoincidencia(
+                  "NUMERO_INTERNO",
+                  "N.º interno",
+                  ingresoPlano
+                    .vehiculo
+                    ?.numeroInterno
+                );
+
+                agregarCoincidencia(
+                  "PATENTE",
+                  "Patente",
+                  ingresoPlano
+                    .vehiculo
+                    ?.dominio
+                );
+
+                agregarCoincidencia(
+                  "MARCA",
+                  "Marca",
+                  ingresoPlano
+                    .vehiculo
+                    ?.marca
+                );
+
+                agregarCoincidencia(
+                  "MODELO",
+                  "Modelo",
+                  ingresoPlano
+                    .vehiculo
+                    ?.modelo
+                );
+
+                agregarCoincidencia(
+                  "COLOR",
+                  "Color",
+                  ingresoPlano
+                    .vehiculo
+                    ?.color
+                );
+
+                /*
+                |--------------------------------------------------------------------------
+                | RECLAMO
+                |--------------------------------------------------------------------------
+                */
+
+                agregarCoincidencia(
+                  "RECLAMO",
+                  "N.º de reclamo",
+                  ingresoPlano
+                    .reclamo
+                    ?.numeroReclamo
+                );
+
+                /*
+                |--------------------------------------------------------------------------
+                | UBICACIÓN EN PREDIO
+                |--------------------------------------------------------------------------
+                */
+
+                agregarCoincidencia(
+                  "SECTOR",
+                  "Sector",
+                  ingresoPlano.sector
+                );
+
+                agregarCoincidencia(
+                  "POSICION",
+                  "Posición / precinto",
+                  ingresoPlano.posicion
+                );
+
+                /*
+                |--------------------------------------------------------------------------
+                | PERSONA QUE RETIRÓ
+                |--------------------------------------------------------------------------
+                */
+
+                agregarCoincidencia(
+                  "PERSONA_RETIRO",
+                  "Retiró",
+                  egreso
+                    ?.destinoPersona
+                );
+
+                agregarCoincidencia(
+                  "DNI_RETIRO",
+                  "DNI de quien retiró",
+                  egreso
+                    ?.dniPersona
+                );
+
+                /*
+                |--------------------------------------------------------------------------
+                | ACTA DE VÍA PÚBLICA
+                |--------------------------------------------------------------------------
+                */
+
+                const actas =
+                  await Acta.findAll({
+                    where: {
+                      reclamoId:
+                        ingresoPlano
+                          .reclamoId,
+                    },
+
+                    attributes: [
+                      "numeroActa",
+                      "tipo",
+                    ],
+                  });
+
+                for (
+                  const acta of actas
+                ) {
+                  agregarCoincidencia(
+                    "ACTA_VIA_PUBLICA",
+
+                    acta.tipo ===
+                      "VIA_PUBLICA"
+                      ? "Acta de Vía Pública"
+                      : "Acta",
+
+                    acta.numeroActa
+                  );
+                }
+
+                /*
+                |--------------------------------------------------------------------------
+                | ACTA DE INFRACCIÓN
+                |--------------------------------------------------------------------------
+                */
+
+                const infracciones =
+                  await Infraccion.findAll({
+                    where: {
+                      reclamoId:
+                        ingresoPlano
+                          .reclamoId,
+
+                      [Op.or]: [
+                        {
+                          anulada:
+                            false,
+                        },
+
+                        {
+                          anulada:
+                            null,
+                        },
+                      ],
+                    },
+
+                    attributes: [
+                      "numeroActa",
+                    ],
+                  });
+
+                for (
+                  const infraccion of
+                  infracciones
+                ) {
+                  agregarCoincidencia(
+                    "ACTA_INFRACCION",
+                    "Acta de Infracción",
+                    infraccion
+                      .numeroActa
+                  );
+                }
+              }
+
+              /*
+              |--------------------------------------------------------------------------
+              | RESULTADO DEL HISTORIAL
+              |--------------------------------------------------------------------------
+              */
+
+              return {
+                ingreso:
+                  ingresoPlano,
+
+                egreso,
+
+                vehiculo:
+                  ingresoPlano
+                    .vehiculo,
+
+                reclamo:
+                  ingresoPlano
+                    .reclamo,
+
+                predio:
+                  ingresoPlano
+                    .predio,
+
+                estaActualmente:
+                  !egreso &&
+                  ingresoPlano
+                    .vehiculo
+                    ?.estadoActual ===
+                    "EN_PREDIO",
+
+                coincidenciasBusqueda:
+                  coincidencias,
+              };
+            }
+          )
         );
+
+      /*
+      |--------------------------------------------------------------------------
+      | PAGINACIÓN
+      |--------------------------------------------------------------------------
+      */
 
       const total =
         Number(count) || 0;
@@ -1408,6 +1824,12 @@ if (buscar) {
           ),
           1
         );
+
+      /*
+      |--------------------------------------------------------------------------
+      | RESPUESTA
+      |--------------------------------------------------------------------------
+      */
 
       return res.json({
         ok: true,
@@ -1434,6 +1856,7 @@ if (buscar) {
         .status(500)
         .json({
           ok: false,
+
           mensaje:
             "Error al obtener el historial del predio",
         });
@@ -1445,7 +1868,6 @@ if (buscar) {
 | VEHÍCULOS ACTUALMENTE EN PREDIO
 |--------------------------------------------------------------------------
 */
-
 const listarVehiculosEnPredio =
   async (req, res) => {
     try {
@@ -1462,50 +1884,12 @@ const listarVehiculosEnPredio =
 
       const offset =
         (pagina - 1) * limite;
-const buscar =
-  String(
-    req.query.buscar || ""
-  ).trim();
 
-const whereVehiculo = {
-  estadoActual:
-    "EN_PREDIO",
-};
+      const buscar =
+        String(
+          req.query.buscar || ""
+        ).trim();
 
-if (buscar) {
-  whereVehiculo[Op.or] = [
-    {
-      numeroInterno: {
-        [Op.like]:
-          `%${buscar}%`,
-      },
-    },
-    {
-      dominio: {
-        [Op.like]:
-          `%${buscar}%`,
-      },
-    },
-    {
-      marca: {
-        [Op.like]:
-          `%${buscar}%`,
-      },
-    },
-    {
-      modelo: {
-        [Op.like]:
-          `%${buscar}%`,
-      },
-    },
-    {
-      color: {
-        [Op.like]:
-          `%${buscar}%`,
-      },
-    },
-  ];
-}
       if (!predioId) {
         return res.status(400).json({
           ok: false,
@@ -1530,15 +1914,98 @@ if (buscar) {
         });
       }
 
+      /*
+      |--------------------------------------------------------------------------
+      | BÚSQUEDA GENERAL
+      |--------------------------------------------------------------------------
+      |
+      | Busca por:
+      |
+      | - número interno
+      | - patente
+      | - marca
+      | - modelo
+      | - color
+      | - número de reclamo
+      | - número de Acta de Vía Pública
+      | - número de Acta de Infracción
+      | - sector
+      | - posición
+      |
+      */
+
+      const whereIngreso = {
+        predioId: predio.id,
+      };
+
+      if (buscar) {
+        const patron =
+          `%${buscar}%`;
+
+        whereIngreso[Op.and] = [
+          sequelize.literal(`
+            (
+              EXISTS (
+                SELECT 1
+                FROM vehiculos v
+                WHERE
+                  v.id = IngresoPredio.vehiculoId
+                  AND (
+                    v.numeroInterno LIKE ${sequelize.escape(patron)}
+                    OR v.dominio LIKE ${sequelize.escape(patron)}
+                    OR v.marca LIKE ${sequelize.escape(patron)}
+                    OR v.modelo LIKE ${sequelize.escape(patron)}
+                    OR v.color LIKE ${sequelize.escape(patron)}
+                  )
+              )
+
+              OR EXISTS (
+                SELECT 1
+                FROM reclamos r
+                WHERE
+                  r.id = IngresoPredio.reclamoId
+                  AND r.numeroReclamo LIKE ${sequelize.escape(patron)}
+              )
+
+              OR EXISTS (
+                SELECT 1
+                FROM actas a
+                WHERE
+                  a.reclamoId = IngresoPredio.reclamoId
+                  AND a.numeroActa LIKE ${sequelize.escape(patron)}
+              )
+
+              OR EXISTS (
+                SELECT 1
+                FROM infracciones i
+                WHERE
+                  i.reclamoId = IngresoPredio.reclamoId
+                  AND i.numeroActa LIKE ${sequelize.escape(patron)}
+                  AND (
+                    i.anulada = 0
+                    OR i.anulada IS NULL
+                  )
+              )
+
+              OR IngresoPredio.sector LIKE ${sequelize.escape(patron)}
+              OR IngresoPredio.posicion LIKE ${sequelize.escape(patron)}
+            )
+          `),
+        ];
+      }
+
+      /*
+      |--------------------------------------------------------------------------
+      | OBTENER VEHÍCULOS
+      |--------------------------------------------------------------------------
+      */
+
       const {
         count,
         rows,
       } =
         await IngresoPredio.findAndCountAll({
-          where: {
-            predioId:
-              predio.id,
-          },
+          where: whereIngreso,
 
           include: [
             {
@@ -1547,11 +2014,16 @@ if (buscar) {
             },
 
             {
-  model: Vehiculo,
-  as: "vehiculo",
-  where: whereVehiculo,
-  required: true,
-},
+              model: Vehiculo,
+              as: "vehiculo",
+
+              where: {
+                estadoActual:
+                  "EN_PREDIO",
+              },
+
+              required: true,
+            },
 
             {
               model: Reclamo,
@@ -1560,14 +2032,249 @@ if (buscar) {
           ],
 
           order: [
-            ["fechaHora", "ASC"],
+            [
+              "fechaHora",
+              "ASC",
+            ],
           ],
 
           limit: limite,
+
           offset,
 
           distinct: true,
         });
+
+      /*
+      |--------------------------------------------------------------------------
+      | INDICAR QUÉ COINCIDIÓ EN LA BÚSQUEDA
+      |--------------------------------------------------------------------------
+      */
+
+      const ingresosConCoincidencias =
+        await Promise.all(
+          rows.map(
+            async (ingreso) => {
+              const item =
+                ingreso.toJSON();
+
+              if (!buscar) {
+                return {
+                  ...item,
+
+                  coincidenciasBusqueda:
+                    [],
+                };
+              }
+
+              const termino =
+                buscar.toLowerCase();
+
+              const coincidencias =
+                [];
+
+              /*
+              |--------------------------------------------------------------------------
+              | FUNCIÓN AUXILIAR
+              |--------------------------------------------------------------------------
+              */
+
+              const agregarCoincidencia =
+                (
+                  tipo,
+                  etiqueta,
+                  valor
+                ) => {
+                  if (
+                    valor !== null &&
+                    valor !== undefined &&
+                    String(valor)
+                      .toLowerCase()
+                      .includes(
+                        termino
+                      )
+                  ) {
+                    coincidencias.push({
+                      tipo,
+
+                      etiqueta,
+
+                      valor:
+                        String(
+                          valor
+                        ),
+                    });
+                  }
+                };
+
+              /*
+              |--------------------------------------------------------------------------
+              | VEHÍCULO
+              |--------------------------------------------------------------------------
+              */
+
+              agregarCoincidencia(
+                "NUMERO_INTERNO",
+                "N.º interno",
+                item.vehiculo
+                  ?.numeroInterno
+              );
+
+              agregarCoincidencia(
+                "PATENTE",
+                "Patente",
+                item.vehiculo
+                  ?.dominio
+              );
+
+              agregarCoincidencia(
+                "MARCA",
+                "Marca",
+                item.vehiculo
+                  ?.marca
+              );
+
+              agregarCoincidencia(
+                "MODELO",
+                "Modelo",
+                item.vehiculo
+                  ?.modelo
+              );
+
+              agregarCoincidencia(
+                "COLOR",
+                "Color",
+                item.vehiculo
+                  ?.color
+              );
+
+              /*
+              |--------------------------------------------------------------------------
+              | RECLAMO
+              |--------------------------------------------------------------------------
+              */
+
+              agregarCoincidencia(
+                "RECLAMO",
+                "N.º de reclamo",
+                item.reclamo
+                  ?.numeroReclamo
+              );
+
+              /*
+              |--------------------------------------------------------------------------
+              | UBICACIÓN DENTRO DEL PREDIO
+              |--------------------------------------------------------------------------
+              */
+
+              agregarCoincidencia(
+                "SECTOR",
+                "Sector",
+                item.sector
+              );
+
+              agregarCoincidencia(
+                "POSICION",
+                "Posición / precinto",
+                item.posicion
+              );
+
+              /*
+              |--------------------------------------------------------------------------
+              | ACTA DE VÍA PÚBLICA
+              |--------------------------------------------------------------------------
+              */
+
+              const actas =
+                await Acta.findAll({
+                  where: {
+                    reclamoId:
+                      item.reclamoId,
+                  },
+
+                  attributes: [
+                    "numeroActa",
+                    "tipo",
+                  ],
+                });
+
+              for (
+                const acta of actas
+              ) {
+                agregarCoincidencia(
+                  "ACTA_VIA_PUBLICA",
+
+                  acta.tipo ===
+                    "VIA_PUBLICA"
+                    ? "Acta de Vía Pública"
+                    : "Acta",
+
+                  acta.numeroActa
+                );
+              }
+
+              /*
+              |--------------------------------------------------------------------------
+              | ACTA DE INFRACCIÓN
+              |--------------------------------------------------------------------------
+              */
+
+              const infracciones =
+                await Infraccion.findAll({
+                  where: {
+                    reclamoId:
+                      item.reclamoId,
+
+                    [Op.or]: [
+                      {
+                        anulada:
+                          false,
+                      },
+
+                      {
+                        anulada:
+                          null,
+                      },
+                    ],
+                  },
+
+                  attributes: [
+                    "numeroActa",
+                  ],
+                });
+
+              for (
+                const infraccion of
+                infracciones
+              ) {
+                agregarCoincidencia(
+                  "ACTA_INFRACCION",
+                  "Acta de Infracción",
+                  infraccion.numeroActa
+                );
+              }
+
+              /*
+              |--------------------------------------------------------------------------
+              | RESULTADO
+              |--------------------------------------------------------------------------
+              */
+
+              return {
+                ...item,
+
+                coincidenciasBusqueda:
+                  coincidencias,
+              };
+            }
+          )
+        );
+
+      /*
+      |--------------------------------------------------------------------------
+      | PAGINACIÓN
+      |--------------------------------------------------------------------------
+      */
 
       const total =
         Number(count) || 0;
@@ -1580,12 +2287,19 @@ if (buscar) {
           1
         );
 
+      /*
+      |--------------------------------------------------------------------------
+      | RESPUESTA
+      |--------------------------------------------------------------------------
+      */
+
       return res.json({
         ok: true,
 
         predio,
 
-        ingresos: rows,
+        ingresos:
+          ingresosConCoincidencias,
 
         total,
 
@@ -1603,12 +2317,12 @@ if (buscar) {
 
       return res.status(500).json({
         ok: false,
+
         mensaje:
           "Error al obtener los vehículos del predio",
       });
     }
   };
-
 module.exports = {
   listarPredios,
   crearPredio,

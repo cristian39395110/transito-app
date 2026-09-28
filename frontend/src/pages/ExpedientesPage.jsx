@@ -7,14 +7,27 @@ import {
 
 import api from "../api/api";
 
+
+import {
+  useAuth,
+} from "../context/AuthContext";
 import ExpedienteResultado from "../components/ExpedienteResultado";
 import ExpedienteManualForm
   from "../components/ExpedienteManualForm";
 
 import "./ExpedientesPage.css";
 
+
 const ExpedientesPage =
   () => {
+
+    const {
+  rol,
+} = useAuth();
+
+const esSuperadmin =
+  rol === "superadmin";
+
     const [
       texto,
       setTexto,
@@ -247,6 +260,110 @@ const ExpedientesPage =
           behavior: "smooth",
         });
       };
+
+      const eliminarExpediente =
+  async (
+    expediente
+  ) => {
+    const reclamo =
+      expediente?.reclamo;
+
+    if (!reclamo?.id) {
+      return;
+    }
+
+    const numero =
+      reclamo.numeroReclamo ||
+      reclamo.id;
+
+    const confirmar =
+      window.confirm(
+        `¿Eliminar COMPLETAMENTE el reclamo ${numero}?\n\n` +
+        `Se eliminarán:\n` +
+        `• Reclamo\n` +
+        `• Vehículos\n` +
+        `• Actas\n` +
+        `• Emplazamientos\n` +
+        `• Infracciones\n` +
+        `• Remociones\n` +
+        `• Movimientos de predio\n` +
+        `• Historial\n` +
+        `• Fotografías\n\n` +
+        `Esta acción no se puede deshacer.`
+      );
+
+    if (!confirmar) {
+      return;
+    }
+
+    const segundaConfirmacion =
+      window.confirm(
+        `ÚLTIMA CONFIRMACIÓN\n\n` +
+        `¿Seguro que querés eliminar el reclamo ${numero}?`
+      );
+
+    if (!segundaConfirmacion) {
+      return;
+    }
+
+    try {
+      setError("");
+
+      const respuesta =
+        await api.delete(
+          `/superadmin/reclamos/${reclamo.id}`
+        );
+
+      const fotos =
+        respuesta.data
+          ?.fotos;
+
+      let mensaje =
+        `Reclamo ${numero} eliminado completamente.`;
+
+      if (
+        fotos?.carpetaEliminada
+      ) {
+        mensaje +=
+          "\n\nTambién se eliminó su carpeta de fotografías.";
+      }
+
+      if (
+        respuesta.data
+          ?.advertencia
+      ) {
+        mensaje +=
+          `\n\nADVERTENCIA:\n${respuesta.data.advertencia}`;
+      }
+
+      window.alert(
+        mensaje
+      );
+
+      /*
+      |--------------------------------------------------------------------------
+      | RECARGAR LISTADO
+      |--------------------------------------------------------------------------
+      */
+
+      await cargarExpedientes(
+        1,
+        busqueda
+      );
+    } catch (err) {
+      console.error(
+        "Error eliminando expediente:",
+        err
+      );
+
+      window.alert(
+        err.response
+          ?.data
+          ?.mensaje ||
+        "No se pudo eliminar el reclamo."
+      );
+    }
+  };
 
     return (
       <div className="expedientes-page">
@@ -493,22 +610,32 @@ const ExpedientesPage =
               <div className="expedientes-listado">
 
                 {expedientes.map(
-                  (
-                    expediente
-                  ) => (
-                    <ExpedienteResultado
-                      key={
-                        expediente
-                          .reclamo
-                          ?.id
-                      }
-                      expediente={
-                        expediente
-                      }
-                    />
-                  )
-                )}
+  (
+    expediente
+  ) => (
+    <ExpedienteResultado
+      key={
+        expediente
+          .reclamo
+          ?.id
+      }
 
+      expediente={
+        expediente
+      }
+
+      permitirEliminar={
+        esSuperadmin
+      }
+
+      onEliminar={() =>
+        eliminarExpediente(
+          expediente
+        )
+      }
+    />
+  )
+)}
               </div>
             </>
           )}

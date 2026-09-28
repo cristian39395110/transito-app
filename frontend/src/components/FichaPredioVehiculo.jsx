@@ -83,6 +83,14 @@ const FichaPredioVehiculo = ({
     rol === "administrador" ||
     rol === "secretaria_predio";
 
+    const coincidenciasBusqueda =
+  item?.coincidenciasBusqueda ||
+  item?.ingresoPredio
+    ?.coincidenciasBusqueda ||
+  item?.IngresoPredio
+    ?.coincidenciasBusqueda ||
+  [];
+
   useEffect(() => {
     const cargarSeguimiento =
       async () => {
@@ -335,7 +343,37 @@ const FichaPredioVehiculo = ({
             </>
           )}
         </div>
-      </section>
+   
+
+            </section>
+
+      {coincidenciasBusqueda.length > 0 && (
+        <section className="ficha-coincidencias">
+          <div className="ficha-coincidencias-titulo">
+            🔎 Coincidencia de búsqueda
+          </div>
+
+          <div className="ficha-coincidencias-lista">
+            {coincidenciasBusqueda.map(
+              (coincidencia, index) => (
+                <div
+                  className="ficha-coincidencia"
+                  key={`${coincidencia.tipo}-${coincidencia.valor}-${index}`}
+                >
+                  <span>
+                    {coincidencia.etiqueta}
+                  </span>
+
+                  <strong>
+                    {coincidencia.valor}
+                  </strong>
+                </div>
+              )
+            )}
+          </div>
+        </section>
+      )}
+
 
       {esPendiente && (
         <div className="ficha-aviso-pendiente">
