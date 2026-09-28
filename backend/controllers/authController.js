@@ -67,12 +67,14 @@ const login = async (req, res) => {
       });
     }
 
-    const token = jwt.sign(
-      {
-        id: usuarioEncontrado.id,
-        rolId: usuarioEncontrado.rolId,
-        rol: usuarioEncontrado.rol.nombre,
-      },
+   const token = jwt.sign(
+  {
+    id: usuarioEncontrado.id,
+    rolId: usuarioEncontrado.rolId,
+    rol: usuarioEncontrado.rol.nombre,
+    predioId:
+      usuarioEncontrado.predioId || null,
+  },
       process.env.JWT_SECRET,
       {
         expiresIn: "12h",
@@ -88,15 +90,21 @@ const login = async (req, res) => {
 
       token,
 
-      usuario: {
-        id: usuarioEncontrado.id,
-        nombre:
-          usuarioEncontrado.nombre,
-        usuario:
-          usuarioEncontrado.usuario,
-        rol:
-          usuarioEncontrado.rol.nombre,
-      },
+    usuario: {
+  id: usuarioEncontrado.id,
+
+  nombre:
+    usuarioEncontrado.nombre,
+
+  usuario:
+    usuarioEncontrado.usuario,
+
+  rol:
+    usuarioEncontrado.rol.nombre,
+
+  predioId:
+    usuarioEncontrado.predioId || null,
+},
     });
   } catch (error) {
     console.error(

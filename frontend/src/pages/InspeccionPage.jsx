@@ -2046,17 +2046,36 @@ const guardarVisita =
                   : "📍 Tomar ubicación"}
             </button>
 
-            {gpsFallo &&
+    {gpsFallo &&
   reclamo?.latitudDenunciada &&
   reclamo?.longitudDenunciada && (
-    <button
-      type="button"
-      className="inspeccion-boton-secundario"
-      onClick={usarUbicacionReclamo}
-    >
-      📌 Usar ubicación del reclamo
-    </button>
-  )}
+    <div className="inspeccion-gps-alternativa">
+
+      <div className="inspeccion-gps-alternativa-aviso">
+        <strong>
+          ⚠️ No pudimos obtener tu ubicación
+        </strong>
+
+        <span>
+          No hay problema. Podés continuar usando
+          la ubicación que ya tiene este reclamo.
+        </span>
+      </div>
+
+      <button
+        type="button"
+        className="inspeccion-boton-ubicacion-reclamo"
+        onClick={usarUbicacionReclamo}
+      >
+        📌 CONTINUAR CON UBICACIÓN DEL RECLAMO
+      </button>
+
+      <small className="inspeccion-gps-alternativa-ayuda">
+        Tocá este botón para continuar con la visita.
+      </small>
+
+    </div>
+)}
 
           </section>
 

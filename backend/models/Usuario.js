@@ -31,7 +31,10 @@ const Usuario = sequelize.define(
       type: DataTypes.INTEGER,
       allowNull: false,
     },
-
+predioId: {
+  type: DataTypes.INTEGER,
+  allowNull: true,
+},
     activo: {
       type: DataTypes.BOOLEAN,
       allowNull: false,

@@ -85,36 +85,34 @@ const VehiculoPredioCard = ({
           </strong>
         </div>
 
-        {tipo !== "PENDIENTE" && (
-          <>
-            <div>
-              <span>
-                Predio
-              </span>
+   <div>
+  <span>
+    📍 Predio
+  </span>
 
-              <strong>
-                {predio?.nombre ||
-                  "—"}
-              </strong>
-            </div>
+  <strong>
+    {predio?.nombre ||
+      "—"}
+  </strong>
+</div>
 
-            <div>
-              <span>
-                Ubicación
-              </span>
+{tipo !== "PENDIENTE" && (
+  <div>
+    <span>
+      Ubicación
+    </span>
 
-              <strong>
-                {[
-                  item.sector,
-                  item.posicion,
-                ]
-                  .filter(Boolean)
-                  .join(" / ") ||
-                  "—"}
-              </strong>
-            </div>
-          </>
-        )}
+    <strong>
+      {[
+        item.sector,
+        item.posicion,
+      ]
+        .filter(Boolean)
+        .join(" / ") ||
+        "—"}
+    </strong>
+  </div>
+)}
       </div>
 
       <button

@@ -127,12 +127,13 @@ const crearUsuario = async (
   res
 ) => {
   try {
-    const {
-      nombre,
-      usuario,
-      password,
-      rolId,
-    } = req.body;
+   const {
+  nombre,
+  usuario,
+  password,
+  rolId,
+  predioId,
+} = req.body;
 
     if (
       !nombre ||
@@ -162,6 +163,22 @@ const crearUsuario = async (
           "El rol seleccionado no es válido",
       });
     }
+    const nombreRol = String(
+  rol.nombre || ""
+)
+  .trim()
+  .toLowerCase();
+
+if (
+  nombreRol === "secretaria_predio" &&
+  !predioId
+) {
+  return res.status(400).json({
+    ok: false,
+    mensaje:
+      "Debe seleccionar un predio para la secretaria de predio",
+  });
+}
 
     /*
     |--------------------------------------------------------------------------
@@ -206,37 +223,46 @@ const crearUsuario = async (
         10
       );
 
-    const nuevoUsuario =
-      await Usuario.create({
-        nombre,
-        usuario,
-        password:
-          passwordHash,
-        rolId,
-        activo: true,
-      });
+   const nuevoUsuario =
+  await Usuario.create({
+    nombre,
+    usuario,
+    password:
+      passwordHash,
+    rolId,
+
+    predioId:
+      nombreRol === "secretaria_predio"
+        ? Number(predioId)
+        : null,
+
+    activo: true,
+  });
 
     return res.status(201).json({
       ok: true,
       mensaje:
         "Usuario creado correctamente",
 
-      usuario: {
-        id:
-          nuevoUsuario.id,
+     usuario: {
+  id:
+    nuevoUsuario.id,
 
-        nombre:
-          nuevoUsuario.nombre,
+  nombre:
+    nuevoUsuario.nombre,
 
-        usuario:
-          nuevoUsuario.usuario,
+  usuario:
+    nuevoUsuario.usuario,
 
-        rolId:
-          nuevoUsuario.rolId,
+  rolId:
+    nuevoUsuario.rolId,
 
-        activo:
-          nuevoUsuario.activo,
-      },
+  predioId:
+    nuevoUsuario.predioId,
+
+  activo:
+    nuevoUsuario.activo,
+},
     });
   } catch (error) {
     console.error(
@@ -267,13 +293,14 @@ const actualizarUsuario = async (
       id,
     } = req.params;
 
-    const {
-      nombre,
-      usuario,
-      password,
-      rolId,
-      activo,
-    } = req.body;
+const {
+  nombre,
+  usuario,
+  password,
+  rolId,
+  predioId,
+  activo,
+} = req.body;
 
     /*
     |--------------------------------------------------------------------------
@@ -488,6 +515,40 @@ const actualizarUsuario = async (
         );
     }
 
+
+    const rolFinal =
+  await Rol.findByPk(
+    usuarioEncontrado.rolId
+  );
+
+const nombreRolFinal = String(
+  rolFinal?.nombre || ""
+)
+  .trim()
+  .toLowerCase();
+
+if (
+  nombreRolFinal === "secretaria_predio"
+) {
+  const predioFinal =
+    predioId !== undefined
+      ? predioId
+      : usuarioEncontrado.predioId;
+
+  if (!predioFinal) {
+    return res.status(400).json({
+      ok: false,
+      mensaje:
+        "Debe seleccionar un predio para la secretaria de predio",
+    });
+  }
+
+  usuarioEncontrado.predioId =
+    Number(predioFinal);
+} else {
+  usuarioEncontrado.predioId =
+    null;
+}
     await usuarioEncontrado.save();
 
     return res.json({

@@ -1198,3 +1198,57 @@ textarea.inspeccion-control {
     padding: 11px;
   }
 }
+
+/* =========================================================
+   GPS - ALTERNATIVA CUANDO NO FUNCIONA
+   ========================================================= */
+
+.inspeccion-gps-alternativa {
+  margin-top: 14px;
+  padding: 16px;
+
+  border: 2px solid #f59e0b;
+  border-radius: 12px;
+
+  background: #fffbeb;
+}
+
+.inspeccion-gps-alternativa-aviso {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  margin-bottom: 14px;
+}
+
+.inspeccion-gps-alternativa-aviso strong {
+  font-size: 1rem;
+  color: #92400e;
+}
+
+.inspeccion-gps-alternativa-aviso span {
+  line-height: 1.4;
+  color: #78350f;
+}
+
+.inspeccion-boton-ubicacion-reclamo {
+  width: 100%;
+
+  padding: 15px 14px;
+
+  border: 0;
+  border-radius: 10px;
+
+  font-size: 1rem;
+  font-weight: 700;
+
+  cursor: pointer;
+}
+
+.inspeccion-gps-alternativa-ayuda {
+  display: block;
+
+  margin-top: 8px;
+
+  text-align: center;
+}

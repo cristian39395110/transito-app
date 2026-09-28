@@ -1,5 +1,6 @@
 import {
   useEffect,
+  useMemo,
   useState,
 } from "react";
 
@@ -18,7 +19,13 @@ const UsuarioForm = ({
   const [roles, setRoles] =
     useState([]);
 
+  const [predios, setPredios] =
+    useState([]);
+
   const [cargandoRoles, setCargandoRoles] =
+    useState(true);
+
+  const [cargandoPredios, setCargandoPredios] =
     useState(true);
 
   const [form, setForm] =
@@ -27,6 +34,7 @@ const UsuarioForm = ({
       usuario: "",
       password: "",
       rolId: "",
+      predioId: "",
       activo: true,
     });
 
@@ -81,6 +89,49 @@ const UsuarioForm = ({
 
   /*
   |--------------------------------------------------------------------------
+  | CARGAR PREDIOS
+  |--------------------------------------------------------------------------
+  */
+
+  useEffect(() => {
+    const cargarPredios = async () => {
+      try {
+        setCargandoPredios(true);
+
+        const respuesta =
+          await api.get(
+            "/predios"
+          );
+
+        const lista =
+          respuesta.data?.predios ||
+          respuesta.data ||
+          [];
+
+        setPredios(
+          Array.isArray(lista)
+            ? lista
+            : []
+        );
+      } catch (err) {
+        console.error(
+          "Error cargando predios:",
+          err
+        );
+
+        setError(
+          "No se pudieron cargar los predios."
+        );
+      } finally {
+        setCargandoPredios(false);
+      }
+    };
+
+    cargarPredios();
+  }, []);
+
+  /*
+  |--------------------------------------------------------------------------
   | CARGAR USUARIO AL EDITAR
   |--------------------------------------------------------------------------
   */
@@ -92,6 +143,7 @@ const UsuarioForm = ({
         usuario: "",
         password: "",
         rolId: "",
+        predioId: "",
         activo: true,
       });
 
@@ -113,10 +165,41 @@ const UsuarioForm = ({
         usuario.Rol?.id ||
         "",
 
+      predioId:
+        usuario.predioId || "",
+
       activo:
         usuario.activo !== false,
     });
   }, [usuario]);
+
+  /*
+  |--------------------------------------------------------------------------
+  | ROL ACTUAL
+  |--------------------------------------------------------------------------
+  */
+
+  const rolSeleccionado =
+    useMemo(() => {
+      return (
+        roles.find(
+          (rol) =>
+            Number(rol.id) ===
+            Number(form.rolId)
+        ) || null
+      );
+    }, [
+      roles,
+      form.rolId,
+    ]);
+
+  const esSecretariaPredio =
+    String(
+      rolSeleccionado?.nombre || ""
+    )
+      .trim()
+      .toLowerCase() ===
+    "secretaria_predio";
 
   /*
   |--------------------------------------------------------------------------
@@ -135,14 +218,50 @@ const UsuarioForm = ({
     } = event.target;
 
     setForm(
-      (anterior) => ({
-        ...anterior,
+      (anterior) => {
+        const nuevo = {
+          ...anterior,
 
-        [name]:
-          type === "checkbox"
-            ? checked
-            : value,
-      })
+          [name]:
+            type === "checkbox"
+              ? checked
+              : value,
+        };
+
+        /*
+        Si cambia el rol,
+        limpiamos predioId cuando
+        el nuevo rol NO es
+        secretaria_predio.
+        */
+
+        if (
+          name === "rolId"
+        ) {
+          const nuevoRol =
+            roles.find(
+              (rol) =>
+                Number(rol.id) ===
+                Number(value)
+            );
+
+          const nombreNuevoRol =
+            String(
+              nuevoRol?.nombre || ""
+            )
+              .trim()
+              .toLowerCase();
+
+          if (
+            nombreNuevoRol !==
+            "secretaria_predio"
+          ) {
+            nuevo.predioId = "";
+          }
+        }
+
+        return nuevo;
+      }
     );
   };
 
@@ -184,6 +303,17 @@ const UsuarioForm = ({
     }
 
     if (
+      esSecretariaPredio &&
+      !form.predioId
+    ) {
+      setError(
+        "Seleccioná el predio de esta secretaria."
+      );
+
+      return;
+    }
+
+    if (
       !editando &&
       !form.password.trim()
     ) {
@@ -207,9 +337,7 @@ const UsuarioForm = ({
 
     /*
     |--------------------------------------------------------------------------
-    | IMPORTANTE
-    |
-    | El backend espera rolId, NO "rol".
+    | DATOS PARA BACKEND
     |--------------------------------------------------------------------------
     */
 
@@ -222,6 +350,11 @@ const UsuarioForm = ({
 
       rolId:
         Number(form.rolId),
+
+      predioId:
+        esSecretariaPredio
+          ? Number(form.predioId)
+          : null,
 
       activo:
         form.activo,
@@ -351,6 +484,42 @@ const UsuarioForm = ({
         </select>
       </label>
 
+      {esSecretariaPredio && (
+        <label>
+          Predio asignado *
+
+          <select
+            name="predioId"
+            value={form.predioId}
+            onChange={cambiar}
+            disabled={cargandoPredios}
+          >
+            <option value="">
+              {cargandoPredios
+                ? "Cargando predios..."
+                : "Seleccionar predio..."}
+            </option>
+
+            {predios.map(
+              (predio) => (
+                <option
+                  key={predio.id}
+                  value={predio.id}
+                >
+                  {predio.nombre}
+                </option>
+              )
+            )}
+          </select>
+
+          <small className="usuario-password-ayuda">
+            Esta secretaria solamente
+            gestionará los vehículos de
+            este predio.
+          </small>
+        </label>
+      )}
+
       <label>
         {editando
           ? "Nueva contraseña"
@@ -419,7 +588,11 @@ const UsuarioForm = ({
           className="usuario-guardar"
           disabled={
             guardando ||
-            cargandoRoles
+            cargandoRoles ||
+            (
+              esSecretariaPredio &&
+              cargandoPredios
+            )
           }
         >
           {guardando
@@ -454,6 +627,9 @@ const nombreRol = (
 
     secretaria_predio:
       "Secretaría de predio",
+
+    superadmin:
+      "Super Administrador",
   };
 
   return (

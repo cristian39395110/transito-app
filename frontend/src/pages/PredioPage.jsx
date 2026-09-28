@@ -6,13 +6,48 @@ import {
 
 import api from "../api/api";
 
+import {
+  useAuth,
+} from "../context/AuthContext";
+
 import PendientesIngresoPredio from "../components/PendientesIngresoPredio";
 import VehiculosEnPredio from "../components/VehiculosEnPredio";
 import FichaPredioVehiculo from "../components/FichaPredioVehiculo";
+import HistorialPredio from "../components/HistorialPredio";
 
 import "./PredioPage.css";
 
 const PredioPage = () => {
+
+    const {
+    usuario,
+    rol,
+  } = useAuth();
+
+  const nombreRol =
+    String(
+      rol || ""
+    )
+      .trim()
+      .toLowerCase();
+
+  const esSecretariaPredio =
+    nombreRol ===
+    "secretaria_predio";
+
+  const puedeVerTodos =
+    [
+      "director",
+      "administrador",
+      "superadmin",
+    ].includes(nombreRol);
+
+  const predioAsignadoId =
+    usuario?.predioId
+      ? String(
+          usuario.predioId
+        )
+      : "";
   const [predios, setPredios] =
     useState([]);
 
@@ -81,8 +116,15 @@ const [
   |--------------------------------------------------------------------------
   */
 
-  const predioSeleccionado =
+   const predioSeleccionado =
     useMemo(() => {
+      if (
+        predioSeleccionadoId ===
+        "TODOS"
+      ) {
+        return null;
+      }
+
       return (
         predios.find(
           (predio) =>
@@ -97,6 +139,9 @@ const [
       predioSeleccionadoId,
     ]);
 
+  const viendoTodos =
+    predioSeleccionadoId ===
+    "TODOS";
   /*
   |--------------------------------------------------------------------------
   | CARGAR CATÁLOGO DE PREDIOS
@@ -135,37 +180,37 @@ setHistorial([]);
           return;
         }
 
-        /*
-        Si existe Granja La Amalia,
-        queda seleccionada por defecto.
+       
 
-        Si no existe, usamos el
-        primer predio disponible.
-        */
+        if (esSecretariaPredio) {
+  if (!predioAsignadoId) {
+    setPredioSeleccionadoId("");
 
-        const granja =
-          lista.find((predio) => {
-            const nombre =
-              String(
-                predio.nombre || ""
-              ).toLowerCase();
+    setError(
+      "La secretaria no tiene un predio asignado."
+    );
 
-            return (
-              nombre.includes(
-                "granja"
-              ) &&
-              nombre.includes(
-                "amalia"
-              )
-            );
-          });
+    return;
+  }
 
-        setPredioSeleccionadoId(
-          String(
-            granja?.id ||
-              lista[0].id
-          )
-        );
+  setPredioSeleccionadoId(
+    predioAsignadoId
+  );
+
+  return;
+}
+
+if (puedeVerTodos) {
+  setPredioSeleccionadoId(
+    "TODOS"
+  );
+
+  return;
+}
+
+setPredioSeleccionadoId(
+  String(lista[0].id)
+);
       } catch (err) {
         console.error(
           "Error cargando predios:",
@@ -622,69 +667,91 @@ const historialFiltrado =
 
       {/* SELECTOR DE PREDIO */}
 
-      <section className="predio-selector">
-        <div className="predio-selector-info">
-          <strong>
-            Predio / destino
-          </strong>
+     {esSecretariaPredio ? (
+  <section className="predio-selector">
+    <div className="predio-selector-info">
+      <strong>
+        📍 Predio asignado
+      </strong>
 
-          <span>
-            Seleccione el lugar que
-            desea consultar.
-          </span>
-        </div>
+      <span>
+        Lugar asignado para gestionar
+        vehículos.
+      </span>
+    </div>
 
-        <select
-          value={
-            predioSeleccionadoId
-          }
-        onChange={(event) => {
-  setPredioSeleccionadoId(
-    event.target.value
-  );
+    <div className="predio-ubicacion-fija">
+      {predioSeleccionado?.nombre ||
+        "Predio asignado"}
+    </div>
+  </section>
+) : (
+  <section className="predio-selector">
+    <div className="predio-selector-info">
+      <strong>
+        Predio / destino
+      </strong>
 
-  setBuscar("");
-  setPaginaEnPredio(1);
-  setPaginaHistorial(1);
-}}
-          disabled={
-            cargando ||
-            !predios.length
-          }
-        >
-          {!predios.length && (
-            <option value="">
-              No hay predios
-            </option>
-          )}
+      <span>
+        Seleccione el lugar que desea
+        consultar.
+      </span>
+    </div>
 
-          {predios.map(
-            (predio) => (
-              <option
-                key={predio.id}
-                value={predio.id}
-              >
-                {predio.nombre}
-              </option>
-            )
-          )}
-        </select>
-      </section>
+    <select
+      value={predioSeleccionadoId}
+      onChange={(event) => {
+        setPredioSeleccionadoId(
+          event.target.value
+        );
 
-      {predioSeleccionado && (
-        <div className="predio-actual">
-          <span>
-            Mostrando vehículos de
-          </span>
-
-          <strong>
-            {
-              predioSeleccionado
-                .nombre
-            }
-          </strong>
-        </div>
+        setBuscar("");
+        setPaginaEnPredio(1);
+        setPaginaHistorial(1);
+      }}
+      disabled={
+        cargando ||
+        !predios.length
+      }
+    >
+      {puedeVerTodos && (
+        <option value="TODOS">
+          🌐 Todos los predios
+        </option>
       )}
+
+      {!predios.length && (
+        <option value="">
+          No hay predios
+        </option>
+      )}
+
+      {predios.map((predio) => (
+        <option
+          key={predio.id}
+          value={predio.id}
+        >
+          {predio.nombre}
+        </option>
+      ))}
+    </select>
+  </section>
+)}
+
+    {(predioSeleccionado ||
+  viendoTodos) && (
+  <div className="predio-actual">
+    <span>
+      Mostrando vehículos de
+    </span>
+
+    <strong>
+      {viendoTodos
+        ? "🌐 Todos los predios"
+        : `📍 ${predioSeleccionado?.nombre}`}
+    </strong>
+  </div>
+)}
 
       <section className="predio-resumen">
         <div className="predio-resumen-item">
@@ -912,148 +979,10 @@ const historialFiltrado =
   pestana ===
     "HISTORIAL" && (
     <>
-      {historial.length === 0 ? (
-        <div className="predio-mensaje">
-          No hay movimientos registrados
-          en este predio.
-        </div>
-      ) : (
-        <div className="predio-tabla-contenedor">
-          <table className="predio-tabla">
-            <thead>
-              <tr>
-                <th>N.º</th>
-                <th>Patente</th>
-                <th>Vehículo</th>
-                <th>Ingreso</th>
-                <th>Sector</th>
-                <th>Posición</th>
-                <th>Salida</th>
-                <th>Fecha salida</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {historial.map(
-                (item) => {
-                  const vehiculo =
-                    item?.vehiculo || {};
-
-                  const ingreso =
-                    item?.ingreso || {};
-
-                  const egreso =
-                    item?.egreso || null;
-
-                  let salida =
-                    "En predio";
-
-                  if (
-                    egreso?.tipoEgreso ===
-                    "ENTREGADO"
-                  ) {
-                    salida =
-                      egreso.destinoPersona
-                        ? `Entregado a ${egreso.destinoPersona}`
-                        : "Entregado";
-                  }
-
-                  if (
-                    egreso?.tipoEgreso ===
-                    "TRASLADADO"
-                  ) {
-                    salida =
-                      egreso
-                        .predioDestino
-                        ?.nombre
-                        ? `Trasladado a ${egreso.predioDestino.nombre}`
-                        : "Trasladado";
-                  }
-
-                  if (
-                    egreso?.tipoEgreso ===
-                    "COMPACTADO"
-                  ) {
-                    salida =
-                      "Compactado";
-                  }
-
-                  if (
-                    egreso?.tipoEgreso ===
-                    "OTRO"
-                  ) {
-                    salida =
-                      "Otra salida";
-                  }
-
-                  return (
-                    <tr key={ingreso.id}>
-                      <td>
-                        <strong>
-                          {vehiculo.numeroInterno ||
-                            vehiculo.id ||
-                            "—"}
-                        </strong>
-                      </td>
-
-                      <td>
-                        <strong>
-                          {vehiculo.dominio ||
-                            "Sin patente"}
-                        </strong>
-                      </td>
-
-                      <td>
-                        {[
-                          vehiculo.marca,
-                          vehiculo.modelo,
-                        ]
-                          .filter(Boolean)
-                          .join(" ") ||
-                          "—"}
-                      </td>
-
-                      <td>
-                        {ingreso.fechaHora
-                          ? new Date(
-                              ingreso.fechaHora
-                            ).toLocaleString(
-                              "es-AR"
-                            )
-                          : "—"}
-                      </td>
-
-                      <td>
-                        {ingreso.sector ||
-                          "—"}
-                      </td>
-
-                      <td>
-                        {ingreso.posicion ||
-                          "—"}
-                      </td>
-
-                      <td>
-                        {salida}
-                      </td>
-
-                      <td>
-                        {egreso?.fechaHora
-                          ? new Date(
-                              egreso.fechaHora
-                            ).toLocaleString(
-                              "es-AR"
-                            )
-                          : "—"}
-                      </td>
-                    </tr>
-                  );
-                }
-              )}
-            </tbody>
-          </table>
-        </div>
-      )}
+    
+        <HistorialPredio
+  items={historial}
+/>
 
       {totalHistorial > 0 && (
         <div className="predio-paginacion">

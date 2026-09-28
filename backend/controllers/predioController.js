@@ -32,14 +32,71 @@ const {
 |--------------------------------------------------------------------------
 */
 
+const obtenerPredioPermitido = (
+  req,
+  predioSolicitado
+) => {
+  if (
+    req.usuario?.rol ===
+    "secretaria_predio"
+  ) {
+    const predioAsignado =
+      Number(
+        req.usuario.predioId
+      );
+
+    if (!predioAsignado) {
+      return null;
+    }
+
+    return predioAsignado;
+  }
+
+  return Number(
+    predioSolicitado
+  ) || null;
+};
+
 const listarPredios =
   async (req, res) => {
     try {
+      const where = {
+        activo: true,
+      };
+
+      /*
+      |--------------------------------------------------------------------------
+      | SECRETARÍA DE PREDIO
+      |--------------------------------------------------------------------------
+      |
+      | Solamente puede ver el predio
+      | que tiene asignado.
+      |
+      */
+
+      if (
+        req.usuario?.rol ===
+        "secretaria_predio"
+      ) {
+        const predioId =
+          Number(
+            req.usuario.predioId
+          );
+
+        if (!predioId) {
+          return res.status(403).json({
+            ok: false,
+            mensaje:
+              "La secretaria no tiene un predio asignado",
+          });
+        }
+
+        where.id = predioId;
+      }
+
       const predios =
         await Predio.findAll({
-          where: {
-            activo: true,
-          },
+          where,
 
           order: [
             ["nombre", "ASC"],
@@ -63,7 +120,6 @@ const listarPredios =
       });
     }
   };
-
 /*
 |--------------------------------------------------------------------------
 | CREAR PREDIO
@@ -150,10 +206,42 @@ const crearPredio =
 const listarPendientesIngreso =
   async (req, res) => {
     try {
-      const predioId =
-        Number(req.query.predioId);
+      /*
+      |--------------------------------------------------------------------------
+      | DETERMINAR PREDIO / TODOS LOS PREDIOS
+      |--------------------------------------------------------------------------
+      */
 
-      if (!predioId) {
+      const solicitaTodos =
+        String(
+          req.query.predioId || ""
+        ).toUpperCase() === "TODOS";
+
+      const puedeVerTodos = [
+        "director",
+        "administrador",
+        "superadmin",
+      ].includes(req.usuario?.rol);
+
+      const verTodos =
+        solicitaTodos &&
+        puedeVerTodos;
+
+      const predioId =
+        verTodos
+          ? null
+          : obtenerPredioPermitido(
+              req,
+              req.query.predioId
+            );
+
+      /*
+      |--------------------------------------------------------------------------
+      | VALIDAR PREDIO
+      |--------------------------------------------------------------------------
+      */
+
+      if (!verTodos && !predioId) {
         return res.status(400).json({
           ok: false,
           mensaje:
@@ -161,20 +249,24 @@ const listarPendientesIngreso =
         });
       }
 
-      const predio =
-        await Predio.findOne({
-          where: {
-            id: predioId,
-            activo: true,
-          },
-        });
+      let predio = null;
 
-      if (!predio) {
-        return res.status(404).json({
-          ok: false,
-          mensaje:
-            "Predio no encontrado o inactivo",
-        });
+      if (!verTodos) {
+        predio =
+          await Predio.findOne({
+            where: {
+              id: predioId,
+              activo: true,
+            },
+          });
+
+        if (!predio) {
+          return res.status(404).json({
+            ok: false,
+            mensaje:
+              "Predio no encontrado o inactivo",
+          });
+        }
       }
 
       /*
@@ -185,10 +277,12 @@ const listarPendientesIngreso =
 
       const remociones =
         await Remocion.findAll({
-          where: {
-            predioDestinoId:
-              predio.id,
-          },
+          where: verTodos
+            ? {}
+            : {
+                predioDestinoId:
+                  predio.id,
+              },
 
           include: [
             {
@@ -217,6 +311,12 @@ const listarPendientesIngreso =
           ],
         });
 
+      /*
+      |--------------------------------------------------------------------------
+      | ARMAR PENDIENTES NORMALES
+      |--------------------------------------------------------------------------
+      */
+
       const pendientesNormales =
         remociones.map(
           (remocion) => ({
@@ -231,7 +331,9 @@ const listarPendientesIngreso =
             origen:
               "CIRCUITO_NORMAL",
 
-            predio,
+            predio:
+              remocion.predioDestino ||
+              predio,
           })
         );
 
@@ -250,8 +352,16 @@ const listarPendientesIngreso =
             origenRegistro:
               "CARGA_HISTORICA",
 
-            predioPendienteId:
-              predio.id,
+            ...(verTodos
+              ? {
+                  predioPendienteId: {
+                    [Op.ne]: null,
+                  },
+                }
+              : {
+                  predioPendienteId:
+                    predio.id,
+                }),
           },
 
           include: [
@@ -267,6 +377,66 @@ const listarPendientesIngreso =
           ],
         });
 
+      /*
+      |--------------------------------------------------------------------------
+      | OBTENER PREDIOS DE LOS VEHÍCULOS MANUALES
+      |--------------------------------------------------------------------------
+      |
+      | Esto solamente hace falta cuando estamos viendo TODOS.
+      |
+      */
+
+      const prediosPorId =
+        new Map();
+
+      if (verTodos) {
+        const idsPredios = [
+          ...new Set(
+            vehiculosManuales
+              .map(
+                (vehiculo) =>
+                  Number(
+                    vehiculo
+                      .predioPendienteId
+                  )
+              )
+              .filter(Boolean)
+          ),
+        ];
+
+        if (idsPredios.length) {
+          const prediosManuales =
+            await Predio.findAll({
+              where: {
+                id: {
+                  [Op.in]:
+                    idsPredios,
+                },
+
+                activo: true,
+              },
+            });
+
+          for (
+            const predioManual of
+            prediosManuales
+          ) {
+            prediosPorId.set(
+              Number(
+                predioManual.id
+              ),
+              predioManual
+            );
+          }
+        }
+      }
+
+      /*
+      |--------------------------------------------------------------------------
+      | ARMAR PENDIENTES MANUALES
+      |--------------------------------------------------------------------------
+      */
+
       const pendientesManuales =
         vehiculosManuales.map(
           (vehiculo) => ({
@@ -281,7 +451,15 @@ const listarPendientesIngreso =
             origen:
               "CARGA_HISTORICA",
 
-            predio,
+            predio:
+              verTodos
+                ? prediosPorId.get(
+                    Number(
+                      vehiculo
+                        .predioPendienteId
+                    )
+                  ) || null
+                : predio,
           })
         );
 
@@ -296,10 +474,19 @@ const listarPendientesIngreso =
         ...pendientesManuales,
       ];
 
+      /*
+      |--------------------------------------------------------------------------
+      | RESPUESTA
+      |--------------------------------------------------------------------------
+      */
+
       return res.json({
         ok: true,
 
         predio,
+
+        todosLosPredios:
+          verTodos,
 
         pendientes,
 
@@ -358,10 +545,42 @@ const registrarIngreso =
         });
       }
 
+
+
+      const predioPermitido =
+  obtenerPredioPermitido(
+    req,
+    predioId
+  );
+
+if (!predioPermitido) {
+  await transaction.rollback();
+
+  return res.status(403).json({
+    ok: false,
+    mensaje:
+      "No tiene un predio asignado",
+  });
+}
+
+if (
+  req.usuario?.rol ===
+    "secretaria_predio" &&
+  Number(predioId) !==
+    Number(predioPermitido)
+) {
+  await transaction.rollback();
+
+  return res.status(403).json({
+    ok: false,
+    mensaje:
+      "No tiene permiso para gestionar este predio",
+  });
+}
       const predio =
         await Predio.findOne({
           where: {
-            id: Number(predioId),
+         id: Number(predioPermitido),
             activo: true,
           },
           transaction,
@@ -935,6 +1154,47 @@ const registrarEgreso =
       }
 
       /*
+|--------------------------------------------------------------------------
+| SEGURIDAD SECRETARÍA DE PREDIO
+|--------------------------------------------------------------------------
+|
+| Una secretaria de predio solamente puede registrar
+| egresos del predio que tiene asignado.
+|
+*/
+
+if (
+  req.usuario?.rol ===
+  "secretaria_predio"
+) {
+  const predioAsignado =
+    Number(req.usuario.predioId);
+
+  if (!predioAsignado) {
+    await transaction.rollback();
+
+    return res.status(403).json({
+      ok: false,
+      mensaje:
+        "La secretaria no tiene un predio asignado",
+    });
+  }
+
+  if (
+    Number(ingreso.predioId) !==
+    predioAsignado
+  ) {
+    await transaction.rollback();
+
+    return res.status(403).json({
+      ok: false,
+      mensaje:
+        "No tiene permiso para registrar egresos de este predio",
+    });
+  }
+}
+
+      /*
       |--------------------------------------------------------------------------
       | EVITAR DOBLE EGRESO
       |--------------------------------------------------------------------------
@@ -1301,8 +1561,28 @@ const registrarEgreso =
  const listarHistorialPredio =
   async (req, res) => {
     try {
-      const predioId =
-        Number(req.query.predioId);
+const solicitaTodos =
+  String(
+    req.query.predioId || ""
+  ).toUpperCase() === "TODOS";
+
+const puedeVerTodos = [
+  "director",
+  "administrador",
+  "superadmin",
+].includes(req.usuario?.rol);
+
+const verTodos =
+  solicitaTodos &&
+  puedeVerTodos;
+
+const predioId =
+  verTodos
+    ? null
+    : obtenerPredioPermitido(
+        req,
+        req.query.predioId
+      );
 
       const pagina =
         Math.max(
@@ -1320,33 +1600,37 @@ const registrarEgreso =
           req.query.buscar || ""
         ).trim();
 
-      if (!predioId) {
-        return res
-          .status(400)
-          .json({
-            ok: false,
-            mensaje:
-              "Debe indicar el predio que desea consultar",
-          });
-      }
+   if (!verTodos && !predioId) {
+  return res
+    .status(400)
+    .json({
+      ok: false,
+      mensaje:
+        "Debe indicar el predio que desea consultar",
+    });
+}
 
-      const predio =
-        await Predio.findOne({
-          where: {
-            id: predioId,
-            activo: true,
-          },
-        });
+      let predio = null;
 
-      if (!predio) {
-        return res
-          .status(404)
-          .json({
-            ok: false,
-            mensaje:
-              "Predio no encontrado o inactivo",
-          });
-      }
+if (!verTodos) {
+  predio =
+    await Predio.findOne({
+      where: {
+        id: predioId,
+        activo: true,
+      },
+    });
+
+  if (!predio) {
+    return res
+      .status(404)
+      .json({
+        ok: false,
+        mensaje:
+          "Predio no encontrado o inactivo",
+      });
+  }
+}
 
       /*
       |--------------------------------------------------------------------------
@@ -1370,9 +1654,12 @@ const registrarEgreso =
       |
       */
 
-      const whereIngreso = {
-        predioId: predio.id,
-      };
+     const whereIngreso = {};
+
+if (!verTodos) {
+  whereIngreso.predioId =
+    predio.id;
+}
 
       if (buscar) {
         const patron =
@@ -1871,8 +2158,28 @@ const registrarEgreso =
 const listarVehiculosEnPredio =
   async (req, res) => {
     try {
-      const predioId =
-        Number(req.query.predioId);
+const solicitaTodos =
+  String(
+    req.query.predioId || ""
+  ).toUpperCase() === "TODOS";
+
+const puedeVerTodos = [
+  "director",
+  "administrador",
+  "superadmin",
+].includes(req.usuario?.rol);
+
+const verTodos =
+  solicitaTodos &&
+  puedeVerTodos;
+
+const predioId =
+  verTodos
+    ? null
+    : obtenerPredioPermitido(
+        req,
+        req.query.predioId
+      );
 
       const pagina =
         Math.max(
@@ -1890,29 +2197,33 @@ const listarVehiculosEnPredio =
           req.query.buscar || ""
         ).trim();
 
-      if (!predioId) {
-        return res.status(400).json({
-          ok: false,
-          mensaje:
-            "Debe indicar el predio que desea consultar",
-        });
-      }
+  if (!verTodos && !predioId) {
+  return res.status(400).json({
+    ok: false,
+    mensaje:
+      "Debe indicar el predio que desea consultar",
+  });
+}
 
-      const predio =
-        await Predio.findOne({
-          where: {
-            id: predioId,
-            activo: true,
-          },
-        });
+      let predio = null;
 
-      if (!predio) {
-        return res.status(404).json({
-          ok: false,
-          mensaje:
-            "Predio no encontrado o inactivo",
-        });
-      }
+if (!verTodos) {
+  predio =
+    await Predio.findOne({
+      where: {
+        id: predioId,
+        activo: true,
+      },
+    });
+
+  if (!predio) {
+    return res.status(404).json({
+      ok: false,
+      mensaje:
+        "Predio no encontrado o inactivo",
+    });
+  }
+}
 
       /*
       |--------------------------------------------------------------------------
@@ -1934,9 +2245,12 @@ const listarVehiculosEnPredio =
       |
       */
 
-      const whereIngreso = {
-        predioId: predio.id,
-      };
+    const whereIngreso = {};
+
+if (!verTodos) {
+  whereIngreso.predioId =
+    predio.id;
+}
 
       if (buscar) {
         const patron =
