@@ -594,3 +594,89 @@
 
 
 
+
+/* =========================================================
+   TARJETAS EXPEDIENTES - CELULAR
+========================================================= */
+
+@media (max-width: 700px) {
+
+  .expedientes-listado {
+    display: flex !important;
+    flex-direction: column !important;
+
+    gap: 10px !important;
+
+    padding: 6px !important;
+
+    background: #f1f5f9 !important;
+
+    box-sizing: border-box !important;
+  }
+
+  .expediente-fila {
+    position: relative !important;
+
+    display: block !important;
+
+    width: 100% !important;
+    min-height: auto !important;
+
+    margin: 0 !important;
+
+    padding:
+      16px
+      42px
+      16px
+      16px !important;
+
+    box-sizing: border-box !important;
+
+    background: #ffffff !important;
+
+    border:
+      2px solid
+      #cbd5e1 !important;
+
+    border-radius:
+      12px !important;
+
+    box-shadow:
+      0 4px 10px
+      rgba(15, 23, 42, 0.12) !important;
+
+    overflow: hidden !important;
+  }
+
+  .expediente-columna {
+    margin-bottom:
+      13px !important;
+  }
+
+  .expediente-columna:last-of-type {
+    margin-bottom:
+      0 !important;
+  }
+
+  .expediente-mobile-label {
+    display: block !important;
+
+    margin-bottom:
+      3px !important;
+  }
+
+  .expediente-acciones-resultado {
+    position: absolute !important;
+
+    right: 13px !important;
+    top: 50% !important;
+
+    transform:
+      translateY(-50%) !important;
+  }
+
+  .expediente-flecha {
+    font-size:
+      28px !important;
+  }
+}
