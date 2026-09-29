@@ -42,6 +42,8 @@ import ExpedientesPage from "./pages/ExpedientesPage";
 
 import CargaManualPage from "./pages/CargaManualPage";
 
+import MiCuentaPage from "./pages/MiCuentaPage";
+
 
 const InicioPorRol = () => {
   const {
@@ -343,7 +345,16 @@ const App = () => {
           }
         />
 
+{/* ==============================================
+    MI CUENTA
+============================================== */}
 
+<Route
+  path="mi-cuenta"
+  element={
+    <MiCuentaPage />
+  }
+/>
         {/* ==============================================
             ADMIN
         ============================================== */}

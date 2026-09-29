@@ -35,11 +35,11 @@ router.patch(
   "/reclamos/:id/jefe",
   permitirRoles(
     "administrador",
-    "director"
+    "director",
+    "secretaria_reclamos"
   ),
   asignarJefeGuardia
 );
-
 /*
 |--------------------------------------------------------------------------
 | DIRECTOR -> CAMBIAR JEFE

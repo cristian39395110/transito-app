@@ -14,6 +14,7 @@ const ReclamoForm = ({
   onCreado,
   onActualizado,
   onCancelar,
+  permitirAsignarJefe = false,
 }) => {
   const [
     form,
@@ -90,6 +91,21 @@ useEffect(() => {
     error,
     setError,
   ] = useState("");
+
+  const [
+  jefesGuardia,
+  setJefesGuardia,
+] = useState([]);
+
+const [
+  jefeGuardiaId,
+  setJefeGuardiaId,
+] = useState("");
+
+const [
+  cargandoJefes,
+  setCargandoJefes,
+] = useState(false);
 
   /*
   |--------------------------------------------------------------------------
@@ -209,6 +225,66 @@ useEffect(() => {
     form.longitudDenunciada !==
       "";
 
+
+      useEffect(() => {
+  const cargarJefes = async () => {
+    if (
+      !permitirAsignarJefe ||
+      editando
+    ) {
+      setJefesGuardia([]);
+      return;
+    }
+
+    try {
+      setCargandoJefes(true);
+
+      const respuesta =
+        await api.get("/usuarios");
+
+      const lista =
+        respuesta.data?.usuarios ||
+        respuesta.data ||
+        [];
+
+      const jefes =
+        Array.isArray(lista)
+          ? lista.filter((item) => {
+              const nombreRol =
+                item.rol?.nombre ||
+                item.Rol?.nombre ||
+                (
+                  typeof item.rol === "string"
+                    ? item.rol
+                    : ""
+                );
+
+              return (
+                nombreRol === "jefe_guardia" &&
+                item.activo !== false
+              );
+            })
+          : [];
+
+      setJefesGuardia(jefes);
+    } catch (err) {
+      console.error(
+        "Error cargando jefes de guardia:",
+        err
+      );
+
+      setJefesGuardia([]);
+    } finally {
+      setCargandoJefes(false);
+    }
+  };
+
+  cargarJefes();
+}, [
+  permitirAsignarJefe,
+  editando,
+]);
+
   /*
   |--------------------------------------------------------------------------
   | GUARDAR
@@ -308,20 +384,37 @@ useEffect(() => {
           respuesta.data
       );
     }
-  } else {
-    respuesta =
-      await api.post(
-        "/reclamos",
-        datos
-      );
+ } else {
+  respuesta =
+    await api.post(
+      "/reclamos",
+      datos
+    );
 
-    if (onCreado) {
-      await onCreado(
-        respuesta.data?.reclamo ||
-          respuesta.data
-      );
-    }
+  const reclamoCreado =
+    respuesta.data?.reclamo ||
+    respuesta.data;
+
+  if (
+    permitirAsignarJefe &&
+    jefeGuardiaId &&
+    reclamoCreado?.id
+  ) {
+    await api.patch(
+      `/asignaciones/reclamos/${reclamoCreado.id}/jefe`,
+      {
+        jefeGuardiaId:
+          Number(jefeGuardiaId),
+      }
+    );
   }
+
+  if (onCreado) {
+    await onCreado(
+      reclamoCreado
+    );
+  }
+}
 } catch (err) {
   console.error(
     editando
@@ -565,6 +658,49 @@ useEffect(() => {
           placeholder="Información necesaria para trabajar el reclamo..."
         />
       </label>
+
+
+      {permitirAsignarJefe && !editando && (
+ <div className="reclamo-asignacion-jefe">
+    <label>
+      Asignar directamente a un jefe de guardia
+
+      <select
+        value={jefeGuardiaId}
+        onChange={(event) =>
+          setJefeGuardiaId(
+            event.target.value
+          )
+        }
+        disabled={
+          guardando ||
+          cargandoJefes
+        }
+      >
+        <option value="">
+          {cargandoJefes
+            ? "Cargando jefes..."
+            : "Dejar para que lo asigne Director"}
+        </option>
+
+        {jefesGuardia.map((jefe) => (
+          <option
+            key={jefe.id}
+            value={jefe.id}
+          >
+            {jefe.nombre || jefe.usuario}
+          </option>
+        ))}
+      </select>
+
+      <small>
+        Opcional. Si elegís un jefe,
+        el reclamo se le asignará
+        directamente al crearlo.
+      </small>
+    </label>
+  </div>
+)}
 
       {error && (
         <div className="reclamo-form-error">

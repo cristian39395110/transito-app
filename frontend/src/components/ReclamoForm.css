@@ -257,3 +257,83 @@
       repeat(2, minmax(0, 1fr));
   }
 }
+
+/* =========================================================
+   ASIGNACIÓN DIRECTA A JEFE DE GUARDIA
+========================================================= */
+
+.reclamo-asignacion-jefe {
+  width: 100%;
+  margin-top: 18px;
+  padding: 16px;
+  box-sizing: border-box;
+
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  border-radius: 12px;
+}
+
+.reclamo-asignacion-jefe label {
+  display: block;
+  margin: 0;
+
+  font-size: 14px;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.reclamo-asignacion-jefe select {
+  display: block;
+  width: 100%;
+  min-height: 50px;
+
+  margin-top: 8px;
+  padding: 11px 12px;
+
+  box-sizing: border-box;
+
+  background: #ffffff;
+  color: #111827;
+
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+
+  font-size: 16px;
+  font-weight: 600;
+
+  outline: none;
+}
+
+.reclamo-asignacion-jefe select:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+.reclamo-asignacion-jefe select:disabled {
+  background: #f1f5f9;
+  color: #64748b;
+  cursor: not-allowed;
+}
+
+.reclamo-asignacion-jefe small {
+  display: block;
+  margin-top: 8px;
+
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.4;
+
+  color: #64748b;
+}
+
+@media (max-width: 600px) {
+  .reclamo-asignacion-jefe {
+    padding: 14px;
+    margin-top: 14px;
+  }
+
+  .reclamo-asignacion-jefe select {
+    min-height: 52px;
+    font-size: 16px;
+  }
+}

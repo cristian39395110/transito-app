@@ -5,6 +5,8 @@ const {
   crearUsuario,
   actualizarUsuario,
   listarRoles,
+    obtenerMiCuenta,
+  actualizarMiCuenta,
 } = require(
   "../controllers/usuarioController"
 );
@@ -55,7 +57,8 @@ router.get(
     "superadmin",
     "administrador",
     "director",
-    "jefe_guardia"
+    "jefe_guardia",
+    "secretaria_reclamos"
   ),
   listarUsuarios
 );
@@ -66,6 +69,24 @@ router.post(
     "administrador"
   ),
   crearUsuario
+);
+
+/*
+|--------------------------------------------------------------------------
+| MI CUENTA
+|--------------------------------------------------------------------------
+| Cualquier usuario autenticado puede consultar
+| y modificar solamente su propia cuenta.
+*/
+
+router.get(
+  "/mi-cuenta",
+  obtenerMiCuenta
+);
+
+router.put(
+  "/mi-cuenta",
+  actualizarMiCuenta
 );
 
 router.put(

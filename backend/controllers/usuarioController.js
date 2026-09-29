@@ -624,9 +624,217 @@ const listarRoles = async (
   }
 };
 
+/*
+|--------------------------------------------------------------------------
+| MI CUENTA
+|--------------------------------------------------------------------------
+*/
+
+const obtenerMiCuenta = async (
+  req,
+  res
+) => {
+  try {
+    const usuarioEncontrado =
+      await Usuario.findByPk(
+        req.usuario.id,
+        {
+          attributes: {
+            exclude: ["password"],
+          },
+
+          include: [
+            {
+              model: Rol,
+              as: "rol",
+              attributes: [
+                "id",
+                "nombre",
+                "descripcion",
+              ],
+            },
+          ],
+        }
+      );
+
+    if (!usuarioEncontrado) {
+      return res.status(404).json({
+        ok: false,
+        mensaje:
+          "Usuario no encontrado",
+      });
+    }
+
+    return res.json({
+      ok: true,
+      usuario: usuarioEncontrado,
+    });
+  } catch (error) {
+    console.error(
+      "Error obteniendo mi cuenta:",
+      error
+    );
+
+    return res.status(500).json({
+      ok: false,
+      mensaje:
+        "Error al obtener los datos de la cuenta",
+    });
+  }
+};
+
+
+/*
+|--------------------------------------------------------------------------
+| ACTUALIZAR MI CUENTA
+|--------------------------------------------------------------------------
+*/
+
+const actualizarMiCuenta = async (
+  req,
+  res
+) => {
+  try {
+    const {
+      usuario,
+      passwordActual,
+      passwordNueva,
+    } = req.body;
+
+    const usuarioEncontrado =
+      await Usuario.findByPk(
+        req.usuario.id
+      );
+
+    if (!usuarioEncontrado) {
+      return res.status(404).json({
+        ok: false,
+        mensaje:
+          "Usuario no encontrado",
+      });
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | USUARIO
+    |--------------------------------------------------------------------------
+    */
+
+    if (
+      usuario !== undefined &&
+      usuario.trim() !== ""
+    ) {
+      const nuevoUsuario =
+        usuario.trim();
+
+      const duplicado =
+        await Usuario.findOne({
+          where: {
+            usuario: nuevoUsuario,
+
+            id: {
+              [Op.ne]:
+                usuarioEncontrado.id,
+            },
+          },
+        });
+
+      if (duplicado) {
+        return res.status(400).json({
+          ok: false,
+          mensaje:
+            "Ese nombre de usuario ya existe",
+        });
+      }
+
+      usuarioEncontrado.usuario =
+        nuevoUsuario;
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | CONTRASEÑA
+    |--------------------------------------------------------------------------
+    */
+
+    if (
+      passwordNueva &&
+      passwordNueva.trim() !== ""
+    ) {
+      if (!passwordActual) {
+        return res.status(400).json({
+          ok: false,
+          mensaje:
+            "Ingresá tu contraseña actual",
+        });
+      }
+
+      const passwordCorrecta =
+        await bcrypt.compare(
+          passwordActual,
+          usuarioEncontrado.password
+        );
+
+      if (!passwordCorrecta) {
+        return res.status(400).json({
+          ok: false,
+          mensaje:
+            "La contraseña actual es incorrecta",
+        });
+      }
+
+      if (
+        passwordNueva.length < 6
+      ) {
+        return res.status(400).json({
+          ok: false,
+          mensaje:
+            "La nueva contraseña debe tener al menos 6 caracteres",
+        });
+      }
+
+      usuarioEncontrado.password =
+        await bcrypt.hash(
+          passwordNueva,
+          10
+        );
+    }
+
+    await usuarioEncontrado.save();
+
+    return res.json({
+      ok: true,
+
+      mensaje:
+        "Cuenta actualizada correctamente",
+
+      usuario: {
+        id: usuarioEncontrado.id,
+        nombre:
+          usuarioEncontrado.nombre,
+        usuario:
+          usuarioEncontrado.usuario,
+      },
+    });
+  } catch (error) {
+    console.error(
+      "Error actualizando mi cuenta:",
+      error
+    );
+
+    return res.status(500).json({
+      ok: false,
+      mensaje:
+        "Error al actualizar la cuenta",
+    });
+  }
+};
+
 module.exports = {
   listarUsuarios,
   crearUsuario,
   actualizarUsuario,
   listarRoles,
+    obtenerMiCuenta,
+  actualizarMiCuenta,
 };

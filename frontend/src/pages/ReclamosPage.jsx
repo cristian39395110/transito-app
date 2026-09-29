@@ -943,16 +943,19 @@ if (
               </button>
 
 
-              <ReclamoForm
-                onCreado={
-                  manejarCreado
-                }
-                onCancelar={() =>
-                  setMostrarNuevo(
-                    false
-                  )
-                }
-              />
+             <ReclamoForm
+  permitirAsignarJefe={
+    rol === "secretaria_reclamos"
+  }
+  onCreado={
+    manejarCreado
+  }
+  onCancelar={() =>
+    setMostrarNuevo(
+      false
+    )
+  }
+/>
 
             </div>
 

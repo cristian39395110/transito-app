@@ -73,6 +73,9 @@ const AsignacionReclamo = ({
   const esDirector =
     rol === "director";
 
+    const esSecretariaReclamos =
+  rol === "secretaria_reclamos";
+
   const esJefe =
     rol === "jefe_guardia";
 
@@ -162,12 +165,13 @@ const etapaConTrabajoInspector =
      ACCIONES DISPONIBLES
   ========================================================= */
 
-  const puedeAsignarJefe =
-    (
-      esAdmin ||
-      esDirector
-    ) &&
-    !reclamo.jefeGuardiaId;
+ const puedeAsignarJefe =
+  (
+    esAdmin ||
+    esDirector ||
+    esSecretariaReclamos
+  ) &&
+  !reclamo.jefeGuardiaId;
 
 const puedeCambiarJefe =
   (

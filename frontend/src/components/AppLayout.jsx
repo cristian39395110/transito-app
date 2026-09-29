@@ -339,6 +339,12 @@ const puede = (
         "administrador",
       ],
     },
+
+    {
+  to: "/mi-cuenta",
+  texto: "Mi cuenta",
+  icono: "👤",
+},
   ];
 
   const visibles =
