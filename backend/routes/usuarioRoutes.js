@@ -6,6 +6,7 @@ const {
   actualizarUsuario,
   listarRoles,
     obtenerMiCuenta,
+     eliminarUsuario,
   actualizarMiCuenta,
 } = require(
   "../controllers/usuarioController"
@@ -97,4 +98,14 @@ router.put(
   ),
   actualizarUsuario
 );
+
+router.delete(
+  "/:id",
+  permitirRoles(
+    "superadmin",
+    "administrador"
+  ),
+  eliminarUsuario
+);
+
 module.exports = router;

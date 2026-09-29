@@ -2,9 +2,12 @@ import RolBadge from "./RolBadge";
 
 import "./UsuarioCard.css";
 
+
 const UsuarioCard = ({
   usuario,
   onEditar,
+  onEliminar,
+  eliminando = false,
 }) => {
   const rol =
     usuario.rol?.nombre ||
@@ -15,9 +18,14 @@ const UsuarioCard = ({
   const activo =
     usuario.activo !== false;
 
+
   return (
     <article className="usuario-card">
+
+      {/* CABECERA */}
+
       <div className="usuario-card-header">
+
         <div className="usuario-avatar">
           {(
             usuario.nombre ||
@@ -28,7 +36,9 @@ const UsuarioCard = ({
             .toUpperCase()}
         </div>
 
+
         <div className="usuario-identidad">
+
           <strong>
             {usuario.nombre}
           </strong>
@@ -36,7 +46,9 @@ const UsuarioCard = ({
           <span>
             @{usuario.usuario}
           </span>
+
         </div>
+
 
         <span
           className={`usuario-estado ${
@@ -49,9 +61,14 @@ const UsuarioCard = ({
             ? "Activo"
             : "Inactivo"}
         </span>
+
       </div>
 
+
+      {/* ROL */}
+
       <div className="usuario-card-rol">
+
         <span>
           Rol
         </span>
@@ -59,16 +76,40 @@ const UsuarioCard = ({
         <RolBadge
           rol={rol}
         />
+
       </div>
 
-      <button
-        type="button"
-        onClick={onEditar}
-      >
-        Editar usuario
-      </button>
+
+      {/* ACCIONES */}
+
+      <div className="usuario-card-acciones">
+
+        <button
+          type="button"
+          className="usuario-editar"
+          onClick={onEditar}
+          disabled={eliminando}
+        >
+          Editar usuario
+        </button>
+
+
+        <button
+          type="button"
+          className="usuario-eliminar"
+          onClick={onEliminar}
+          disabled={eliminando}
+        >
+          {eliminando
+            ? "Eliminando..."
+            : "Eliminar usuario"}
+        </button>
+
+      </div>
+
     </article>
   );
 };
+
 
 export default UsuarioCard;

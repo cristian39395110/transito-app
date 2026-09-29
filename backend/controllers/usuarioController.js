@@ -830,6 +830,165 @@ const actualizarMiCuenta = async (
   }
 };
 
+/*
+|--------------------------------------------------------------------------
+| ELIMINAR USUARIO
+|--------------------------------------------------------------------------
+*/
+
+const eliminarUsuario = async (req, res) => {
+  try {
+    const usuarioId =
+      Number(req.params.id);
+
+    /*
+    |--------------------------------------------------------------------------
+    | VALIDAR ID
+    |--------------------------------------------------------------------------
+    */
+
+    if (
+      !usuarioId ||
+      Number.isNaN(usuarioId)
+    ) {
+      return res.status(400).json({
+        ok: false,
+        mensaje:
+          "El usuario indicado no es válido",
+      });
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | NO PERMITIR ELIMINARSE A SÍ MISMO
+    |--------------------------------------------------------------------------
+    */
+
+    if (
+      Number(req.usuario.id) ===
+      usuarioId
+    ) {
+      return res.status(400).json({
+        ok: false,
+        mensaje:
+          "No podés eliminar tu propio usuario",
+      });
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | BUSCAR USUARIO
+    |--------------------------------------------------------------------------
+    */
+
+    const usuario =
+      await Usuario.findByPk(
+        usuarioId
+      );
+
+    if (!usuario) {
+      return res.status(404).json({
+        ok: false,
+        mensaje:
+          "Usuario no encontrado",
+      });
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | PROTEGER SUPERADMIN
+    |--------------------------------------------------------------------------
+    */
+
+    const rolUsuario =
+      await Rol.findByPk(
+        usuario.rolId
+      );
+
+    if (
+      rolUsuario?.nombre ===
+      "superadmin"
+    ) {
+      return res.status(403).json({
+        ok: false,
+        mensaje:
+          "El usuario superadmin no puede eliminarse",
+      });
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | ELIMINAR
+    |--------------------------------------------------------------------------
+    |
+    | Si el usuario está relacionado con reclamos,
+    | asignaciones, actuaciones, etc., MySQL puede
+    | impedir la eliminación mediante las claves foráneas.
+    |
+    */
+
+    await usuario.destroy();
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | RESPUESTA
+    |--------------------------------------------------------------------------
+    */
+
+    return res.json({
+      ok: true,
+      mensaje:
+        "Usuario eliminado correctamente",
+    });
+
+  } catch (error) {
+    console.error(
+      "Error eliminando usuario:",
+      error
+    );
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | USUARIO CON HISTORIAL / RELACIONES
+    |--------------------------------------------------------------------------
+    */
+
+    if (
+      error.name ===
+        "SequelizeForeignKeyConstraintError" ||
+      error.original?.code ===
+        "ER_ROW_IS_REFERENCED_2" ||
+      error.parent?.code ===
+        "ER_ROW_IS_REFERENCED_2"
+    ) {
+      return res.status(409).json({
+        ok: false,
+        mensaje:
+          "Este usuario ya tiene movimientos o historial en el sistema y no puede eliminarse. Podés dejarlo como inactivo.",
+      });
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | ERROR GENERAL
+    |--------------------------------------------------------------------------
+    */
+
+    return res.status(500).json({
+      ok: false,
+      mensaje:
+        "No se pudo eliminar el usuario",
+    });
+  }
+};
+
 module.exports = {
   listarUsuarios,
   crearUsuario,
@@ -837,4 +996,5 @@ module.exports = {
   listarRoles,
     obtenerMiCuenta,
   actualizarMiCuenta,
+  eliminarUsuario
 };

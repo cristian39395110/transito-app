@@ -125,3 +125,99 @@
 .usuario-card > button:hover {
   background: #f9fafb;
 }
+
+
+/* =========================================================
+   ACCIONES
+========================================================= */
+
+.usuario-card-acciones {
+  display: grid;
+
+  grid-template-columns:
+    1fr 1fr;
+
+  gap: 10px;
+
+  width: 100%;
+}
+
+
+/* =========================================================
+   EDITAR
+========================================================= */
+
+.usuario-card-acciones .usuario-editar {
+  width: 100%;
+  min-height: 46px;
+
+  padding: 10px 14px;
+
+  background: #ffffff;
+  color: #1d4ed8;
+
+  border: 1px solid #bfdbfe;
+  border-radius: 9px;
+
+  font-size: 14px;
+  font-weight: 700;
+
+  cursor: pointer;
+}
+
+.usuario-card-acciones .usuario-editar:hover:not(:disabled) {
+  background: #eff6ff;
+}
+
+
+/* =========================================================
+   ELIMINAR
+========================================================= */
+
+.usuario-card-acciones .usuario-eliminar {
+  width: 100%;
+  min-height: 46px;
+
+  padding: 10px 14px;
+
+  background: #ffffff;
+  color: #b91c1c;
+
+  border: 1px solid #fecaca;
+  border-radius: 9px;
+
+  font-size: 14px;
+  font-weight: 700;
+
+  cursor: pointer;
+}
+
+.usuario-card-acciones .usuario-eliminar:hover:not(:disabled) {
+  background: #fef2f2;
+}
+
+
+/* =========================================================
+   DESHABILITADOS
+========================================================= */
+
+.usuario-card-acciones button:disabled {
+  opacity: 0.55;
+
+  cursor: not-allowed;
+}
+
+
+/* =========================================================
+   CELULAR
+========================================================= */
+
+@media (max-width: 500px) {
+  .usuario-card-acciones {
+    grid-template-columns: 1fr;
+  }
+
+  .usuario-card-acciones button {
+    min-height: 50px;
+  }
+}

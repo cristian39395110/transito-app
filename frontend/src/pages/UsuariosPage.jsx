@@ -12,6 +12,7 @@ import UsuarioForm from "../components/UsuarioForm";
 
 import "./UsuariosPage.css";
 
+
 const UsuariosPage = () => {
   const [usuarios, setUsuarios] =
     useState([]);
@@ -34,8 +35,18 @@ const UsuariosPage = () => {
   const [cargando, setCargando] =
     useState(true);
 
+  const [eliminandoId, setEliminandoId] =
+    useState(null);
+
   const [error, setError] =
     useState("");
+
+
+  /*
+  |--------------------------------------------------------------------------
+  | CARGAR USUARIOS
+  |--------------------------------------------------------------------------
+  */
 
   const cargar = useCallback(async () => {
     try {
@@ -70,9 +81,17 @@ const UsuariosPage = () => {
     }
   }, []);
 
+
   useEffect(() => {
     cargar();
   }, [cargar]);
+
+
+  /*
+  |--------------------------------------------------------------------------
+  | FILTROS
+  |--------------------------------------------------------------------------
+  */
 
   const filtrados =
     useMemo(() => {
@@ -137,10 +156,18 @@ const UsuariosPage = () => {
       filtroEstado,
     ]);
 
+
+  /*
+  |--------------------------------------------------------------------------
+  | NUEVO / EDITAR
+  |--------------------------------------------------------------------------
+  */
+
   const abrirNuevo = () => {
     setUsuarioEditar(null);
     setMostrarForm(true);
   };
+
 
   const abrirEditar = (
     usuario
@@ -149,18 +176,89 @@ const UsuariosPage = () => {
     setMostrarForm(true);
   };
 
+
   const cerrarForm = () => {
     setMostrarForm(false);
     setUsuarioEditar(null);
   };
+
 
   const guardado = async () => {
     await cargar();
     cerrarForm();
   };
 
+
+  /*
+  |--------------------------------------------------------------------------
+  | ELIMINAR USUARIO
+  |--------------------------------------------------------------------------
+  */
+
+  const eliminarUsuario = async (
+    usuario
+  ) => {
+    const confirmar =
+      window.confirm(
+        `¿Eliminar definitivamente al usuario "${usuario.nombre}"?\n\n` +
+          `Usuario: ${usuario.usuario}\n\n` +
+          "Esta acción no se puede deshacer."
+      );
+
+    if (!confirmar) {
+      return;
+    }
+
+    try {
+      setEliminandoId(
+        usuario.id
+      );
+
+      setError("");
+
+      await api.delete(
+        `/usuarios/${usuario.id}`
+      );
+
+      /*
+       * Lo quitamos inmediatamente
+       * de la pantalla.
+       */
+      setUsuarios(
+        (anteriores) =>
+          anteriores.filter(
+            (item) =>
+              item.id !==
+              usuario.id
+          )
+      );
+    } catch (err) {
+      console.error(
+        "Error eliminando usuario:",
+        err
+      );
+
+      setError(
+        err.response?.data?.mensaje ||
+          "No se pudo eliminar el usuario."
+      );
+    } finally {
+      setEliminandoId(null);
+    }
+  };
+
+
+  /*
+  |--------------------------------------------------------------------------
+  | VISTA
+  |--------------------------------------------------------------------------
+  */
+
   return (
     <div className="usuarios-page">
+
+      {/* CABECERA */}
+
       <div className="usuarios-header">
         <div>
           <h1>
@@ -182,7 +280,11 @@ const UsuariosPage = () => {
         </button>
       </div>
 
+
+      {/* RESUMEN */}
+
       <div className="usuarios-resumen">
+
         <div>
           <span>
             Total
@@ -224,9 +326,14 @@ const UsuariosPage = () => {
             }
           </strong>
         </div>
+
       </div>
 
+
+      {/* FILTROS */}
+
       <div className="usuarios-filtros">
+
         <input
           value={busqueda}
           onChange={(event) =>
@@ -294,7 +401,11 @@ const UsuariosPage = () => {
             Todos
           </option>
         </select>
+
       </div>
+
+
+      {/* ERROR */}
 
       {error && (
         <div className="usuarios-error">
@@ -302,33 +413,53 @@ const UsuariosPage = () => {
         </div>
       )}
 
+
+      {/* LISTADO */}
+
       {cargando ? (
         <div className="usuarios-vacio">
           Cargando usuarios...
         </div>
-      ) : filtrados.length ===
-        0 ? (
+      ) : filtrados.length === 0 ? (
         <div className="usuarios-vacio">
           No hay usuarios que
           coincidan con los filtros.
         </div>
       ) : (
         <div className="usuarios-lista">
+
           {filtrados.map(
             (usuario) => (
               <UsuarioCard
                 key={usuario.id}
+
                 usuario={usuario}
+
                 onEditar={() =>
                   abrirEditar(
                     usuario
                   )
                 }
+
+                onEliminar={() =>
+                  eliminarUsuario(
+                    usuario
+                  )
+                }
+
+                eliminando={
+                  eliminandoId ===
+                  usuario.id
+                }
               />
             )
           )}
+
         </div>
       )}
+
+
+      {/* MODAL */}
 
       {mostrarForm && (
         <div
@@ -349,9 +480,11 @@ const UsuariosPage = () => {
               usuario={
                 usuarioEditar
               }
+
               onGuardado={
                 guardado
               }
+
               onCancelar={
                 cerrarForm
               }
@@ -359,8 +492,10 @@ const UsuariosPage = () => {
           </div>
         </div>
       )}
+
     </div>
   );
 };
+
 
 export default UsuariosPage;
