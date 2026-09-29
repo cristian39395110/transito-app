@@ -23,13 +23,18 @@ const EgresoPredioForm = ({
       observaciones: "",
     });
 
-  const [predios, setPredios] =
-    useState([]);
+ const [predios, setPredios] =
+  useState([]);
 
-  const [
-    cargandoPredios,
-    setCargandoPredios,
-  ] = useState(false);
+const [
+  cargandoPredios,
+  setCargandoPredios,
+] = useState(false);
+
+const [
+  errorPredios,
+  setErrorPredios,
+] = useState("");
 
   const [guardando, setGuardando] =
     useState(false);
@@ -46,39 +51,57 @@ const EgresoPredioForm = ({
   |--------------------------------------------------------------------------
   */
 
-  useEffect(() => {
-    const cargarPredios =
-      async () => {
-        try {
-          setCargandoPredios(true);
+useEffect(() => {
+  const cargarPredios =
+    async () => {
+      try {
+        setCargandoPredios(true);
+        setErrorPredios("");
 
-          const respuesta =
-            await api.get(
-              "/predios"
-            );
+        const respuesta =
+       await api.get(
+  "/predios/destinos"
+);
 
-          setPredios(
-            respuesta.data
-              ?.predios ||
-              []
-          );
-        } catch (err) {
-          console.error(
-            "Error cargando destinos:",
-            err
-          );
+        const lista =
+          respuesta.data
+            ?.predios ||
+          [];
 
-          setPredios([]);
-        } finally {
-          setCargandoPredios(
-            false
-          );
-        }
-      };
+        console.log(
+          "Predios recibidos:",
+          lista
+        );
 
-    cargarPredios();
-  }, []);
+        setPredios(
+          lista.filter(
+            (predio) =>
+              predio.activo !==
+              false
+          )
+        );
+      } catch (err) {
+        console.error(
+          "Error cargando destinos:",
+          err
+        );
 
+        setPredios([]);
+
+        setErrorPredios(
+          err.response?.data
+            ?.mensaje ||
+          "No se pudieron cargar los predios."
+        );
+      } finally {
+        setCargandoPredios(
+          false
+        );
+      }
+    };
+
+  cargarPredios();
+}, []);
   /*
   |--------------------------------------------------------------------------
   | CAMBIAR CAMPOS
@@ -146,15 +169,21 @@ const EgresoPredioForm = ({
   |
   */
 
-  const prediosDisponibles =
-    predios.filter(
-      (predio) =>
-        Number(predio.id) !==
+const prediosDisponibles =
+  predios.filter(
+    (predio) => {
+      const esPredioActual =
+        Number(predio.id) ===
         Number(
           ingresoPredio?.predioId
-        )
-    );
+        );
 
+      return (
+        !esPredioActual &&
+        predio.activo !== false
+      );
+    }
+  );
   /*
   |--------------------------------------------------------------------------
   | GUARDAR
@@ -501,41 +530,62 @@ const EgresoPredioForm = ({
       |--------------------------------------------------------------------------
       */}
 
-      {form.tipoEgreso ===
-        "TRASLADADO" && (
-        <label>
-          Destino del traslado *
+   {form.tipoEgreso ===
+  "TRASLADADO" && (
+    <label>
+      Destino del traslado *
 
-          <select
-            name="predioDestinoId"
-            value={
-              form.predioDestinoId
-            }
-            onChange={cambiar}
-            disabled={
-              cargandoPredios
-            }
-          >
-            <option value="">
-              {cargandoPredios
-                ? "Cargando destinos..."
-                : "Seleccionar destino"}
+      <select
+        name="predioDestinoId"
+        value={
+          form.predioDestinoId
+        }
+        onChange={cambiar}
+        disabled={
+          cargandoPredios ||
+          prediosDisponibles.length ===
+            0
+        }
+      >
+        <option value="">
+          {cargandoPredios
+            ? "Cargando predios..."
+            : prediosDisponibles.length >
+                0
+              ? "Seleccionar predio de destino"
+              : "No hay otros predios disponibles"}
+        </option>
+
+        {prediosDisponibles.map(
+          (predio) => (
+            <option
+              key={predio.id}
+              value={predio.id}
+            >
+              {predio.nombre}
             </option>
+          )
+        )}
+      </select>
 
-            {prediosDisponibles.map(
-              (predio) => (
-                <option
-                  key={predio.id}
-                  value={predio.id}
-                >
-                  {predio.nombre}
-                </option>
-              )
-            )}
-          </select>
-        </label>
+      {errorPredios && (
+        <small className="egreso-error-predios">
+          {errorPredios}
+        </small>
       )}
 
+      {!cargandoPredios &&
+        !errorPredios &&
+        prediosDisponibles.length ===
+          0 && (
+          <small>
+            No existe otro predio
+            activo disponible para
+            realizar el traslado.
+          </small>
+        )}
+    </label>
+  )}
       {/*
       |--------------------------------------------------------------------------
       | COMPACTADO

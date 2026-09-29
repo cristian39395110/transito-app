@@ -333,3 +333,123 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* =========================================================
+   RECEPCIÓN DE TRASLADO ENTRE PREDIOS
+   ========================================================= */
+
+.traslado-recepcion-campo {
+  width: 100%;
+  margin-top: 18px;
+  margin-bottom: 18px;
+}
+
+.traslado-recepcion-label {
+  display: block;
+  margin-bottom: 8px;
+
+  font-size: 14px;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.traslado-recepcion-input {
+  display: block;
+  width: 100%;
+  min-height: 50px;
+
+  padding: 12px 14px;
+
+  box-sizing: border-box;
+
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+
+  background: #ffffff;
+  color: #111827;
+
+  font-size: 16px;
+  font-weight: 600;
+
+  outline: none;
+
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.traslado-recepcion-input:focus {
+  border-color: #2563eb;
+  box-shadow:
+    0 0 0 3px
+    rgba(37, 99, 235, 0.12);
+}
+
+.traslado-recepcion-input::placeholder {
+  color: #94a3b8;
+  font-weight: 400;
+}
+
+.traslado-recepcion-ayuda {
+  display: block;
+
+  margin-top: 7px;
+
+  font-size: 13px;
+  line-height: 1.4;
+
+  color: #64748b;
+}
+
+.traslado-recepcion-boton {
+  width: 100%;
+  min-height: 50px;
+
+  margin-top: 10px;
+  padding: 12px 18px;
+
+  border: 0;
+  border-radius: 10px;
+
+  background: #166534;
+  color: #ffffff;
+
+  font-size: 16px;
+  font-weight: 700;
+
+  cursor: pointer;
+
+  transition:
+    opacity 0.2s ease,
+    transform 0.1s ease;
+}
+
+.traslado-recepcion-boton:hover {
+  opacity: 0.92;
+}
+
+.traslado-recepcion-boton:active {
+  transform: scale(0.99);
+}
+
+.traslado-recepcion-boton:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+}
+
+
+/* =========================================================
+   ESCRITORIO
+   ========================================================= */
+
+@media (min-width: 768px) {
+  .traslado-recepcion-campo {
+    max-width: 420px;
+  }
+
+  .traslado-recepcion-boton {
+    width: auto;
+    min-width: 220px;
+  }
+}

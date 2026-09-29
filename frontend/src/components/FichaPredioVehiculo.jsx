@@ -26,8 +26,20 @@ const FichaPredioVehiculo = ({
     rol,
   } = useAuth();
 
+
+const [recibiendoTraslado, setRecibiendoTraslado] =
+  useState(false);
+
+const [errorTraslado, setErrorTraslado] =
+  useState("");
+
+const [precintoTraslado, setPrecintoTraslado] =
+  useState("");
+
   const [seguimiento, setSeguimiento] =
     useState(null);
+
+
 
   const [
     cargandoSeguimiento,
@@ -78,6 +90,12 @@ const FichaPredioVehiculo = ({
 
   const esPendiente =
     !ingresoPredio;
+
+    const esTrasladoPredio =
+  item?.origen === "TRASLADO_PREDIO";
+
+const traslado =
+  item?.traslado || null;
 
   const puedeGestionarPredio =
     rol === "administrador" ||
@@ -239,6 +257,65 @@ const FichaPredioVehiculo = ({
         ),
       [inventario]
     );
+    const confirmarRecepcionTraslado =
+  async () => {
+    if (!traslado?.id) {
+      setErrorTraslado(
+        "No se pudo identificar el traslado."
+      );
+      return;
+    }
+
+    const precinto =
+  precintoTraslado.trim();
+
+if (!precinto) {
+  setErrorTraslado(
+    "Debe ingresar el número de precinto."
+  );
+  return;
+}
+
+    const confirmar = window.confirm(
+      `¿Confirmar que el vehículo Nº ${
+        vehiculo.numeroInterno ||
+        vehiculo.id
+      } fue recibido en ${
+        item?.predioDestino?.nombre ||
+        "este predio"
+      }?`
+    );
+
+    if (!confirmar) {
+      return;
+    }
+
+    try {
+      setRecibiendoTraslado(true);
+      setErrorTraslado("");
+
+     await api.post(
+  `/predios/traslados/${traslado.id}/recibir`,
+  {
+    posicion: precinto,
+  }
+);
+
+      await onActualizado();
+    } catch (error) {
+      console.error(
+        "Error recibiendo traslado:",
+        error
+      );
+
+      setErrorTraslado(
+        error.response?.data?.mensaje ||
+        "No se pudo recibir el traslado."
+      );
+    } finally {
+      setRecibiendoTraslado(false);
+    }
+  };
 
   return (
     <div className="ficha-predio">
@@ -592,7 +669,104 @@ const FichaPredioVehiculo = ({
                 en las mismas condiciones.
               </p>
 
-              {reclamo ? (
+    {esTrasladoPredio ? (
+  <div className="ficha-solo-lectura">
+    <span>
+      TRASLADO ENTRE PREDIOS
+    </span>
+
+    <h2>
+      Recibir vehículo
+    </h2>
+
+    <p>
+      Este vehículo fue trasladado desde{" "}
+      <strong>
+        {item?.predioOrigen?.nombre ||
+          "otro predio"}
+      </strong>
+      {" "}hacia{" "}
+      <strong>
+        {item?.predioDestino?.nombre ||
+          "este predio"}
+      </strong>.
+    </p>
+
+    {traslado?.numeroOficio && (
+      <p>
+        Oficio:{" "}
+        <strong>
+          {traslado.numeroOficio}
+        </strong>
+      </p>
+    )}
+
+   <div
+  style={{
+    marginTop: "16px",
+    marginBottom: "16px",
+  }}
+>
+  <label
+    style={{
+      display: "block",
+      marginBottom: "6px",
+      fontWeight: "600",
+    }}
+  >
+    Número de precinto *
+  </label>
+
+  <input
+    type="text"
+    value={precintoTraslado}
+    onChange={(e) =>
+      setPrecintoTraslado(
+        e.target.value
+      )
+    }
+    placeholder="Ej: 125"
+    inputMode="numeric"
+    style={{
+      width: "100%",
+      minHeight: "48px",
+      fontSize: "16px",
+      padding: "10px 12px",
+      boxSizing: "border-box",
+    }}
+  />
+
+  <small
+    style={{
+      display: "block",
+      marginTop: "6px",
+    }}
+  >
+    Indica la ubicación / posición del
+    vehículo dentro del predio.
+  </small>
+</div>
+
+{errorTraslado && (
+  <div className="ficha-error">
+    {errorTraslado}
+  </div>
+)}
+
+<button
+  type="button"
+  className="traslado-recepcion-boton"
+  onClick={
+    confirmarRecepcionTraslado
+  }
+  disabled={recibiendoTraslado}
+>
+  {recibiendoTraslado
+    ? "Recibiendo..."
+    : "✓ Confirmar recepción"}
+</button>
+  </div>
+) : reclamo ? (
   <IngresoPredioForm
     reclamo={reclamo}
     vehiculo={vehiculo}

@@ -8,6 +8,9 @@ const {
   listarVehiculosEnPredio,
   listarPendientesIngreso,
   listarHistorialPredio,
+  listarPrediosDestino,
+  listarTrasladosPendientes,
+  recibirTraslado,
 } = require(
   "../controllers/predioController"
 );
@@ -154,6 +157,59 @@ router.post(
   ),
   registrarEgreso
 );
+/*
+|--------------------------------------------------------------------------
+| PREDIOS DISPONIBLES COMO DESTINO DE TRASLADO
+|--------------------------------------------------------------------------
+*/
+
+router.get(
+  "/destinos",
+  permitirRoles(
+    "administrador",
+    "secretaria_predio"
+  ),
+  listarPrediosDestino
+);
+
+
+/*
+|--------------------------------------------------------------------------
+| TRASLADOS PENDIENTES DE RECEPCIÓN
+|--------------------------------------------------------------------------
+*/
+
+router.get(   
+  "/traslados/pendientes",
+  permitirRoles(
+    "administrador",
+    "secretaria_predio"
+  ),
+  listarTrasladosPendientes
+);
+
+
+/*
+|--------------------------------------------------------------------------
+| RECIBIR TRASLADO EN PREDIO DESTINO
+|--------------------------------------------------------------------------
+*/
+
+router.post(
+  "/traslados/:egresoId/recibir",
+  permitirRoles(
+    "administrador",
+    "secretaria_predio"
+  ),
+  recibirTraslado
+);
+
+
+/*
+|--------------------------------------------------------------------------
+| EDITAR PREDIO
+|--------------------------------------------------------------------------
+*/
 
 router.put(
   "/:id",
@@ -162,5 +218,6 @@ router.put(
   ),
   actualizarPredio
 );
+
 
 module.exports = router;

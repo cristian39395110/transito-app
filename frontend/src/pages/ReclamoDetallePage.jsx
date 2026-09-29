@@ -3532,7 +3532,7 @@ return lista.sort((a, b) => {
 
         <div>
           <span>
-            Posición
+            Precinto
           </span>
 
           <strong>

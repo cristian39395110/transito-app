@@ -2823,7 +2823,625 @@ if (!verTodos) {
       });
   }
 };
+
+const listarPrediosDestino =
+  async (req, res) => {
+    try {
+      const predios =
+        await Predio.findAll({
+          where: {
+            activo: true,
+          },
+
+          order: [
+            ["nombre", "ASC"],
+          ],
+        });
+
+      return res.json({
+        ok: true,
+        predios,
+      });
+    } catch (error) {
+      console.error(
+        "Error listando predios de destino:",
+        error
+      );
+
+      return res.status(500).json({
+        ok: false,
+        mensaje:
+          "Error al obtener los predios de destino",
+      });
+    }
+  };
   
+
+
+  /*
+|--------------------------------------------------------------------------
+| LISTAR TRASLADOS PENDIENTES DE RECEPCIÓN
+|--------------------------------------------------------------------------
+*/
+
+const listarTrasladosPendientes =
+  async (req, res) => {
+    try {
+      /*
+      |--------------------------------------------------------------------------
+      | DETERMINAR PREDIO
+      |--------------------------------------------------------------------------
+      */
+
+      const predioId =
+        obtenerPredioPermitido(
+          req,
+          req.query.predioId
+        );
+
+      if (!predioId) {
+        return res.status(400).json({
+          ok: false,
+          mensaje:
+            "Debe indicar el predio que desea consultar",
+        });
+      }
+
+
+      /*
+      |--------------------------------------------------------------------------
+      | VALIDAR PREDIO
+      |--------------------------------------------------------------------------
+      */
+
+      const predio =
+        await Predio.findOne({
+          where: {
+            id: Number(predioId),
+            activo: true,
+          },
+        });
+
+      if (!predio) {
+        return res.status(404).json({
+          ok: false,
+          mensaje:
+            "Predio no encontrado o inactivo",
+        });
+      }
+
+
+      /*
+      |--------------------------------------------------------------------------
+      | BUSCAR TRASLADOS HACIA ESTE PREDIO
+      |--------------------------------------------------------------------------
+      */
+
+      const traslados =
+        await EgresoPredio.findAll({
+          where: {
+            tipoEgreso:
+              "TRASLADADO",
+
+            predioDestinoId:
+              predio.id,
+          },
+
+          order: [
+            ["fechaHora", "ASC"],
+          ],
+        });
+
+
+      /*
+      |--------------------------------------------------------------------------
+      | VER CUÁLES TODAVÍA NO FUERON RECIBIDOS
+      |--------------------------------------------------------------------------
+      */
+
+      const pendientes = [];
+
+      for (
+        const traslado of traslados
+      ) {
+        /*
+         * Buscamos un ingreso del mismo
+         * vehículo al predio destino
+         * posterior al traslado.
+         */
+
+        const ingresoDestino =
+          await IngresoPredio.findOne({
+            where: {
+              vehiculoId:
+                traslado.vehiculoId,
+
+              predioId:
+                predio.id,
+
+              fechaHora: {
+                [Op.gte]:
+                  traslado.fechaHora,
+              },
+            },
+
+            order: [
+              ["fechaHora", "ASC"],
+            ],
+          });
+
+
+        if (ingresoDestino) {
+          continue;
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | DATOS DEL VEHÍCULO
+        |--------------------------------------------------------------------------
+        */
+
+        const vehiculo =
+          await Vehiculo.findByPk(
+            traslado.vehiculoId
+          );
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | DATOS DEL RECLAMO
+        |--------------------------------------------------------------------------
+        */
+
+        const reclamo =
+          traslado.reclamoId
+            ? await Reclamo.findByPk(
+                traslado.reclamoId
+              )
+            : null;
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | PREDIO DE ORIGEN
+        |--------------------------------------------------------------------------
+        */
+
+        const ingresoOrigen =
+          await IngresoPredio.findByPk(
+            traslado.ingresoPredioId
+          );
+
+        let predioOrigen = null;
+
+        if (ingresoOrigen) {
+          predioOrigen =
+            await Predio.findByPk(
+              ingresoOrigen.predioId
+            );
+        }
+
+
+        pendientes.push({
+          traslado,
+
+          vehiculo,
+
+          reclamo,
+
+          predioOrigen,
+
+          predioDestino:
+            predio,
+
+          origen:
+            "TRASLADO_PREDIO",
+        });
+      }
+
+
+      return res.json({
+        ok: true,
+
+        predio,
+
+        pendientes,
+
+        total:
+          pendientes.length,
+      });
+    } catch (error) {
+      console.error(
+        "Error listando traslados pendientes:",
+        error
+      );
+
+      return res.status(500).json({
+        ok: false,
+        mensaje:
+          "Error al obtener los traslados pendientes",
+      });
+    }
+  };
+  /*
+|--------------------------------------------------------------------------
+| RECIBIR TRASLADO ENTRE PREDIOS
+|--------------------------------------------------------------------------
+*/
+
+const recibirTraslado =
+  async (req, res) => {
+    const transaction =
+      await sequelize.transaction();
+
+    try {
+      const {
+        egresoId,
+      } = req.params;
+
+      const {
+        sector,
+        posicion,
+        observaciones,
+        fechaHora,
+      } = req.body;
+
+
+      /*
+      |--------------------------------------------------------------------------
+      | BUSCAR TRASLADO
+      |--------------------------------------------------------------------------
+      */
+
+      const traslado =
+        await EgresoPredio.findByPk(
+          egresoId,
+          {
+            transaction,
+          }
+        );
+
+      if (!traslado) {
+        await transaction.rollback();
+
+        return res.status(404).json({
+          ok: false,
+          mensaje:
+            "Traslado no encontrado",
+        });
+      }
+
+
+      if (
+        traslado.tipoEgreso !==
+        "TRASLADADO"
+      ) {
+        await transaction.rollback();
+
+        return res.status(400).json({
+          ok: false,
+          mensaje:
+            "El egreso indicado no corresponde a un traslado",
+        });
+      }
+
+
+      if (
+        !traslado.predioDestinoId
+      ) {
+        await transaction.rollback();
+
+        return res.status(400).json({
+          ok: false,
+          mensaje:
+            "El traslado no tiene un predio de destino",
+        });
+      }
+
+
+      /*
+      |--------------------------------------------------------------------------
+      | SEGURIDAD DEL PREDIO
+      |--------------------------------------------------------------------------
+      */
+
+      const predioPermitido =
+        obtenerPredioPermitido(
+          req,
+          traslado.predioDestinoId
+        );
+
+      if (!predioPermitido) {
+        await transaction.rollback();
+
+        return res.status(403).json({
+          ok: false,
+          mensaje:
+            "No tiene un predio asignado",
+        });
+      }
+
+
+      if (
+        req.usuario?.rol ===
+          "secretaria_predio" &&
+        Number(predioPermitido) !==
+          Number(
+            traslado.predioDestinoId
+          )
+      ) {
+        await transaction.rollback();
+
+        return res.status(403).json({
+          ok: false,
+          mensaje:
+            "Este traslado pertenece a otro predio",
+        });
+      }
+
+
+      /*
+      |--------------------------------------------------------------------------
+      | EVITAR RECIBIR DOS VECES
+      |--------------------------------------------------------------------------
+      */
+
+      const ingresoExistente =
+        await IngresoPredio.findOne({
+          where: {
+            vehiculoId:
+              traslado.vehiculoId,
+
+            predioId:
+              traslado.predioDestinoId,
+
+            fechaHora: {
+              [Op.gte]:
+                traslado.fechaHora,
+            },
+          },
+
+          transaction,
+        });
+
+      if (ingresoExistente) {
+        await transaction.rollback();
+
+        return res.status(400).json({
+          ok: false,
+          mensaje:
+            "Este traslado ya fue recibido en el predio de destino",
+        });
+      }
+
+
+      /*
+      |--------------------------------------------------------------------------
+      | VEHÍCULO
+      |--------------------------------------------------------------------------
+      */
+
+      const vehiculo =
+        await Vehiculo.findByPk(
+          traslado.vehiculoId,
+          {
+            transaction,
+          }
+        );
+
+      if (!vehiculo) {
+        await transaction.rollback();
+
+        return res.status(404).json({
+          ok: false,
+          mensaje:
+            "Vehículo no encontrado",
+        });
+      }
+
+
+      /*
+      |--------------------------------------------------------------------------
+      | RECLAMO
+      |--------------------------------------------------------------------------
+      */
+
+      const reclamo =
+        traslado.reclamoId
+          ? await Reclamo.findByPk(
+              traslado.reclamoId,
+              {
+                transaction,
+              }
+            )
+          : null;
+
+
+      /*
+      |--------------------------------------------------------------------------
+      | FECHA DE RECEPCIÓN
+      |--------------------------------------------------------------------------
+      */
+
+      const fechaIngreso =
+        fechaHora
+          ? new Date(fechaHora)
+          : new Date();
+
+      if (
+        Number.isNaN(
+          fechaIngreso.getTime()
+        )
+      ) {
+        await transaction.rollback();
+
+        return res.status(400).json({
+          ok: false,
+          mensaje:
+            "La fecha de ingreso no es válida",
+        });
+      }
+
+
+      /*
+      |--------------------------------------------------------------------------
+      | CREAR NUEVO INGRESO
+      |--------------------------------------------------------------------------
+      */
+
+      const ingreso =
+        await IngresoPredio.create(
+          {
+            reclamoId:
+              traslado.reclamoId ||
+              null,
+
+            vehiculoId:
+              traslado.vehiculoId,
+
+            /*
+             * No es una nueva remoción.
+             * Es un traslado entre predios.
+             */
+            remocionId:
+              null,
+
+            predioId:
+              traslado.predioDestinoId,
+
+            registradoPorId:
+              req.usuario.id,
+
+            fechaHora:
+              fechaIngreso,
+
+            sector:
+              sector?.trim() ||
+              null,
+
+            posicion:
+              posicion?.trim() ||
+              null,
+
+            observaciones:
+              observaciones?.trim() ||
+              null,
+          },
+          {
+            transaction,
+          }
+        );
+
+
+      /*
+      |--------------------------------------------------------------------------
+      | VEHÍCULO AHORA ESTÁ EN EL NUEVO PREDIO
+      |--------------------------------------------------------------------------
+      */
+
+      vehiculo.estadoActual =
+        "EN_PREDIO";
+
+      await vehiculo.save({
+        transaction,
+      });
+
+
+      /*
+      |--------------------------------------------------------------------------
+      | RECLAMO
+      |--------------------------------------------------------------------------
+      */
+
+   if (reclamo) {
+  const estadoAnterior =
+    reclamo.estado;
+
+  reclamo.estado =
+    "EN_PREDIO";
+
+  reclamo.etapaActual =
+    "EN_PREDIO";
+
+  await reclamo.save({
+    transaction,
+  });
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | HISTORIAL
+        |--------------------------------------------------------------------------
+        */
+
+        const predioDestino =
+          await Predio.findByPk(
+            traslado.predioDestinoId,
+            {
+              transaction,
+            }
+          );
+
+        await registrarHistorial({
+          reclamoId:
+            reclamo.id,
+
+          usuarioId:
+            req.usuario.id,
+
+          accion:
+            "INGRESO_PREDIO",
+
+          descripcion:
+            `Vehículo interno N.º ${
+              vehiculo.numeroInterno ||
+              vehiculo.id
+            } recibido por traslado en ${
+              predioDestino?.nombre ||
+              "predio destino"
+            }. Oficio N.º ${
+              traslado.numeroOficio ||
+              "sin número"
+            }.`,
+
+          estadoAnterior:
+  estadoAnterior,
+
+estadoNuevo:
+  "EN_PREDIO",
+
+          transaction,
+        });
+      }
+
+
+      await transaction.commit();
+
+
+      return res.status(201).json({
+        ok: true,
+
+        mensaje:
+          "Traslado recibido correctamente",
+
+        ingreso,
+      });
+    } catch (error) {
+      await transaction.rollback();
+
+      console.error(
+        "Error recibiendo traslado:",
+        error
+      );
+
+      return res.status(500).json({
+        ok: false,
+        mensaje:
+          "Error al recibir el traslado",
+      });
+    }
+  };
 module.exports = {
   listarPredios,
   crearPredio,
@@ -2832,5 +3450,8 @@ module.exports = {
   listarVehiculosEnPredio,
   listarPendientesIngreso,
   listarHistorialPredio,
-  actualizarPredio 
+  actualizarPredio ,
+  listarPrediosDestino,
+  listarTrasladosPendientes,
+recibirTraslado,
 };

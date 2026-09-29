@@ -250,11 +250,12 @@ const cargarVehiculos =
       setCargando(true);
       setError("");
 
-      const [
-        respuestaPendientes,
-        respuestaEnPredio,
-        respuestaHistorial,
-      ] = await Promise.all([
+   const [
+  respuestaPendientes,
+  respuestaTraslados,
+  respuestaEnPredio,
+  respuestaHistorial,
+] = await Promise.all([
         api.get(
           "/predios/vehiculos/pendientes-ingreso",
           {
@@ -263,6 +264,15 @@ const cargarVehiculos =
             },
           }
         ),
+
+        api.get(
+  "/predios/traslados/pendientes",
+  {
+    params: {
+      predioId,
+    },
+  }
+),
 
         api.get(
           "/predios/vehiculos/en-predio",
@@ -290,12 +300,18 @@ const cargarVehiculos =
           }
         ),
       ]);
+const pendientesNormales =
+  respuestaPendientes.data
+    ?.pendientes || [];
 
-      setPendientes(
-        respuestaPendientes.data
-          ?.pendientes || []
-      );
+const trasladosPendientes =
+  respuestaTraslados.data
+    ?.pendientes || [];
 
+setPendientes([
+  ...pendientesNormales,
+  ...trasladosPendientes,
+]);
       setEnPredio(
         respuestaEnPredio.data
           ?.ingresos || []

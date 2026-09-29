@@ -99,7 +99,7 @@ const VehiculoPredioCard = ({
 {tipo !== "PENDIENTE" && (
   <div>
     <span>
-      Ubicación
+      PRECINTO
     </span>
 
     <strong>
