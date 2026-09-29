@@ -7,6 +7,7 @@ import api from "../api/api";
 
 import "./EgresoPredioForm.css";
 
+
 const EgresoPredioForm = ({
   reclamo,
   vehiculo,
@@ -16,34 +17,51 @@ const EgresoPredioForm = ({
   const [form, setForm] =
     useState({
       tipoEgreso: "ENTREGADO",
+
       predioDestinoId: "",
+
       destinoPersona: "",
+
       dniPersona: "",
+
       numeroOficio: "",
+
+      numeroLibro: "",
+
+      numeroPagina: "",
+
       observaciones: "",
     });
 
- const [predios, setPredios] =
-  useState([]);
 
-const [
-  cargandoPredios,
-  setCargandoPredios,
-] = useState(false);
+  const [predios, setPredios] =
+    useState([]);
 
-const [
-  errorPredios,
-  setErrorPredios,
-] = useState("");
+  const [
+    cargandoPredios,
+    setCargandoPredios,
+  ] = useState(false);
 
-  const [guardando, setGuardando] =
-    useState(false);
+  const [
+    errorPredios,
+    setErrorPredios,
+  ] = useState("");
 
-  const [error, setError] =
-    useState("");
+  const [
+    guardando,
+    setGuardando,
+  ] = useState(false);
 
-  const [mensaje, setMensaje] =
-    useState("");
+  const [
+    error,
+    setError,
+  ] = useState("");
+
+  const [
+    mensaje,
+    setMensaje,
+  ] = useState("");
+
 
   /*
   |--------------------------------------------------------------------------
@@ -51,57 +69,62 @@ const [
   |--------------------------------------------------------------------------
   */
 
-useEffect(() => {
-  const cargarPredios =
-    async () => {
-      try {
-        setCargandoPredios(true);
-        setErrorPredios("");
+  useEffect(() => {
+    const cargarPredios =
+      async () => {
+        try {
+          setCargandoPredios(true);
 
-        const respuesta =
-       await api.get(
-  "/predios/destinos"
-);
+          setErrorPredios("");
 
-        const lista =
-          respuesta.data
-            ?.predios ||
-          [];
+          const respuesta =
+            await api.get(
+              "/predios/destinos"
+            );
 
-        console.log(
-          "Predios recibidos:",
-          lista
-        );
+          const lista =
+            respuesta.data
+              ?.predios ||
+            [];
 
-        setPredios(
-          lista.filter(
-            (predio) =>
-              predio.activo !==
-              false
-          )
-        );
-      } catch (err) {
-        console.error(
-          "Error cargando destinos:",
-          err
-        );
+          console.log(
+            "Predios recibidos:",
+            lista
+          );
 
-        setPredios([]);
+          setPredios(
+            lista.filter(
+              (predio) =>
+                predio.activo !==
+                false
+            )
+          );
 
-        setErrorPredios(
-          err.response?.data
-            ?.mensaje ||
-          "No se pudieron cargar los predios."
-        );
-      } finally {
-        setCargandoPredios(
-          false
-        );
-      }
-    };
+        } catch (err) {
+          console.error(
+            "Error cargando destinos:",
+            err
+          );
 
-  cargarPredios();
-}, []);
+          setPredios([]);
+
+          setErrorPredios(
+            err.response?.data
+              ?.mensaje ||
+            "No se pudieron cargar los predios."
+          );
+
+        } finally {
+          setCargandoPredios(
+            false
+          );
+        }
+      };
+
+    cargarPredios();
+  }, []);
+
+
   /*
   |--------------------------------------------------------------------------
   | CAMBIAR CAMPOS
@@ -120,6 +143,7 @@ useEffect(() => {
     }));
   };
 
+
   /*
   |--------------------------------------------------------------------------
   | CAMBIAR TIPO DE EGRESO
@@ -133,6 +157,7 @@ useEffect(() => {
       event.target.value;
 
     setError("");
+
     setMensaje("");
 
     setForm((anterior) => ({
@@ -151,13 +176,15 @@ useEffect(() => {
         "",
 
       /*
-      El oficio NO se limpia.
+      La documentación NO se limpia
+      al cambiar el tipo de egreso.
 
-      El oficio autoriza la salida,
-      independientemente del destino.
+      Oficio, libro y página pueden
+      utilizarse en cualquier egreso.
       */
     }));
   };
+
 
   /*
   |--------------------------------------------------------------------------
@@ -169,21 +196,23 @@ useEffect(() => {
   |
   */
 
-const prediosDisponibles =
-  predios.filter(
-    (predio) => {
-      const esPredioActual =
-        Number(predio.id) ===
-        Number(
-          ingresoPredio?.predioId
-        );
+  const prediosDisponibles =
+    predios.filter(
+      (predio) => {
+        const esPredioActual =
+          Number(predio.id) ===
+          Number(
+            ingresoPredio?.predioId
+          );
 
-      return (
-        !esPredioActual &&
-        predio.activo !== false
-      );
-    }
-  );
+        return (
+          !esPredioActual &&
+          predio.activo !== false
+        );
+      }
+    );
+
+
   /*
   |--------------------------------------------------------------------------
   | GUARDAR
@@ -196,7 +225,9 @@ const prediosDisponibles =
     event.preventDefault();
 
     setError("");
+
     setMensaje("");
+
 
     /*
     |--------------------------------------------------------------------------
@@ -212,26 +243,6 @@ const prediosDisponibles =
       return;
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | NÚMERO DE OFICIO
-    |--------------------------------------------------------------------------
-    |
-    | Todo vehículo que sale del predio
-    | debe tener un oficio que autorice
-    | su salida.
-    |
-    */
-
-    if (
-      !form.numeroOficio.trim()
-    ) {
-      setError(
-        "Ingresá el número de oficio que autoriza la salida del vehículo."
-      );
-
-      return;
-    }
 
     /*
     |--------------------------------------------------------------------------
@@ -251,10 +262,18 @@ const prediosDisponibles =
       return;
     }
 
+
     /*
     |--------------------------------------------------------------------------
     | TRASLADADO
     |--------------------------------------------------------------------------
+    |
+    | Solamente el predio de destino
+    | es obligatorio.
+    |
+    | Oficio, libro y página
+    | son opcionales.
+    |
     */
 
     if (
@@ -269,23 +288,55 @@ const prediosDisponibles =
       return;
     }
 
+
     /*
     |--------------------------------------------------------------------------
     | CONFIRMACIÓN
     |--------------------------------------------------------------------------
     */
 
+    let textoConfirmacion =
+      "¿Confirmás el egreso del vehículo?";
+
+    if (
+      form.tipoEgreso ===
+      "TRASLADADO"
+    ) {
+      const predioDestino =
+        prediosDisponibles.find(
+          (predio) =>
+            Number(predio.id) ===
+            Number(
+              form.predioDestinoId
+            )
+        );
+
+      textoConfirmacion =
+        `¿Confirmás el traslado del vehículo a ${
+          predioDestino?.nombre ||
+          "otro predio"
+        }?`;
+    }
+
+    if (
+      form.tipoEgreso ===
+      "ENTREGADO"
+    ) {
+      textoConfirmacion =
+        `¿Confirmás la entrega del vehículo a ${
+          form.destinoPersona.trim()
+        }?`;
+    }
+
     const confirmar =
       window.confirm(
-        form.tipoEgreso ===
-          "TRASLADADO"
-          ? `¿Confirmás el traslado del vehículo por oficio N.º ${form.numeroOficio.trim()}?`
-          : `¿Confirmás el egreso del vehículo por oficio N.º ${form.numeroOficio.trim()}?`
+        textoConfirmacion
       );
 
     if (!confirmar) {
       return;
     }
+
 
     /*
     |--------------------------------------------------------------------------
@@ -300,10 +351,14 @@ const prediosDisponibles =
         "/predios/egresos",
         {
           reclamoId:
-            Number(reclamo.id),
+            Number(
+              reclamo.id
+            ),
 
           vehiculoId:
-            Number(vehiculo.id),
+            Number(
+              vehiculo.id
+            ),
 
           ingresoPredioId:
             Number(
@@ -313,15 +368,28 @@ const prediosDisponibles =
           tipoEgreso:
             form.tipoEgreso,
 
+
           /*
           |--------------------------------------------------------------------------
-          | OFICIO
+          | DOCUMENTACIÓN OPCIONAL
           |--------------------------------------------------------------------------
           */
 
           numeroOficio:
             form.numeroOficio
-              .trim(),
+              .trim() ||
+            null,
+
+          numeroLibro:
+            form.numeroLibro
+              .trim() ||
+            null,
+
+          numeroPagina:
+            form.numeroPagina
+              .trim() ||
+            null,
+
 
           /*
           |--------------------------------------------------------------------------
@@ -336,6 +404,7 @@ const prediosDisponibles =
                   form.predioDestinoId
                 )
               : null,
+
 
           /*
           |--------------------------------------------------------------------------
@@ -359,6 +428,7 @@ const prediosDisponibles =
                 null
               : null,
 
+
           /*
           |--------------------------------------------------------------------------
           | OBSERVACIONES
@@ -373,12 +443,16 @@ const prediosDisponibles =
       );
 
       setMensaje(
-        "Egreso registrado correctamente."
+        form.tipoEgreso ===
+          "TRASLADADO"
+          ? "Traslado registrado correctamente."
+          : "Egreso registrado correctamente."
       );
 
       if (onGuardado) {
         await onGuardado();
       }
+
     } catch (err) {
       console.error(
         "Error registrando egreso:",
@@ -388,12 +462,14 @@ const prediosDisponibles =
       setError(
         err.response?.data
           ?.mensaje ||
-          "No se pudo registrar el egreso."
+        "No se pudo registrar el egreso."
       );
+
     } finally {
       setGuardando(false);
     }
   };
+
 
   /*
   |--------------------------------------------------------------------------
@@ -406,6 +482,7 @@ const prediosDisponibles =
       className="egreso-predio-form"
       onSubmit={guardar}
     >
+
       <div className="egreso-header">
         <span>
           EGRESO DEL PREDIO
@@ -423,32 +500,6 @@ const prediosDisponibles =
         </p>
       </div>
 
-      {/*
-      |--------------------------------------------------------------------------
-      | NÚMERO DE OFICIO
-      |--------------------------------------------------------------------------
-      */}
-
-      <label>
-        N.º de oficio *
-
-        <input
-          type="text"
-          name="numeroOficio"
-          value={
-            form.numeroOficio
-          }
-          onChange={cambiar}
-          placeholder="Ej.: 1548/2026"
-          autoComplete="off"
-          required
-        />
-
-        <small>
-          Oficio que autoriza la salida
-          del vehículo del predio.
-        </small>
-      </label>
 
       {/*
       |--------------------------------------------------------------------------
@@ -485,6 +536,7 @@ const prediosDisponibles =
           </option>
         </select>
       </label>
+
 
       {/*
       |--------------------------------------------------------------------------
@@ -524,68 +576,144 @@ const prediosDisponibles =
         </div>
       )}
 
+
       {/*
       |--------------------------------------------------------------------------
       | TRASLADADO
       |--------------------------------------------------------------------------
       */}
 
-   {form.tipoEgreso ===
-  "TRASLADADO" && (
-    <label>
-      Destino del traslado *
+      {form.tipoEgreso ===
+        "TRASLADADO" && (
+        <label>
+          Destino del traslado *
 
-      <select
-        name="predioDestinoId"
-        value={
-          form.predioDestinoId
-        }
-        onChange={cambiar}
-        disabled={
-          cargandoPredios ||
-          prediosDisponibles.length ===
-            0
-        }
-      >
-        <option value="">
-          {cargandoPredios
-            ? "Cargando predios..."
-            : prediosDisponibles.length >
+          <select
+            name="predioDestinoId"
+            value={
+              form.predioDestinoId
+            }
+            onChange={cambiar}
+            disabled={
+              cargandoPredios ||
+              prediosDisponibles.length ===
                 0
-              ? "Seleccionar predio de destino"
-              : "No hay otros predios disponibles"}
-        </option>
-
-        {prediosDisponibles.map(
-          (predio) => (
-            <option
-              key={predio.id}
-              value={predio.id}
-            >
-              {predio.nombre}
+            }
+          >
+            <option value="">
+              {cargandoPredios
+                ? "Cargando predios..."
+                : prediosDisponibles.length >
+                    0
+                  ? "Seleccionar predio de destino"
+                  : "No hay otros predios disponibles"}
             </option>
-          )
-        )}
-      </select>
 
-      {errorPredios && (
-        <small className="egreso-error-predios">
-          {errorPredios}
-        </small>
+            {prediosDisponibles.map(
+              (predio) => (
+                <option
+                  key={predio.id}
+                  value={predio.id}
+                >
+                  {predio.nombre}
+                </option>
+              )
+            )}
+          </select>
+
+          {errorPredios && (
+            <small className="egreso-error-predios">
+              {errorPredios}
+            </small>
+          )}
+
+          {!cargandoPredios &&
+            !errorPredios &&
+            prediosDisponibles.length ===
+              0 && (
+              <small>
+                No existe otro predio
+                activo disponible para
+                realizar el traslado.
+              </small>
+            )}
+        </label>
       )}
 
-      {!cargandoPredios &&
-        !errorPredios &&
-        prediosDisponibles.length ===
-          0 && (
-          <small>
-            No existe otro predio
-            activo disponible para
-            realizar el traslado.
-          </small>
-        )}
-    </label>
-  )}
+
+      {/*
+      |--------------------------------------------------------------------------
+      | DOCUMENTACIÓN
+      |--------------------------------------------------------------------------
+      */}
+
+      <div className="egreso-documentacion">
+        <div className="egreso-documentacion-titulo">
+          <strong>
+            Documentación
+          </strong>
+
+          <span>
+            Opcional
+          </span>
+        </div>
+
+        <p className="egreso-documentacion-ayuda">
+          Completá los datos que figuren
+          en la documentación disponible.
+          Podés dejar todos los campos
+          vacíos.
+        </p>
+
+        <label>
+          N.º de oficio
+
+          <input
+            type="text"
+            name="numeroOficio"
+            value={
+              form.numeroOficio
+            }
+            onChange={cambiar}
+            placeholder="Ej.: 1548/2026"
+            autoComplete="off"
+          />
+        </label>
+
+        <div className="egreso-grid">
+          <label>
+            N.º de libro
+
+            <input
+              type="text"
+              name="numeroLibro"
+              value={
+                form.numeroLibro
+              }
+              onChange={cambiar}
+              placeholder="Ej.: 12"
+              autoComplete="off"
+            />
+          </label>
+
+          <label>
+            N.º de página
+
+            <input
+              type="text"
+              name="numeroPagina"
+              value={
+                form.numeroPagina
+              }
+              onChange={cambiar}
+              placeholder="Ej.: 145"
+              autoComplete="off"
+            />
+          </label>
+        </div>
+      </div>
+
+
       {/*
       |--------------------------------------------------------------------------
       | COMPACTADO
@@ -603,6 +731,7 @@ const prediosDisponibles =
         </div>
       )}
 
+
       {/*
       |--------------------------------------------------------------------------
       | OTRO
@@ -616,6 +745,7 @@ const prediosDisponibles =
           ocurrió con el vehículo.
         </div>
       )}
+
 
       {/*
       |--------------------------------------------------------------------------
@@ -645,6 +775,7 @@ const prediosDisponibles =
         />
       </label>
 
+
       {/*
       |--------------------------------------------------------------------------
       | MENSAJES
@@ -662,6 +793,7 @@ const prediosDisponibles =
           {mensaje}
         </div>
       )}
+
 
       {/*
       |--------------------------------------------------------------------------
@@ -681,8 +813,10 @@ const prediosDisponibles =
             ? "Registrar traslado"
             : "Registrar egreso"}
       </button>
+
     </form>
   );
 };
+
 
 export default EgresoPredioForm;

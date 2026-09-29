@@ -82,6 +82,16 @@
   allowNull: true,
 },
 
+  numeroLibro: {
+        type: DataTypes.STRING(100),
+        allowNull: true,
+      },
+
+      numeroPagina: {
+        type: DataTypes.STRING(100),
+        allowNull: true,
+      },
+
         observaciones: {
           type: DataTypes.TEXT,
           allowNull: true,

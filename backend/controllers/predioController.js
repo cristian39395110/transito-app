@@ -1054,9 +1054,15 @@ const registrarEgreso =
         predioDestinoId,
         destinoPersona,
         dniPersona,
+
+        // Documentación opcional
         numeroOficio,
+        numeroLibro,
+        numeroPagina,
+
         observaciones,
       } = req.body;
+
 
       /*
       |--------------------------------------------------------------------------
@@ -1077,13 +1083,14 @@ const registrarEgreso =
         });
       }
 
+
       /*
       |--------------------------------------------------------------------------
-      | NÚMERO DE OFICIO OBLIGATORIO PARA TODO EGRESO
+      | DOCUMENTACIÓN OPCIONAL
       |--------------------------------------------------------------------------
       |
-      | Ningún vehículo puede salir del predio
-      | sin el oficio que autoriza su salida.
+      | Oficio, libro y página son opcionales.
+      | Se guarda solamente lo que haya sido informado.
       |
       */
 
@@ -1092,15 +1099,16 @@ const registrarEgreso =
           numeroOficio || ""
         ).trim();
 
-      if (!numeroOficioLimpio) {
-        await transaction.rollback();
+      const numeroLibroLimpio =
+        String(
+          numeroLibro || ""
+        ).trim();
 
-        return res.status(400).json({
-          ok: false,
-          mensaje:
-            "Debe indicar el número de oficio que autoriza la salida del vehículo",
-        });
-      }
+      const numeroPaginaLimpio =
+        String(
+          numeroPagina || ""
+        ).trim();
+
 
       /*
       |--------------------------------------------------------------------------
@@ -1129,6 +1137,7 @@ const registrarEgreso =
         });
       }
 
+
       /*
       |--------------------------------------------------------------------------
       | BUSCAR INGRESO
@@ -1153,46 +1162,52 @@ const registrarEgreso =
         });
       }
 
+
       /*
-|--------------------------------------------------------------------------
-| SEGURIDAD SECRETARÍA DE PREDIO
-|--------------------------------------------------------------------------
-|
-| Una secretaria de predio solamente puede registrar
-| egresos del predio que tiene asignado.
-|
-*/
+      |--------------------------------------------------------------------------
+      | SEGURIDAD SECRETARÍA DE PREDIO
+      |--------------------------------------------------------------------------
+      |
+      | Una secretaria de predio solamente puede registrar
+      | egresos del predio que tiene asignado.
+      |
+      */
 
-if (
-  req.usuario?.rol ===
-  "secretaria_predio"
-) {
-  const predioAsignado =
-    Number(req.usuario.predioId);
+      if (
+        req.usuario?.rol ===
+        "secretaria_predio"
+      ) {
+        const predioAsignado =
+          Number(
+            req.usuario.predioId
+          );
 
-  if (!predioAsignado) {
-    await transaction.rollback();
+        if (!predioAsignado) {
+          await transaction.rollback();
 
-    return res.status(403).json({
-      ok: false,
-      mensaje:
-        "La secretaria no tiene un predio asignado",
-    });
-  }
+          return res.status(403).json({
+            ok: false,
+            mensaje:
+              "La secretaria no tiene un predio asignado",
+          });
+        }
 
-  if (
-    Number(ingreso.predioId) !==
-    predioAsignado
-  ) {
-    await transaction.rollback();
+        if (
+          Number(
+            ingreso.predioId
+          ) !==
+          predioAsignado
+        ) {
+          await transaction.rollback();
 
-    return res.status(403).json({
-      ok: false,
-      mensaje:
-        "No tiene permiso para registrar egresos de este predio",
-    });
-  }
-}
+          return res.status(403).json({
+            ok: false,
+            mensaje:
+              "No tiene permiso para registrar egresos de este predio",
+          });
+        }
+      }
+
 
       /*
       |--------------------------------------------------------------------------
@@ -1219,6 +1234,7 @@ if (
             "Este vehículo ya tiene un egreso registrado",
         });
       }
+
 
       /*
       |--------------------------------------------------------------------------
@@ -1255,10 +1271,17 @@ if (
         });
       }
 
+
       /*
       |--------------------------------------------------------------------------
       | VALIDAR TRASLADO
       |--------------------------------------------------------------------------
+      |
+      | Para trasladar, solamente es obligatorio
+      | seleccionar el predio de destino.
+      |
+      | Oficio, libro y página siguen siendo opcionales.
+      |
       */
 
       let predioDestino = null;
@@ -1319,6 +1342,7 @@ if (
         }
       }
 
+
       /*
       |--------------------------------------------------------------------------
       | FECHA
@@ -1327,7 +1351,9 @@ if (
 
       const fechaEgreso =
         fechaHora
-          ? new Date(fechaHora)
+          ? new Date(
+              fechaHora
+            )
           : new Date();
 
       if (
@@ -1343,6 +1369,7 @@ if (
             "La fecha de egreso no es válida",
         });
       }
+
 
       /*
       |--------------------------------------------------------------------------
@@ -1392,14 +1419,25 @@ if (
                   null
                 : null,
 
+
             /*
             |--------------------------------------------------------------------------
-            | OFICIO QUE AUTORIZA LA SALIDA
+            | DOCUMENTACIÓN OPCIONAL
             |--------------------------------------------------------------------------
             */
 
             numeroOficio:
-              numeroOficioLimpio,
+              numeroOficioLimpio ||
+              null,
+
+            numeroLibro:
+              numeroLibroLimpio ||
+              null,
+
+            numeroPagina:
+              numeroPaginaLimpio ||
+              null,
+
 
             observaciones:
               observaciones
@@ -1410,6 +1448,7 @@ if (
             transaction,
           }
         );
+
 
       /*
       |--------------------------------------------------------------------------
@@ -1424,11 +1463,80 @@ if (
         transaction,
       });
 
+
+      /*
+      |--------------------------------------------------------------------------
+      | TEXTO DE DOCUMENTACIÓN PARA HISTORIAL
+      |--------------------------------------------------------------------------
+      */
+
+      const documentacion = [];
+
+      if (numeroOficioLimpio) {
+        documentacion.push(
+          `oficio N.º ${numeroOficioLimpio}`
+        );
+      }
+
+      if (numeroLibroLimpio) {
+        documentacion.push(
+          `libro N.º ${numeroLibroLimpio}`
+        );
+      }
+
+      if (numeroPaginaLimpio) {
+        documentacion.push(
+          `página N.º ${numeroPaginaLimpio}`
+        );
+      }
+
+      const textoDocumentacion =
+        documentacion.length > 0
+          ? ` - ${documentacion.join(
+              " - "
+            )}`
+          : "";
+
+
       /*
       |--------------------------------------------------------------------------
       | HISTORIAL
       |--------------------------------------------------------------------------
       */
+
+      let descripcionHistorial = "";
+
+      if (
+        tipoEgreso ===
+        "TRASLADADO"
+      ) {
+        descripcionHistorial =
+          `Vehículo interno N.º ${
+            vehiculo.numeroInterno ||
+            vehiculo.id
+          } trasladado a ${
+            predioDestino.nombre
+          }${textoDocumentacion}`;
+      } else if (
+        tipoEgreso ===
+        "ENTREGADO"
+      ) {
+        descripcionHistorial =
+          `Vehículo interno N.º ${
+            vehiculo.numeroInterno ||
+            vehiculo.id
+          } entregado a ${
+            destinoPersona?.trim() ||
+            "responsable"
+          }${textoDocumentacion}`;
+      } else {
+        descripcionHistorial =
+          `Vehículo interno N.º ${
+            vehiculo.numeroInterno ||
+            vehiculo.id
+          }: ${tipoEgreso}${textoDocumentacion}`;
+      }
+
 
       await registrarHistorial({
         reclamoId:
@@ -1441,27 +1549,7 @@ if (
           "EGRESO_PREDIO",
 
         descripcion:
-          tipoEgreso ===
-          "TRASLADADO"
-            ? `Vehículo interno N.º ${
-                vehiculo.numeroInterno ||
-                vehiculo.id
-              } trasladado a ${
-                predioDestino.nombre
-              } por oficio N.º ${numeroOficioLimpio}`
-            : tipoEgreso ===
-                "ENTREGADO"
-              ? `Vehículo interno N.º ${
-                  vehiculo.numeroInterno ||
-                  vehiculo.id
-                } entregado a ${
-                  destinoPersona?.trim() ||
-                  "responsable"
-                } por oficio N.º ${numeroOficioLimpio}`
-              : `Vehículo interno N.º ${
-                  vehiculo.numeroInterno ||
-                  vehiculo.id
-                }: ${tipoEgreso} por oficio N.º ${numeroOficioLimpio}`,
+          descripcionHistorial,
 
         estadoAnterior:
           reclamo.estado,
@@ -1471,6 +1559,7 @@ if (
 
         transaction,
       });
+
 
       /*
       |--------------------------------------------------------------------------
@@ -1509,6 +1598,7 @@ if (
         });
       }
 
+
       /*
       |--------------------------------------------------------------------------
       | CONFIRMAR
@@ -1526,7 +1616,8 @@ if (
         egreso,
 
         reclamo: {
-          id: reclamo.id,
+          id:
+            reclamo.id,
 
           estado:
             reclamo.estado,
@@ -1535,6 +1626,7 @@ if (
             reclamo.estadoExterno,
         },
       });
+
     } catch (error) {
       await transaction.rollback();
 

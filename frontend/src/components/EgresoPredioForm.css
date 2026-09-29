@@ -128,3 +128,217 @@
       );
   }
 }
+
+/* =========================================================
+   DOCUMENTACIÓN DEL EGRESO
+   ========================================================= */
+
+.egreso-documentacion {
+  width: 100%;
+  box-sizing: border-box;
+
+  padding: 16px;
+  margin: 4px 0;
+
+  background: #f8fafc;
+  border: 1px solid #dbe3ec;
+  border-radius: 12px;
+}
+
+
+/* =========================================================
+   CABECERA
+   ========================================================= */
+
+.egreso-documentacion-titulo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+
+  margin-bottom: 6px;
+}
+
+.egreso-documentacion-titulo strong {
+  color: #1f2937;
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.egreso-documentacion-titulo span {
+  flex-shrink: 0;
+
+  padding: 4px 9px;
+
+  background: #e2e8f0;
+  color: #475569;
+
+  border-radius: 999px;
+
+  font-size: 12px;
+  font-weight: 700;
+}
+
+
+/* =========================================================
+   TEXTO DE AYUDA
+   ========================================================= */
+
+.egreso-documentacion-ayuda {
+  margin: 0 0 14px;
+
+  color: #64748b;
+
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+
+/* =========================================================
+   LABELS
+   ========================================================= */
+
+.egreso-documentacion label {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+
+  width: 100%;
+  min-width: 0;
+
+  margin-bottom: 14px;
+
+  color: #374151;
+
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.egreso-documentacion label:last-child {
+  margin-bottom: 0;
+}
+
+
+/* =========================================================
+   INPUTS
+   ========================================================= */
+
+.egreso-documentacion input {
+  display: block;
+
+  width: 100%;
+  min-width: 0;
+  min-height: 48px;
+
+  box-sizing: border-box;
+
+  padding: 11px 12px;
+
+  background: #ffffff;
+  color: #111827;
+
+  border: 1px solid #cbd5e1;
+  border-radius: 9px;
+
+  font-family: inherit;
+
+  /*
+   * 16px evita el zoom automático
+   * en varios navegadores móviles.
+   */
+  font-size: 16px;
+
+  outline: none;
+
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    background 0.15s ease;
+}
+
+.egreso-documentacion input::placeholder {
+  color: #94a3b8;
+}
+
+.egreso-documentacion input:hover {
+  border-color: #94a3b8;
+}
+
+.egreso-documentacion input:focus {
+  background: #ffffff;
+
+  border-color: #2563eb;
+
+  box-shadow:
+    0 0 0 3px
+    rgba(37, 99, 235, 0.12);
+}
+
+
+/* =========================================================
+   LIBRO / PÁGINA
+   ========================================================= */
+
+/*
+ * En celular los dejamos uno debajo
+ * del otro para que sean cómodos.
+ */
+
+.egreso-documentacion .egreso-grid {
+  display: grid;
+
+  grid-template-columns: 1fr;
+
+  gap: 12px;
+
+  width: 100%;
+}
+
+.egreso-documentacion .egreso-grid label {
+  margin-bottom: 0;
+}
+
+
+/* =========================================================
+   TABLET / PC
+   ========================================================= */
+
+@media (min-width: 700px) {
+  .egreso-documentacion {
+    padding: 18px;
+  }
+
+  /*
+   * En pantallas grandes:
+   *
+   * Libro      | Página
+   */
+  .egreso-documentacion .egreso-grid {
+    grid-template-columns:
+      minmax(0, 1fr)
+      minmax(0, 1fr);
+
+    gap: 14px;
+  }
+}
+
+
+/* =========================================================
+   CELULARES PEQUEÑOS
+   ========================================================= */
+
+@media (max-width: 480px) {
+  .egreso-documentacion {
+    padding: 14px;
+
+    border-radius: 10px;
+  }
+
+  .egreso-documentacion-titulo {
+    align-items: flex-start;
+  }
+
+  .egreso-documentacion input {
+    min-height: 50px;
+  }
+}

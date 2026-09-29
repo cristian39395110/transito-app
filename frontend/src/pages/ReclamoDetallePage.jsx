@@ -3649,28 +3649,52 @@ if (
         )}
 
         {datos.numeroOficio && (
-          <div>
-            <span>
-              N.º de oficio
-            </span>
+  <div>
+    <span>
+      N.º de oficio
+    </span>
 
-            <strong>
-              {datos.numeroOficio}
-            </strong>
-          </div>
-        )}
+    <strong>
+      {datos.numeroOficio}
+    </strong>
+  </div>
+)}
 
-        <div>
-          <span>
-            Registrado por
-          </span>
+{datos.numeroLibro && (
+  <div>
+    <span>
+      N.º de libro
+    </span>
 
-          <strong>
-            {nombreUsuario(
-              datos.registradoPor
-            )}
-          </strong>
-        </div>
+    <strong>
+      {datos.numeroLibro}
+    </strong>
+  </div>
+)}
+
+{datos.numeroPagina && (
+  <div>
+    <span>
+      N.º de página
+    </span>
+
+    <strong>
+      {datos.numeroPagina}
+    </strong>
+  </div>
+)}
+
+<div>
+  <span>
+    Registrado por
+  </span>
+
+  <strong>
+    {nombreUsuario(
+      datos.registradoPor
+    )}
+  </strong>
+</div>
       </div>
 
       {datos.observaciones && (

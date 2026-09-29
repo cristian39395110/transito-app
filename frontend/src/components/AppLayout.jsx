@@ -251,7 +251,7 @@ const puede = (
         "director",
         "jefe_guardia",
         "secretaria_reclamos",
-        "secretaria_predio",
+        
       ],
     },
     {
