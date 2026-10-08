@@ -1804,3 +1804,931 @@
     margin-top: 10px;
   }
 }
+
+/* =========================================================
+   EVIDENCIA PRIMERA VISITA
+========================================================= */
+
+.evidencia-primera-visita {
+  width: 100%;
+  margin-top: 18px;
+}
+
+.evidencia-general {
+  width: 100%;
+  margin-bottom: 22px;
+}
+
+.evidencia-vehiculo-bloque {
+  width: 100%;
+  margin-top: 18px;
+}
+
+.evidencia-vehiculo-cabecera {
+  margin-bottom: 14px;
+}
+
+
+/* =========================================================
+   CELULAR
+   Foto vehículo
+   Foto emplazamiento
+   una debajo de la otra
+========================================================= */
+
+.evidencia-vehiculo-fotos {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+
+.evidencia-vehiculo-foto {
+  width: 100%;
+  min-width: 0;
+}
+
+.evidencia-vehiculo-foto img {
+  display: block;
+
+  width: 100%;
+  max-width: 100%;
+
+  height: auto;
+  max-height: 320px;
+
+  object-fit: cover;
+  object-position: center;
+
+  border-radius: 10px;
+}
+
+
+/* =========================================================
+   COMPUTADORA / TABLET
+   Foto vehículo | Foto emplazamiento
+========================================================= */
+@media (min-width: 768px) {
+
+  .evidencia-vehiculo-fotos {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+
+    gap: 18px;
+    align-items: start;
+  }
+
+  .evidencia-vehiculo-foto img {
+    width: 100%;
+    height: 350px;
+    max-height: 350px;
+
+    object-fit: cover;
+    object-position: center;
+  }
+}
+
+/* =========================================================
+   FIX FOTOS VEHÍCULO + EMPLAZAMIENTO
+========================================================= */
+
+.evidencia-vehiculo-foto .galeria-fotos {
+  width: 100% !important;
+  display: block !important;
+}
+
+.evidencia-vehiculo-foto .galeria-foto {
+  width: 100% !important;
+  max-width: 100% !important;
+  display: block !important;
+}
+
+.evidencia-vehiculo-foto .galeria-foto img {
+  display: block !important;
+  width: 100% !important;
+
+  /* IMPORTANTE: no recortar la evidencia */
+  height: auto !important;
+  max-height: none !important;
+
+  object-fit: contain !important;
+  object-position: center !important;
+
+  border-radius: 10px;
+}
+
+
+/* PC: las dos evidencias juntas */
+@media (min-width: 768px) {
+
+  .evidencia-vehiculo-fotos {
+    display: grid;
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+    gap: 22px;
+    align-items: start;
+  }
+
+}
+
+
+/* CELULAR: una debajo de la otra */
+@media (max-width: 767px) {
+
+  .evidencia-vehiculo-fotos {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+
+}
+
+/* =========================================================
+   VEHÍCULOS DEL RECLAMO
+========================================================= */
+
+.vehiculos-reclamo-resumen {
+  margin: 22px 0;
+}
+
+.vehiculos-reclamo-cabecera {
+  margin-bottom: 14px;
+}
+
+.vehiculos-reclamo-etiqueta {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: .04em;
+}
+
+.vehiculos-reclamo-cabecera h2 {
+  margin: 0;
+  font-size: 22px;
+}
+
+.vehiculos-reclamo-cabecera p {
+  margin: 6px 0 0;
+  line-height: 1.45;
+}
+
+.vehiculos-reclamo-lista {
+  display: grid;
+  gap: 14px;
+}
+
+.vehiculo-reclamo-card {
+  padding: 16px;
+  border: 1px solid #d9dde3;
+  border-radius: 14px;
+  background: #fff;
+}
+
+.vehiculo-reclamo-titulo {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.vehiculo-reclamo-numero {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: .04em;
+}
+
+.vehiculo-reclamo-titulo h3 {
+  margin: 0;
+  font-size: 23px;
+}
+
+.vehiculo-reclamo-titulo p {
+  margin: 4px 0 0;
+  font-size: 14px;
+}
+
+.vehiculo-reclamo-estado {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 10px 12px;
+  border: 1px solid #d9dde3;
+  border-radius: 10px;
+}
+
+.vehiculo-reclamo-estado strong {
+  font-size: 15px;
+}
+
+.vehiculo-reclamo-estado span {
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.vehiculo-reclamo-datos {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  padding-top: 14px;
+}
+
+.vehiculo-reclamo-dato {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 11px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+}
+
+.vehiculo-reclamo-dato span {
+  font-size: 12px;
+}
+
+.vehiculo-reclamo-dato strong {
+  font-size: 15px;
+}
+
+.vehiculo-reclamo-dato small {
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.vehiculo-reclamo-sin-actuaciones {
+  margin-top: 14px;
+  padding: 12px;
+  border: 1px dashed #cfd4dc;
+  border-radius: 10px;
+  font-size: 14px;
+}
+
+@media (min-width: 700px) {
+  .vehiculo-reclamo-titulo {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: flex-start;
+  }
+
+  .vehiculo-reclamo-estado {
+    min-width: 240px;
+  }
+
+  .vehiculo-reclamo-datos {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1050px) {
+  .vehiculo-reclamo-datos {
+    grid-template-columns:
+      repeat(3, minmax(0, 1fr));
+  }
+}
+
+.cronologia-vehiculo {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  width: fit-content;
+  max-width: 100%;
+  margin: 8px 0 12px;
+  padding: 7px 10px;
+  border: 1px solid #d9dde3;
+  border-radius: 8px;
+  background: #f8f9fa;
+}
+
+.cronologia-vehiculo span {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.cronologia-vehiculo strong {
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 600px) {
+  .cronologia-vehiculo {
+    width: 100%;
+  }
+}
+
+/* =========================================================
+   VEHÍCULOS DEL RECLAMO
+========================================================= */
+
+.vehiculos-reclamo-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  width: 100%;
+}
+
+.vehiculo-reclamo-card {
+  width: 100%;
+  box-sizing: border-box;
+  background: #fff;
+  border: 1px solid #dfe3e8;
+  border-radius: 14px;
+  padding: 16px;
+  overflow: hidden;
+}
+
+.vehiculo-reclamo-titulo {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding-bottom: 14px;
+  margin-bottom: 14px;
+  border-bottom: 1px solid #e7e9ec;
+}
+
+.vehiculo-reclamo-numero {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: #5c6570;
+}
+
+.vehiculo-reclamo-titulo h3 {
+  margin: 0;
+  font-size: 24px;
+  line-height: 1.15;
+  color: #17191c;
+  overflow-wrap: anywhere;
+}
+
+.vehiculo-reclamo-titulo p {
+  margin: 5px 0 0;
+  font-size: 14px;
+  line-height: 1.4;
+  color: #606873;
+}
+
+.vehiculo-reclamo-estado {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 11px 12px;
+  background: #f4f6f8;
+  border: 1px solid #dfe3e8;
+  border-radius: 10px;
+}
+
+.vehiculo-reclamo-estado strong {
+  font-size: 15px;
+  line-height: 1.3;
+  color: #1d232a;
+}
+
+.vehiculo-reclamo-estado span {
+  font-size: 13px;
+  line-height: 1.4;
+  color: #5b6470;
+}
+
+
+/* =========================================================
+   DATOS / ACTUACIONES DEL VEHÍCULO
+========================================================= */
+
+.vehiculo-reclamo-datos {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  width: 100%;
+}
+
+.vehiculo-reclamo-dato {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+  box-sizing: border-box;
+  padding: 12px;
+  background: #f8f9fa;
+  border: 1px solid #e3e6e9;
+  border-radius: 10px;
+}
+
+.vehiculo-reclamo-dato > span {
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1.35;
+  letter-spacing: 0.035em;
+  color: #606873;
+}
+
+.vehiculo-reclamo-dato > strong {
+  font-size: 15px;
+  line-height: 1.35;
+  color: #20252b;
+  overflow-wrap: anywhere;
+}
+
+.vehiculo-reclamo-dato > small {
+  display: block;
+  font-size: 13px;
+  line-height: 1.4;
+  color: #656d76;
+  overflow-wrap: anywhere;
+}
+
+
+/* =========================================================
+   EVIDENCIAS
+========================================================= */
+
+.vehiculo-reclamo-evidencia {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 12px;
+  padding: 12px;
+  box-sizing: border-box;
+  background: #f8f9fa;
+  border: 1px solid #e3e6e9;
+  border-radius: 10px;
+}
+
+.vehiculo-reclamo-evidencia > strong {
+  font-size: 13px;
+  line-height: 1.4;
+  color: #343a40;
+}
+
+.evidencia-primera-visita {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  margin-top: 14px;
+}
+
+.evidencia-general,
+.evidencia-vehiculo-bloque {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 12px;
+  background: #f8f9fa;
+  border: 1px solid #e1e5e9;
+  border-radius: 10px;
+}
+
+.evidencia-visita-titulo {
+  display: block;
+  margin-bottom: 3px;
+  font-size: 14px;
+  color: #24292f;
+}
+
+.evidencia-visita-descripcion {
+  display: block;
+  margin-bottom: 10px;
+  font-size: 13px;
+  line-height: 1.4;
+  color: #68717b;
+}
+
+.evidencia-vehiculo-cabecera {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 10px;
+}
+
+.evidencia-vehiculo-cabecera strong {
+  font-size: 14px;
+  color: #24292f;
+}
+
+
+/* =========================================================
+   BOTÓN INVENTARIO
+========================================================= */
+
+.vehiculo-reclamo-acciones {
+  display: flex;
+  width: 100%;
+  margin-top: 12px;
+}
+
+.boton-inventario {
+  width: 100%;
+  min-height: 46px;
+  box-sizing: border-box;
+  padding: 11px 14px;
+  border: 0;
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.3;
+  cursor: pointer;
+}
+
+.boton-inventario:active {
+  transform: translateY(1px);
+}
+
+
+/* =========================================================
+   PREDIO MUNICIPAL
+========================================================= */
+
+.vehiculo-reclamo-final {
+  width: 100%;
+  box-sizing: border-box;
+  margin-top: 16px;
+  padding: 14px;
+  background: #f5f7f8;
+  border: 1px solid #d8dde2;
+  border-radius: 12px;
+}
+
+.vehiculo-reclamo-final-titulo {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding-bottom: 11px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid #dce1e5;
+}
+
+.vehiculo-reclamo-final-titulo span {
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1.3;
+  letter-spacing: 0.05em;
+  color: #59636d;
+}
+
+.vehiculo-reclamo-final-titulo strong {
+  font-size: 16px;
+  line-height: 1.35;
+  color: #20252b;
+}
+
+
+/* =========================================================
+   EGRESO DEL PREDIO
+========================================================= */
+
+.vehiculo-reclamo-egreso {
+  width: 100%;
+  box-sizing: border-box;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 2px solid #d8dde2;
+}
+
+
+/* =========================================================
+   IDENTIFICACIÓN DEL VEHÍCULO EN CRONOLOGÍA
+========================================================= */
+
+.cronologia-vehiculo {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px 8px;
+  width: fit-content;
+  max-width: 100%;
+  box-sizing: border-box;
+  margin-bottom: 10px;
+  padding: 7px 10px;
+  background: #f1f3f5;
+  border: 1px solid #dde1e5;
+  border-radius: 8px;
+}
+
+.cronologia-vehiculo span {
+  font-size: 12px;
+  font-weight: 700;
+  color: #59616a;
+}
+
+.cronologia-vehiculo strong {
+  font-size: 13px;
+  color: #20252b;
+  overflow-wrap: anywhere;
+}
+
+
+/* =========================================================
+   PROTECCIÓN PARA CELULAR
+========================================================= */
+
+.vehiculo-reclamo-card img,
+.vehiculo-reclamo-evidencia img,
+.evidencia-primera-visita img {
+  max-width: 100%;
+  height: auto;
+}
+
+.vehiculo-reclamo-card button,
+.vehiculo-reclamo-card input,
+.vehiculo-reclamo-card select,
+.vehiculo-reclamo-card textarea {
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.vehiculo-reclamo-card,
+.vehiculo-reclamo-card * {
+  overflow-wrap: anywhere;
+}
+
+
+/* =========================================================
+   TABLET / PC
+========================================================= */
+
+@media (min-width: 700px) {
+  .vehiculo-reclamo-card {
+    padding: 20px;
+  }
+
+  .vehiculo-reclamo-titulo {
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: space-between;
+  }
+
+  .vehiculo-reclamo-estado {
+    width: auto;
+    min-width: 230px;
+    max-width: 360px;
+  }
+
+  .vehiculo-reclamo-datos {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+  }
+
+  .vehiculo-reclamo-final {
+    padding: 16px;
+  }
+
+  .vehiculo-reclamo-acciones {
+    justify-content: flex-start;
+  }
+
+  .boton-inventario {
+    width: auto;
+    min-width: 240px;
+  }
+
+  .evidencia-vehiculo-cabecera {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+
+
+/* =========================================================
+   PC GRANDE
+========================================================= */
+
+@media (min-width: 1100px) {
+  .vehiculo-reclamo-card {
+    padding: 22px;
+  }
+
+  .vehiculo-reclamo-datos {
+    grid-template-columns:
+      repeat(3, minmax(0, 1fr));
+  }
+
+  .vehiculo-reclamo-final
+    .vehiculo-reclamo-datos {
+    grid-template-columns:
+      repeat(3, minmax(0, 1fr));
+  }
+}
+
+/* =========================================================
+   HISTORIAL AGRUPADO POR VEHÍCULO
+========================================================= */
+
+.historial-por-vehiculo {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  width: 100%;
+}
+
+.historial-general,
+.historial-vehiculo {
+  width: 100%;
+  min-width: 0;
+}
+
+.historial-grupo-titulo,
+.historial-vehiculo-cabecera {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  padding: 14px 16px;
+  margin-bottom: 14px;
+
+  border: 1px solid #dfe3e8;
+  border-radius: 12px;
+
+  background: #f8f9fa;
+}
+
+.historial-grupo-titulo > span,
+.historial-vehiculo-icono {
+  flex: 0 0 auto;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 42px;
+  height: 42px;
+
+  border-radius: 50%;
+
+  background: #ffffff;
+
+  font-size: 21px;
+}
+
+.historial-grupo-titulo > div,
+.historial-vehiculo-info {
+  display: flex;
+  flex-direction: column;
+
+  min-width: 0;
+}
+
+.historial-grupo-titulo strong,
+.historial-vehiculo-info strong {
+  font-size: 17px;
+  line-height: 1.25;
+}
+
+.historial-grupo-titulo small,
+.historial-vehiculo-info small {
+  margin-top: 3px;
+
+  color: #667085;
+
+  font-size: 13px;
+}
+
+.historial-vehiculo-info > span {
+  margin-bottom: 2px;
+
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+
+/* =========================================================
+   CELULAR
+========================================================= */
+
+@media (max-width: 768px) {
+
+  .historial-por-vehiculo {
+    gap: 22px;
+  }
+
+  .historial-grupo-titulo,
+  .historial-vehiculo-cabecera {
+    padding: 12px;
+
+    border-radius: 10px;
+  }
+
+  .historial-grupo-titulo > span,
+  .historial-vehiculo-icono {
+    width: 38px;
+    height: 38px;
+
+    font-size: 18px;
+  }
+
+  .historial-grupo-titulo strong,
+  .historial-vehiculo-info strong {
+    font-size: 16px;
+  }
+
+  .historial-vehiculo .linea-tiempo,
+  .historial-general .linea-tiempo {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .historial-vehiculo .evento-contenido,
+  .historial-general .evento-contenido {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .historial-vehiculo .evento-cuerpo,
+  .historial-general .evento-cuerpo {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+}
+
+/* Fotografías históricas: constatación y emplazamiento */
+
+.evidencias-historicas-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  width: 100%;
+  align-items: start;
+}
+
+.evidencia-historica-item {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.evidencia-historica-item .evidencia-visita-titulo,
+.evidencia-historica-item .evidencia-visita-descripcion {
+  display: block;
+}
+
+/* Evita que el contenido desborde la columna */
+.evidencia-historica-item > * {
+  max-width: 100%;
+}
+
+/* En celulares se muestran una debajo de la otra */
+@media (max-width: 650px) {
+  .evidencias-historicas-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+/* Fotografías históricas del expediente */
+
+.evidencias-historicas-grid .galeria-fotos {
+  grid-template-columns: minmax(0, 1fr);
+  width: 100%;
+}
+
+.evidencias-historicas-grid .galeria-foto {
+  display: block;
+  width: 100%;
+}
+
+.evidencias-historicas-grid .galeria-foto img {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+}
+
+@media (max-width: 650px) {
+  .evidencias-historicas-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+/* Foto de infracción: mismo tamaño que emplazamiento */
+
+@media (min-width: 768px) {
+  .evento-fotos .galeria-fotos {
+    grid-template-columns: minmax(0, 1fr);
+    width: 50%;
+  }
+
+  .evento-fotos .galeria-foto {
+    display: block;
+    width: 100%;
+  }
+
+  .evento-fotos .galeria-foto img {
+    display: block;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 4 / 3;
+    object-fit: cover;
+  }
+}

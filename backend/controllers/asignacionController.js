@@ -1,13 +1,21 @@
+//AsignacionController
+
 const {
   Op,
 } = require("sequelize");
 
+const {
+  enviarCorreo,
+} = require(
+  "../services/emailService"
+);
 const {
   sequelize,
   Reclamo,
   Usuario,
   Rol,
   Asignacion,
+  Infraccion,
 } = require("../models");
 
 const {
@@ -424,6 +432,127 @@ const asignarJefeGuardia =
 
       await transaction.commit();
 
+      /*
+|--------------------------------------------------------------------------
+| NOTIFICAR POR EMAIL AL JEFE
+|--------------------------------------------------------------------------
+|
+| IMPORTANTE:
+| El reclamo ya quedó asignado y la transacción ya terminó.
+|
+| Si el correo falla, NO se rompe la asignación.
+|
+*/
+
+if (jefe.email) {
+  try {
+    let asunto =
+      `Nuevo reclamo asignado N° ${reclamo.numeroReclamo}`;
+
+    let tarea =
+      "Tenés un nuevo reclamo asignado para organizar la primera visita.";
+
+    if (esSegundaVisita) {
+      asunto =
+        `Segunda visita asignada - Reclamo N° ${reclamo.numeroReclamo}`;
+
+      tarea =
+        "Tenés un reclamo asignado para organizar una segunda visita.";
+    }
+
+    if (esPostJuzgado) {
+      asunto =
+        `Actuación posterior al Juzgado - Reclamo N° ${reclamo.numeroReclamo}`;
+
+      tarea =
+        "Tenés un expediente asignado para continuar una actuación posterior al Juzgado.";
+    }
+
+    await enviarCorreo({
+      para: jefe.email,
+
+      asunto,
+
+      texto:
+        `Hola ${jefe.nombre}.\n\n` +
+        `${tarea}\n\n` +
+        `Reclamo N°: ${reclamo.numeroReclamo}\n` +
+        `Dirección: ${reclamo.direccion || "Sin dirección"}\n\n` +
+        `Ingresá al Sistema de Tránsito para revisar el reclamo y continuar con la tarea.\n\n` +
+        `https://transito.informerapido.com.ar\n\n` +
+        `Este es un mensaje automático. No es necesario responder.`,
+
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px;">
+          
+          <h2>Sistema de Tránsito</h2>
+
+          <p>
+            Hola <strong>${jefe.nombre}</strong>.
+          </p>
+
+          <p>
+            ${tarea}
+          </p>
+
+          <div
+            style="
+              padding: 15px;
+              border: 1px solid #dddddd;
+              border-radius: 8px;
+              margin: 20px 0;
+            "
+          >
+            <p style="margin: 0 0 8px 0;">
+              <strong>Reclamo N°:</strong>
+              ${reclamo.numeroReclamo}
+            </p>
+
+            <p style="margin: 0;">
+              <strong>Dirección:</strong>
+              ${reclamo.direccion || "Sin dirección"}
+            </p>
+          </div>
+
+          <p>
+            Ingresá al <strong>Sistema de Tránsito</strong>
+            para revisar el reclamo y continuar con la tarea.
+          </p>
+
+          <div style="text-align: center; margin: 25px 0;">
+  <a
+    href="https://transito.informerapido.com.ar"
+    style="display: inline-block; background-color: #2563eb;
+           color: #ffffff; padding: 14px 24px;
+           text-decoration: none; border-radius: 8px;
+           font-size: 15px; font-weight: bold;"
+  >
+    Ingresar al Sistema de Tránsito
+  </a>
+</div>
+
+          <hr />
+
+          <small>
+            Este es un mensaje automático.
+            No es necesario responder.
+          </small>
+
+        </div>
+      `,
+    });
+
+    console.log(
+      `Email enviado al jefe ${jefe.nombre} (${jefe.email})`
+    );
+  } catch (errorEmail) {
+    console.error(
+      "El reclamo fue asignado correctamente, pero no se pudo enviar el email al jefe:",
+      errorEmail.message
+    );
+  }
+}
+
 
       /* =====================================================
          RESPUESTA
@@ -832,6 +961,40 @@ if (!etapaPermiteAsignarInspector) {
       }
 
 
+      /*
+|--------------------------------------------------------------------------
+| REFERENCIA EXACTA POST JUZGADO
+|--------------------------------------------------------------------------
+|
+| Para el sistema nuevo guardamos en la tarea qué infracción y qué
+| vehículo corresponden exactamente.
+|
+| Para el sistema viejo estos valores pueden seguir siendo null.
+|
+*/
+
+let infraccionPostJuzgado = null;
+
+if (esPostJuzgado) {
+  infraccionPostJuzgado =
+    await Infraccion.findOne({
+      where: {
+        reclamoId: reclamo.id,
+        anulada: false,
+        requiereOrdenRemocion: true,
+        estadoOrdenRemocion: "AUTORIZADA",
+      },
+
+      order: [
+        ["fechaRespuestaOrdenRemocion", "DESC"],
+        ["id", "DESC"],
+      ],
+
+      transaction,
+    });
+}
+
+
       /* =====================================================
          ACTUALIZAR RECLAMO
       ===================================================== */
@@ -890,6 +1053,15 @@ if (!etapaPermiteAsignarInspector) {
           {
             reclamoId:
               reclamo.id,
+                    vehiculoId:
+        esPostJuzgado
+          ? infraccionPostJuzgado?.vehiculoId || null
+          : null,
+
+      infraccionId:
+        esPostJuzgado
+          ? infraccionPostJuzgado?.id || null
+          : null,
 
             tipo:
               "INSPECTOR",
@@ -973,7 +1145,137 @@ if (!etapaPermiteAsignarInspector) {
       });
 
 
+
+
       await transaction.commit();
+  /*
+|--------------------------------------------------------------------------
+| NOTIFICAR POR EMAIL AL INSPECTOR
+|--------------------------------------------------------------------------
+|
+| La asignación ya fue confirmada en la base.
+| Si falla el correo, NO se rompe la asignación.
+|
+*/
+
+if (inspector.email) {
+  try {
+    let asunto =
+      `Primera visita asignada - Reclamo N° ${reclamo.numeroReclamo}`;
+
+    let tarea =
+      "Tenés una primera visita asignada.";
+
+    if (
+      asignacion.etapa ===
+      "SEGUNDA_VISITA"
+    ) {
+      asunto =
+        `Segunda visita asignada - Reclamo N° ${reclamo.numeroReclamo}`;
+
+      tarea =
+        "Tenés una segunda visita asignada.";
+    }
+
+    if (
+      asignacion.etapa ===
+      "POST_JUZGADO"
+    ) {
+      asunto =
+        `Actuación posterior al Juzgado - Reclamo N° ${reclamo.numeroReclamo}`;
+
+      tarea =
+        "Tenés una actuación posterior al Juzgado asignada.";
+    }
+
+    await enviarCorreo({
+      para: inspector.email,
+
+      asunto,
+
+      texto:
+        `Hola ${inspector.nombre}.\n\n` +
+        `${tarea}\n\n` +
+        `Reclamo N°: ${reclamo.numeroReclamo}\n` +
+        `Dirección: ${reclamo.direccion || "Sin dirección"}\n\n` +
+        `Ingresá al Sistema de Tránsito para revisar el trabajo asignado.\n\n` +
+        `https://transito.informerapido.com.ar\n\n` +
+        `Este es un mensaje automático. No es necesario responder.`,
+
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px;">
+          <h2>Sistema de Tránsito</h2>
+
+          <p>
+            Hola <strong>${inspector.nombre}</strong>.
+          </p>
+
+          <p>${tarea}</p>
+
+          <div
+            style="
+              padding: 15px;
+              border: 1px solid #dddddd;
+              border-radius: 8px;
+              margin: 20px 0;
+            "
+          >
+            <p style="margin: 0 0 8px 0;">
+              <strong>Reclamo N°:</strong>
+              ${reclamo.numeroReclamo}
+            </p>
+
+            <p style="margin: 0;">
+              <strong>Dirección:</strong>
+              ${reclamo.direccion || "Sin dirección"}
+            </p>
+          </div>
+
+          <p>
+            Ingresá al <strong>Sistema de Tránsito</strong>
+            para revisar el trabajo asignado.
+          </p>
+
+
+          <div style="text-align: center; margin: 25px 0;">
+  <a
+    href="https://transito.informerapido.com.ar"
+    target="_blank"
+    style="
+      display: inline-block;
+      background-color: #2563eb;
+      color: #ffffff;
+      padding: 14px 24px;
+      text-decoration: none;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: bold;
+    "
+  >
+    Ingresar al Sistema de Tránsito
+  </a>
+</div>
+
+          <hr />
+
+          <small>
+            Este es un mensaje automático.
+            No es necesario responder.
+          </small>
+        </div>
+      `,
+    });
+
+    console.log(
+      `Email enviado al inspector ${inspector.nombre} (${inspector.email})`
+    );
+  } catch (errorEmail) {
+    console.error(
+      "El trabajo fue asignado correctamente, pero no se pudo enviar el email al inspector:",
+      errorEmail.message
+    );
+  }
+}    
 
 
       /* =====================================================
@@ -1054,6 +1356,12 @@ const cambiarInspector =
         motivo,
       } = req.body;
 
+      /*
+      |--------------------------------------------------------------------------
+      | VALIDAR INSPECTOR
+      |--------------------------------------------------------------------------
+      */
+
       if (!inspectorId) {
         await transaction.rollback();
 
@@ -1064,11 +1372,18 @@ const cambiarInspector =
         });
       }
 
+      /*
+      |--------------------------------------------------------------------------
+      | BUSCAR RECLAMO
+      |--------------------------------------------------------------------------
+      */
+
       const reclamo =
         await Reclamo.findByPk(
           id,
           {
             transaction,
+
             lock:
               transaction.LOCK.UPDATE,
           }
@@ -1079,15 +1394,21 @@ const cambiarInspector =
 
         return res.status(404).json({
           ok: false,
+
           mensaje:
             "Reclamo no encontrado.",
         });
       }
 
       /*
-       * El jefe solamente puede modificar
-       * trabajos de su propia guardia.
-       */
+      |--------------------------------------------------------------------------
+      | VALIDAR GUARDIA
+      |--------------------------------------------------------------------------
+      |
+      | El jefe solamente puede modificar
+      | trabajos de su propia guardia.
+      |
+      */
 
       if (
         req.usuario.rol ===
@@ -1101,22 +1422,30 @@ const cambiarInspector =
 
         return res.status(403).json({
           ok: false,
+
           mensaje:
             "Este trabajo pertenece a otra guardia.",
         });
       }
 
       /*
-       * Buscamos la tarea que todavía
-       * no fue realizada.
-       */
+      |--------------------------------------------------------------------------
+      | BUSCAR TAREA ACTUAL DEL INSPECTOR
+      |--------------------------------------------------------------------------
+      |
+      | Buscamos la tarea que todavía
+      | no fue realizada.
+      |
+      */
 
       const tareaActual =
         await Asignacion.findOne({
           where: {
-            reclamoId: reclamo.id,
+            reclamoId:
+              reclamo.id,
 
-            tipo: "INSPECTOR",
+            tipo:
+              "INSPECTOR",
 
             estadoTarea: {
               [Op.in]: [
@@ -1127,7 +1456,10 @@ const cambiarInspector =
           },
 
           order: [
-            ["id", "DESC"],
+            [
+              "id",
+              "DESC",
+            ],
           ],
 
           transaction,
@@ -1141,18 +1473,17 @@ const cambiarInspector =
 
         return res.status(409).json({
           ok: false,
+
           mensaje:
             "Este trabajo ya fue realizado o no tiene un inspector asignado.",
         });
       }
 
       /*
-       * Si ya comenzó realmente la actuación,
-       * no permitimos cambiar de inspector.
-       *
-       * EN_CURSO se bloquea para evitar que
-       * dos personas trabajen el mismo caso.
-       */
+      |--------------------------------------------------------------------------
+      | NO CAMBIAR SI EL INSPECTOR YA EMPEZÓ
+      |--------------------------------------------------------------------------
+      */
 
       if (
         tareaActual.estadoTarea ===
@@ -1162,10 +1493,17 @@ const cambiarInspector =
 
         return res.status(409).json({
           ok: false,
+
           mensaje:
             "El inspector ya comenzó este trabajo. Ya no se puede cambiar.",
         });
       }
+
+      /*
+      |--------------------------------------------------------------------------
+      | VALIDAR NUEVO INSPECTOR
+      |--------------------------------------------------------------------------
+      */
 
       const inspector =
         await Usuario.findByPk(
@@ -1192,24 +1530,39 @@ const cambiarInspector =
 
         return res.status(400).json({
           ok: false,
+
           mensaje:
             "Seleccioná un inspector válido.",
         });
       }
 
+      /*
+      |--------------------------------------------------------------------------
+      | EVITAR ELEGIR EL MISMO INSPECTOR
+      |--------------------------------------------------------------------------
+      */
+
       if (
         Number(
           tareaActual.asignadoAId
-        ) === Number(inspector.id)
+        ) ===
+          Number(inspector.id)
       ) {
         await transaction.rollback();
 
         return res.status(400).json({
           ok: false,
+
           mensaje:
             "Ese inspector ya está asignado.",
         });
       }
+
+      /*
+      |--------------------------------------------------------------------------
+      | INSPECTOR ANTERIOR
+      |--------------------------------------------------------------------------
+      */
 
       const inspectorAnterior =
         await Usuario.findByPk(
@@ -1220,9 +1573,14 @@ const cambiarInspector =
         );
 
       /*
-       * Cancelamos la asignación anterior.
-       * NO LA BORRAMOS.
-       */
+      |--------------------------------------------------------------------------
+      | CANCELAR ASIGNACIÓN ANTERIOR
+      |--------------------------------------------------------------------------
+      |
+      | No la borramos.
+      | Queda como antecedente.
+      |
+      */
 
       tareaActual.estadoTarea =
         "CANCELADA";
@@ -1233,6 +1591,7 @@ const cambiarInspector =
       tareaActual.observaciones =
         [
           tareaActual.observaciones,
+
           motivo?.trim()
             ? `Cambio de inspector: ${motivo.trim()}`
             : "Inspector reemplazado antes de realizar el trabajo.",
@@ -1245,15 +1604,39 @@ const cambiarInspector =
       });
 
       /*
-       * Creamos una nueva tarea conservando
-       * exactamente la misma etapa.
-       */
+      |--------------------------------------------------------------------------
+      | CREAR NUEVA ASIGNACIÓN
+      |--------------------------------------------------------------------------
+      |
+      | IMPORTANTE:
+      |
+      | Conservamos exactamente:
+      |
+      | - vehiculoId
+      | - infraccionId
+      | - etapa
+      |
+      | Sistema nuevo:
+      | mantiene la referencia exacta.
+      |
+      | Sistema viejo:
+      | vehiculoId / infraccionId pueden ser null.
+      |
+      */
 
       const nuevaAsignacion =
         await Asignacion.create(
           {
             reclamoId:
               reclamo.id,
+
+            vehiculoId:
+              tareaActual.vehiculoId ||
+              null,
+
+            infraccionId:
+              tareaActual.infraccionId ||
+              null,
 
             tipo:
               "INSPECTOR",
@@ -1282,6 +1665,12 @@ const cambiarInspector =
           }
         );
 
+      /*
+      |--------------------------------------------------------------------------
+      | ACTUALIZAR RESPONSABLE DEL RECLAMO
+      |--------------------------------------------------------------------------
+      */
+
       reclamo.inspectorId =
         inspector.id;
 
@@ -1291,6 +1680,12 @@ const cambiarInspector =
       await reclamo.save({
         transaction,
       });
+
+      /*
+      |--------------------------------------------------------------------------
+      | HISTORIAL
+      |--------------------------------------------------------------------------
+      */
 
       await registrarHistorial({
         reclamoId:
@@ -1321,7 +1716,195 @@ const cambiarInspector =
         transaction,
       });
 
+      /*
+      |--------------------------------------------------------------------------
+      | CONFIRMAR CAMBIO
+      |--------------------------------------------------------------------------
+      */
+
       await transaction.commit();
+
+      /*
+      |--------------------------------------------------------------------------
+      | NOTIFICAR AL NUEVO INSPECTOR
+      |--------------------------------------------------------------------------
+      |
+      | El cambio YA quedó guardado.
+      |
+      | Si Gmail falla:
+      | NO se revierte el cambio de inspector.
+      |
+      */
+
+      if (inspector.email) {
+        try {
+          let asunto =
+            `Trabajo reasignado - Reclamo N° ${reclamo.numeroReclamo}`;
+
+          let tarea =
+            "Te asignaron un trabajo.";
+
+          /*
+          |--------------------------------------------------------------
+          | PRIMERA VISITA
+          |--------------------------------------------------------------
+          */
+
+          if (
+            nuevaAsignacion.etapa ===
+            "PRIMERA_VISITA"
+          ) {
+            asunto =
+              `Primera visita reasignada - Reclamo N° ${reclamo.numeroReclamo}`;
+
+            tarea =
+              "Te asignaron una primera visita.";
+          }
+
+          /*
+          |--------------------------------------------------------------
+          | SEGUNDA VISITA
+          |--------------------------------------------------------------
+          */
+
+          if (
+            nuevaAsignacion.etapa ===
+            "SEGUNDA_VISITA"
+          ) {
+            asunto =
+              `Segunda visita reasignada - Reclamo N° ${reclamo.numeroReclamo}`;
+
+            tarea =
+              "Te asignaron una segunda visita.";
+          }
+
+          /*
+          |--------------------------------------------------------------
+          | POST JUZGADO
+          |--------------------------------------------------------------
+          */
+
+          if (
+            nuevaAsignacion.etapa ===
+            "POST_JUZGADO"
+          ) {
+            asunto =
+              `Actuación posterior al Juzgado reasignada - Reclamo N° ${reclamo.numeroReclamo}`;
+
+            tarea =
+              "Te asignaron una actuación posterior al Juzgado.";
+          }
+
+          await enviarCorreo({
+            para:
+              inspector.email,
+
+            asunto,
+
+            texto:
+              `Hola ${inspector.nombre}.\n\n` +
+              `${tarea}\n\n` +
+              `Reclamo N°: ${reclamo.numeroReclamo}\n` +
+              `Dirección: ${reclamo.direccion || "Sin dirección"}\n\n` +
+            `Ingresá al Sistema de Tránsito para revisar el trabajo asignado.\n\n` +
+`https://transito.informerapido.com.ar\n\n` +
+`Este es un mensaje automático. No es necesario responder.`,
+
+            html: `
+              <div style="font-family: Arial, sans-serif; max-width: 600px;">
+
+                <h2>
+                  Sistema de Tránsito
+                </h2>
+
+                <p>
+                  Hola
+                  <strong>
+                    ${inspector.nombre}
+                  </strong>.
+                </p>
+
+                <p>
+                  ${tarea}
+                </p>
+
+                <div
+                  style="
+                    padding: 15px;
+                    border: 1px solid #dddddd;
+                    border-radius: 8px;
+                    margin: 20px 0;
+                  "
+                >
+
+                  <p style="margin: 0 0 8px 0;">
+                    <strong>
+                      Reclamo N°:
+                    </strong>
+
+                    ${reclamo.numeroReclamo}
+                  </p>
+
+                  <p style="margin: 0;">
+                    <strong>
+                      Dirección:
+                    </strong>
+
+                    ${
+                      reclamo.direccion ||
+                      "Sin dirección"
+                    }
+                  </p>
+
+                </div>
+
+                <p>
+                  Ingresá al
+                  <strong>
+                    Sistema de Tránsito
+                  </strong>
+                  para revisar el trabajo asignado.
+                </p>
+
+                <div style="text-align: center; margin: 25px 0;">
+  <a
+    href="https://transito.informerapido.com.ar"
+    style="display: inline-block; background-color: #2563eb;
+           color: #ffffff; padding: 14px 24px;
+           text-decoration: none; border-radius: 8px;
+           font-size: 15px; font-weight: bold;"
+  >
+    Ingresar al Sistema de Tránsito
+  </a>
+</div>
+
+                <hr />
+
+                <small>
+                  Este es un mensaje automático.
+                  No es necesario responder.
+                </small>
+
+              </div>
+            `,
+          });
+
+          console.log(
+            `Email enviado al nuevo inspector ${inspector.nombre} (${inspector.email})`
+          );
+        } catch (errorEmail) {
+          console.error(
+            "El inspector fue cambiado correctamente, pero no se pudo enviar el email:",
+            errorEmail.message
+          );
+        }
+      }
+
+      /*
+      |--------------------------------------------------------------------------
+      | RESPUESTA
+      |--------------------------------------------------------------------------
+      */
 
       return res.json({
         ok: true,
@@ -1335,10 +1918,16 @@ const cambiarInspector =
           nuevaAsignacion,
       });
     } catch (error) {
+      /*
+      |--------------------------------------------------------------------------
+      | ERROR
+      |--------------------------------------------------------------------------
+      */
+
       try {
         await transaction.rollback();
       } catch {
-        // Nada
+        // La transacción puede haber terminado.
       }
 
       console.error(
@@ -1348,13 +1937,12 @@ const cambiarInspector =
 
       return res.status(500).json({
         ok: false,
+
         mensaje:
           "No se pudo cambiar el inspector.",
       });
     }
   };
-
-
 /* =========================================================
    DEVOLVER RECLAMO A LA COLA DE JEFES
 ========================================================= */
@@ -1600,6 +2188,242 @@ const devolverGuardia =
       });
 
       await transaction.commit();
+
+      /*
+|--------------------------------------------------------------------------
+| NOTIFICAR DEVOLUCIÓN DEL RECLAMO
+|--------------------------------------------------------------------------
+|
+| La devolución YA fue confirmada.
+|
+| Si falla el email:
+| NO se rompe la devolución.
+|
+| SEGUNDA VISITA:
+|   -> Jefes de guardia
+|
+| PRIMERA VISITA / POST JUZGADO:
+|   -> Director
+|
+*/
+
+try {
+  const esSegundaVisita =
+    reclamo.etapaActual ===
+    "PENDIENTE_SEGUNDA_VISITA";
+
+  const esPostJuzgado =
+    reclamo.etapaActual ===
+    "PENDIENTE_ASIGNACION_POST_JUZGADO";
+
+  /*
+  |--------------------------------------------------------------------------
+  | DETERMINAR ROL DESTINO
+  |--------------------------------------------------------------------------
+  */
+
+  const rolDestino =
+    esSegundaVisita
+      ? "jefe_guardia"
+      : "director";
+
+  /*
+  |--------------------------------------------------------------------------
+  | BUSCAR DESTINATARIOS
+  |--------------------------------------------------------------------------
+  */
+
+  const destinatarios =
+    await Usuario.findAll({
+      where: {
+        activo: true,
+      },
+
+      attributes: [
+        "id",
+        "nombre",
+        "email",
+      ],
+
+      include: [
+        {
+          model: Rol,
+          as: "rol",
+
+          where: {
+            nombre:
+              rolDestino,
+          },
+
+          attributes: [],
+        },
+      ],
+    });
+
+  /*
+  |--------------------------------------------------------------------------
+  | TEXTO SEGÚN ETAPA
+  |--------------------------------------------------------------------------
+  */
+
+  let asunto =
+    `Reclamo devuelto para reasignación - N° ${reclamo.numeroReclamo}`;
+
+  let tarea =
+    "Un reclamo fue devuelto y necesita una nueva asignación de jefe de guardia.";
+
+  if (esSegundaVisita) {
+    asunto =
+      `Segunda visita disponible - Reclamo N° ${reclamo.numeroReclamo}`;
+
+    tarea =
+      "Un reclamo fue devuelto y volvió a quedar disponible para organizar la segunda visita.";
+  }
+
+  if (esPostJuzgado) {
+    asunto =
+      `Actuación posterior al Juzgado devuelta - Reclamo N° ${reclamo.numeroReclamo}`;
+
+    tarea =
+      "Una actuación posterior al Juzgado fue devuelta y necesita una nueva asignación.";
+  }
+
+  /*
+  |--------------------------------------------------------------------------
+  | ENVIAR EMAIL
+  |--------------------------------------------------------------------------
+  */
+
+  for (
+    const destinatario
+    of destinatarios
+  ) {
+    if (!destinatario.email) {
+      continue;
+    }
+
+    try {
+      await enviarCorreo({
+        para:
+          destinatario.email,
+
+        asunto,
+
+        texto:
+          `Hola ${destinatario.nombre}.\n\n` +
+          `${tarea}\n\n` +
+          `Reclamo N°: ${reclamo.numeroReclamo}\n` +
+          `Dirección: ${reclamo.direccion || "Sin dirección"}\n` +
+          (
+            motivo?.trim()
+              ? `Motivo de devolución: ${motivo.trim()}\n`
+              : ""
+          ) +
+          `\nIngresá al Sistema de Tránsito para revisar el reclamo.\n\n` +
+          `https://transito.informerapido.com.ar\n\n` +
+          `Este es un mensaje automático. No es necesario responder.`,
+
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px;">
+
+            <h2>
+              Sistema de Tránsito
+            </h2>
+
+            <p>
+              Hola
+              <strong>
+                ${destinatario.nombre}
+              </strong>.
+            </p>
+
+            <p>
+              ${tarea}
+            </p>
+
+            <div
+              style="
+                padding: 15px;
+                border: 1px solid #dddddd;
+                border-radius: 8px;
+                margin: 20px 0;
+              "
+            >
+
+              <p style="margin: 0 0 8px 0;">
+                <strong>
+                  Reclamo N°:
+                </strong>
+
+                ${reclamo.numeroReclamo}
+              </p>
+
+              <p style="margin: 0;">
+                <strong>
+                  Dirección:
+                </strong>
+
+                ${
+                  reclamo.direccion ||
+                  "Sin dirección"
+                }
+              </p>
+
+            </div>
+
+            <p>
+              Ingresá al
+              <strong>
+                Sistema de Tránsito
+              </strong>
+              para revisar el reclamo.
+            </p>
+
+            <div style="text-align: center; margin: 25px 0;">
+  <a
+    href="https://transito.informerapido.com.ar"
+    style="display: inline-block; background-color: #2563eb;
+           color: #ffffff; padding: 14px 24px;
+           text-decoration: none; border-radius: 8px;
+           font-size: 15px; font-weight: bold;"
+  >
+    Ingresar al Sistema de Tránsito
+  </a>
+</div>
+
+            
+
+            <hr />
+
+            <small>
+              Este es un mensaje automático.
+              No es necesario responder.
+            </small>
+
+          </div>
+        `,
+      });
+
+      console.log(
+        `Email de devolución enviado a ${destinatario.nombre} (${destinatario.email})`
+      );
+    } catch (
+      errorEmailDestinatario
+    ) {
+      console.error(
+        `No se pudo enviar el email de devolución a ${destinatario.email}:`,
+        errorEmailDestinatario.message
+      );
+    }
+  }
+} catch (errorNotificacion) {
+  console.error(
+    "El trabajo fue devuelto correctamente, pero no se pudieron preparar las notificaciones:",
+    errorNotificacion.message
+  );
+}
+
+  
 
       return res.json({
         ok: true,
@@ -1879,6 +2703,137 @@ const cambiarJefeGuardia =
       });
 
       await transaction.commit();
+      /*
+|--------------------------------------------------------------------------
+| NOTIFICAR AL NUEVO JEFE DE GUARDIA
+|--------------------------------------------------------------------------
+|
+| El cambio ya fue confirmado.
+| Si falla el email, NO se rompe el cambio de jefe.
+|
+*/
+
+if (nuevoJefe.email) {
+  try {
+    let asunto =
+      `Reclamo reasignado - N° ${reclamo.numeroReclamo}`;
+
+    let tarea =
+      "Quedaste a cargo de este reclamo.";
+
+    if (
+      nuevaAsignacion.etapa ===
+      "PRIMERA_VISITA"
+    ) {
+      asunto =
+        `Reclamo asignado - N° ${reclamo.numeroReclamo}`;
+
+      tarea =
+        "Quedaste a cargo de organizar la primera visita.";
+    }
+
+    if (
+      nuevaAsignacion.etapa ===
+      "SEGUNDA_VISITA"
+    ) {
+      asunto =
+        `Segunda visita asignada - Reclamo N° ${reclamo.numeroReclamo}`;
+
+      tarea =
+        "Quedaste a cargo de organizar la segunda visita.";
+    }
+
+    if (
+      nuevaAsignacion.etapa ===
+      "POST_JUZGADO"
+    ) {
+      asunto =
+        `Actuación posterior al Juzgado - Reclamo N° ${reclamo.numeroReclamo}`;
+
+      tarea =
+        "Quedaste a cargo de continuar la actuación posterior al Juzgado.";
+    }
+
+    await enviarCorreo({
+      para: nuevoJefe.email,
+
+      asunto,
+
+      texto:
+        `Hola ${nuevoJefe.nombre}.\n\n` +
+        `${tarea}\n\n` +
+        `Reclamo N°: ${reclamo.numeroReclamo}\n` +
+        `Dirección: ${reclamo.direccion || "Sin dirección"}\n\n` +
+      `Ingresá al Sistema de Tránsito para revisar el reclamo.\n\n` +
+`https://transito.informerapido.com.ar\n\n` +
+`Este es un mensaje automático. No es necesario responder.`,
+
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px;">
+          <h2>Sistema de Tránsito</h2>
+
+          <p>
+            Hola <strong>${nuevoJefe.nombre}</strong>.
+          </p>
+
+          <p>${tarea}</p>
+
+          <div
+            style="
+              padding: 15px;
+              border: 1px solid #dddddd;
+              border-radius: 8px;
+              margin: 20px 0;
+            "
+          >
+            <p style="margin: 0 0 8px 0;">
+              <strong>Reclamo N°:</strong>
+              ${reclamo.numeroReclamo}
+            </p>
+
+            <p style="margin: 0;">
+              <strong>Dirección:</strong>
+              ${reclamo.direccion || "Sin dirección"}
+            </p>
+          </div>
+
+       <p>
+  Ingresá al <strong>Sistema de Tránsito</strong>
+  para revisar el reclamo y continuar con la tarea.
+</p>
+
+<div style="text-align: center; margin: 25px 0;">
+  <a
+    href="https://transito.informerapido.com.ar"
+    style="display: inline-block; background-color: #2563eb;
+           color: #ffffff; padding: 14px 24px;
+           text-decoration: none; border-radius: 8px;
+           font-size: 15px; font-weight: bold;"
+  >
+    Ingresar al Sistema de Tránsito
+  </a>
+</div>
+
+          <hr />
+
+          <small>
+            Este es un mensaje automático.
+            No es necesario responder.
+          </small>
+        </div>
+      `,
+    });
+
+    console.log(
+      `Email enviado al nuevo jefe ${nuevoJefe.nombre} (${nuevoJefe.email})`
+    );
+  } catch (errorEmail) {
+    console.error(
+      "El jefe fue cambiado correctamente, pero no se pudo enviar el email:",
+      errorEmail.message
+    );
+  }
+}
 
       return res.json({
         ok: true,
@@ -1891,6 +2846,8 @@ const cambiarJefeGuardia =
         asignacion:
           nuevaAsignacion,
       });
+
+
     } catch (error) {
       try {
         await transaction.rollback();

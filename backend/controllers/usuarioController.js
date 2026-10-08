@@ -5,6 +5,10 @@ const {
 } = require("sequelize");
 
 const {
+  enviarConfirmacionCorreo,
+} = require("../services/emailService");
+
+const {
   Usuario,
   Rol,
 } = require("../models");
@@ -697,6 +701,7 @@ const actualizarMiCuenta = async (
   try {
     const {
       usuario,
+      email,
       passwordActual,
       passwordNueva,
     } = req.body;
@@ -753,6 +758,82 @@ const actualizarMiCuenta = async (
 
     /*
     |--------------------------------------------------------------------------
+    | EMAIL
+    |--------------------------------------------------------------------------
+    */
+
+    let emailCambio = false;
+
+    if (email !== undefined) {
+      const nuevoEmail = String(
+        email || ""
+      )
+        .trim()
+        .toLowerCase();
+
+      if (!nuevoEmail) {
+        return res.status(400).json({
+          ok: false,
+          mensaje:
+            "El email no puede quedar vacío",
+        });
+      }
+
+      const formatoEmail =
+        /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+      if (
+        !formatoEmail.test(
+          nuevoEmail
+        )
+      ) {
+        return res.status(400).json({
+          ok: false,
+          mensaje:
+            "Ingresá un email válido",
+        });
+      }
+
+      const emailDuplicado =
+        await Usuario.findOne({
+          where: {
+            email: nuevoEmail,
+
+            id: {
+              [Op.ne]:
+                usuarioEncontrado.id,
+            },
+          },
+        });
+
+      if (emailDuplicado) {
+        return res.status(409).json({
+          ok: false,
+          mensaje:
+            "Ese email ya está registrado en otro usuario",
+        });
+      }
+
+      /*
+      |----------------------------------------------------------------------
+      | DETECTAR SI REALMENTE CAMBIÓ
+      |----------------------------------------------------------------------
+      */
+
+      emailCambio =
+        nuevoEmail !==
+        String(
+          usuarioEncontrado.email || ""
+        )
+          .trim()
+          .toLowerCase();
+
+      usuarioEncontrado.email =
+        nuevoEmail;
+    }
+
+    /*
+    |--------------------------------------------------------------------------
     | CONTRASEÑA
     |--------------------------------------------------------------------------
     */
@@ -800,20 +881,84 @@ const actualizarMiCuenta = async (
         );
     }
 
+    /*
+    |--------------------------------------------------------------------------
+    | GUARDAR CAMBIOS
+    |--------------------------------------------------------------------------
+    */
+
     await usuarioEncontrado.save();
+
+    /*
+    |--------------------------------------------------------------------------
+    | ENVIAR CONFIRMACIÓN SI CAMBIÓ EL EMAIL
+    |--------------------------------------------------------------------------
+    |
+    | El usuario ya fue guardado.
+    |
+    | Si Gmail falla, NO fallamos la actualización de la cuenta.
+    |
+    */
+
+    let emailEnviado = false;
+
+    if (
+      emailCambio &&
+      usuarioEncontrado.email
+    ) {
+      try {
+        await enviarConfirmacionCorreo({
+          para:
+            usuarioEncontrado.email,
+
+          nombre:
+            usuarioEncontrado.nombre,
+        });
+
+        emailEnviado = true;
+      } catch (errorEmail) {
+        console.error(
+          "Email guardado, pero no se pudo enviar la confirmación:",
+          errorEmail.message
+        );
+      }
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | RESPUESTA
+    |--------------------------------------------------------------------------
+    */
 
     return res.json({
       ok: true,
 
-      mensaje:
-        "Cuenta actualizada correctamente",
+      emailEnviado,
+
+      mensaje: emailCambio
+        ? emailEnviado
+          ? "Cuenta actualizada correctamente. Te enviamos un correo de confirmación."
+          : "Cuenta actualizada correctamente. El email se guardó, pero no se pudo enviar el correo de confirmación."
+        : "Cuenta actualizada correctamente",
 
       usuario: {
-        id: usuarioEncontrado.id,
+        id:
+          usuarioEncontrado.id,
+
         nombre:
           usuarioEncontrado.nombre,
+
         usuario:
           usuarioEncontrado.usuario,
+
+        email:
+          usuarioEncontrado.email,
+
+        rolId:
+          usuarioEncontrado.rolId,
+
+        predioId:
+          usuarioEncontrado.predioId,
       },
     });
   } catch (error) {
@@ -989,6 +1134,162 @@ const eliminarUsuario = async (req, res) => {
   }
 };
 
+
+const actualizarMiEmail = async (
+  req,
+  res
+) => {
+  try {
+    const email = String(
+      req.body.email || ""
+    )
+      .trim()
+      .toLowerCase();
+
+    /*
+    |--------------------------------------------------------------------------
+    | VALIDAR EMAIL
+    |--------------------------------------------------------------------------
+    */
+
+    if (!email) {
+      return res.status(400).json({
+        ok: false,
+        mensaje:
+          "El email es obligatorio",
+      });
+    }
+
+    const formatoEmail =
+      /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (
+      !formatoEmail.test(email)
+    ) {
+      return res.status(400).json({
+        ok: false,
+        mensaje:
+          "Ingresá un email válido",
+      });
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | BUSCAR USUARIO ACTUAL
+    |--------------------------------------------------------------------------
+    */
+
+    const usuarioEncontrado =
+      await Usuario.findByPk(
+        req.usuario.id
+      );
+
+    if (!usuarioEncontrado) {
+      return res.status(404).json({
+        ok: false,
+        mensaje:
+          "Usuario no encontrado",
+      });
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | VERIFICAR QUE EL EMAIL NO ESTÉ USADO
+    |--------------------------------------------------------------------------
+    */
+
+    const emailDuplicado =
+      await Usuario.findOne({
+        where: {
+          email,
+
+          id: {
+            [Op.ne]:
+              usuarioEncontrado.id,
+          },
+        },
+      });
+
+    if (emailDuplicado) {
+      return res.status(409).json({
+        ok: false,
+        mensaje:
+          "Ese email ya está registrado en otro usuario",
+      });
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | GUARDAR EMAIL
+    |--------------------------------------------------------------------------
+    */
+
+    usuarioEncontrado.email =
+      email;
+
+    await usuarioEncontrado.save();
+
+    let emailEnviado = false;
+
+try {
+  await enviarConfirmacionCorreo({
+    para: usuarioEncontrado.email,
+    nombre: usuarioEncontrado.nombre,
+  });
+
+  emailEnviado = true;
+} catch (errorEmail) {
+  console.error(
+    "Email guardado, pero no se pudo enviar la confirmación:",
+    errorEmail.message
+  );
+}
+
+ return res.json({
+  ok: true,
+
+  emailEnviado,
+
+  mensaje: emailEnviado
+    ? "Email guardado correctamente. Te enviamos un correo de confirmación."
+    : "Email guardado correctamente, pero no se pudo enviar el correo de confirmación.",
+
+  usuario: {
+        id:
+          usuarioEncontrado.id,
+
+        nombre:
+          usuarioEncontrado.nombre,
+
+        usuario:
+          usuarioEncontrado.usuario,
+
+        email:
+          usuarioEncontrado.email,
+
+        rolId:
+          usuarioEncontrado.rolId,
+
+        predioId:
+          usuarioEncontrado.predioId,
+
+        activo:
+          usuarioEncontrado.activo,
+      },
+    });
+  } catch (error) {
+    console.error(
+      "Error actualizando email:",
+      error
+    );
+
+    return res.status(500).json({
+      ok: false,
+      mensaje:
+        "No se pudo guardar el email",
+    });
+  }
+};
 module.exports = {
   listarUsuarios,
   crearUsuario,
@@ -996,5 +1297,6 @@ module.exports = {
   listarRoles,
     obtenerMiCuenta,
   actualizarMiCuenta,
+  actualizarMiEmail,
   eliminarUsuario
 };

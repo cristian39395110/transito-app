@@ -499,10 +499,11 @@ const obtenerCoincidencias =
             },
           },
 
-          attributes: [
-            "id",
-            "reclamoId",
-            "numeroActa",
+         attributes: [
+  "id",
+  "reclamoId",
+  "vehiculoId",
+  "numeroActa",
             "numeroExpedienteJuzgado",
             "dniInfractor",
             "nombreInfractor",
@@ -1134,12 +1135,15 @@ const listarExpedientes =
       |--------------------------------------------------------------------------
       */
 
-      const [
-        vehiculos,
-        actas,
-        infracciones,
-        mapaCoincidencias,
-      ] =
+   const [
+  vehiculos,
+  actas,
+  infracciones,
+  emplazamientos,
+  verificaciones,
+  mapaCoincidencias,
+
+] =
         await Promise.all([
           Vehiculo.findAll({
             where: {
@@ -1201,17 +1205,22 @@ const listarExpedientes =
               },
             },
 
-            attributes: [
-              "id",
-              "reclamoId",
-              "numeroActa",
-              "numeroExpedienteJuzgado",
-              "dniInfractor",
-              "nombreInfractor",
-              "apellidoInfractor",
-              "estadoJuzgado",
-              "fechaHora",
-            ],
+          attributes: [
+  "id",
+  "reclamoId",
+  "vehiculoId",
+  "numeroActa",
+  "numeroExpedienteJuzgado",
+  "dniInfractor",
+  "nombreInfractor",
+  "apellidoInfractor",
+  "fechaSolicitudOrdenRemocion",
+  "fechaRespuestaOrdenRemocion",
+  "requiereOrdenRemocion",
+  "estadoOrdenRemocion",
+  "estadoJuzgado",
+  "fechaHora",
+],
 
             order: [
               [
@@ -1220,6 +1229,41 @@ const listarExpedientes =
               ],
             ],
           }),
+
+          Emplazamiento.findAll({
+  where: {
+    reclamoId: {
+      [Op.in]: ids,
+    },
+  },
+  attributes: [
+    "id",
+    "reclamoId",
+    "vehiculoId",
+    "estado",
+  ],
+  order: [
+    ["id", "DESC"],
+  ],
+}),
+
+Verificacion.findAll({
+  where: {
+    reclamoId: {
+      [Op.in]: ids,
+    },
+  },
+  attributes: [
+    "id",
+    "reclamoId",
+    "vehiculoId",
+    "emplazamientoId",
+    "resultado",
+  ],
+  order: [
+    ["id", "DESC"],
+  ],
+}),
 
           obtenerCoincidencias(
             ids,
@@ -1258,20 +1302,39 @@ const listarExpedientes =
                 return null;
               }
 
-              const vehiculosReclamo =
-                vehiculos
-                  .filter(
-                    (item) =>
-                      Number(
-                        item.reclamoId
-                      ) ===
-                      Number(id)
-                  )
-                  .map(
-                    (item) =>
-                      item.toJSON()
-                  );
+         const vehiculosReclamo =
+  vehiculos
+    .filter(
+      (item) =>
+        Number(item.reclamoId) ===
+        Number(id)
+    )
+    .map((item) => {
+      const datos = item.toJSON();
 
+      const ultimoEmplazamiento =
+        emplazamientos.find(
+          (e) =>
+            Number(e.reclamoId) === Number(id) &&
+            Number(e.vehiculoId) === Number(datos.id)
+        );
+
+      const ultimaVerificacion =
+        ultimoEmplazamiento
+          ? verificaciones.find(
+              (v) =>
+                Number(v.emplazamientoId) ===
+                Number(ultimoEmplazamiento.id)
+            )
+          : null;
+
+      return {
+        ...datos,
+        cumplioSegundaVisita:
+          ultimoEmplazamiento?.estado === "CUMPLIDO" &&
+          ultimaVerificacion?.resultado === "CUMPLIDO",
+      };
+    });
               const actasReclamo =
                 actas
                   .filter(
@@ -1288,6 +1351,7 @@ const listarExpedientes =
 
               const infraccionesReclamo =
                 infracciones
+                
                   .filter(
                     (item) =>
                       Number(
@@ -1300,16 +1364,34 @@ const listarExpedientes =
                       item.toJSON()
                   );
 
+
+                  const vehiculosConEstadoJudicial =
+  vehiculosReclamo.map((vehiculo) => {
+    const infraccion =
+      infraccionesReclamo.find(
+        (item) =>
+          Number(item.vehiculoId) ===
+          Number(vehiculo.id)
+      );
+
+    return {
+      ...vehiculo,
+esperandoOrdenJudicial:
+  Boolean(
+    infraccion?.requiereOrdenRemocion === true &&
+    infraccion?.estadoOrdenRemocion === "ESPERANDO_RESPUESTA"
+  ),
+    };
+  });
+
               return {
                 reclamo,
 
-                vehiculo:
-                  vehiculosReclamo[
-                    0
-                  ] || null,
+              vehiculo:
+  vehiculosConEstadoJudicial[0] || null,
 
-                vehiculos:
-                  vehiculosReclamo,
+vehiculos:
+  vehiculosConEstadoJudicial,
 
                 actaViaPublica:
                   actasReclamo.find(

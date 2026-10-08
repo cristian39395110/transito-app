@@ -1,16 +1,40 @@
-# React + Vite
+referenciaTemporal: {
+  type: DataTypes.STRING(100),
+  allowNull: true,
+},  agregar a foto en el vps de transito
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+indexe agregar  
+  {
+    fields: ["referenciaTemporal"],
+  },
 
-Currently, two official plugins are available:
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
 
-## React Compiler
+  USE transito_db;
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+ALTER TABLE fotos
+ADD COLUMN referenciaTemporal VARCHAR(100) NULL
+AFTER referenciaId;
 
-## Expanding the ESLint configuration
+CREATE INDEX idx_fotos_referencia_temporal
+ON fotos (referenciaTemporal);
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+
+ALTER TABLE asignaciones
+  ADD COLUMN vehiculoId INT NULL AFTER reclamoId,
+  ADD COLUMN infraccionId INT NULL AFTER vehiculoId;
+
+CREATE INDEX idx_asignaciones_vehiculoId
+  ON asignaciones (vehiculoId);
+
+CREATE INDEX idx_asignaciones_infraccionId
+  ON asignaciones (infraccionId);
+
+
+
+
+  ALTER TABLE usuarios
+ADD COLUMN email VARCHAR(160) NULL AFTER password;
+
+ALTER TABLE usuarios
+ADD UNIQUE INDEX uq_usuarios_email (email);

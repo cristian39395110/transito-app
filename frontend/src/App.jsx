@@ -45,6 +45,9 @@ import CargaManualPage from "./pages/CargaManualPage";
 import MiCuentaPage from "./pages/MiCuentaPage";
 
 
+import CompletarEmailPage from "./pages/CompletarEmailPage";
+
+
 const InicioPorRol = () => {
   const {
     rol,
@@ -79,6 +82,16 @@ const App = () => {
         }
       />
 
+      <Route
+  path="/completar-email"
+  element={
+    <ProtectedRoute
+      permitirSinEmail
+    >
+      <CompletarEmailPage />
+    </ProtectedRoute>
+  }
+/>
 
       <Route
         path="/no-autorizado"

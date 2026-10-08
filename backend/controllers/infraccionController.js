@@ -5,6 +5,8 @@ const {
   Foto,
 } = require("../models");
 
+const { enviarCorreo } = require("../services/emailService");
+
 const enviarAlJuzgado = async (
   req,
   res
@@ -511,7 +513,72 @@ if (resultado === "AUTORIZADA") {
             "PENDIENTE_DECISION_JEFE";
         }
 
-        await reclamo.save();
+
+        /*
+|--------------------------------------------------------------------------
+| AVISAR AL DIRECTOR CUANDO EL JUEZ AUTORIZA LA REMOCIÓN
+|--------------------------------------------------------------------------
+*/
+
+   await reclamo.save();
+
+if (resultado === "AUTORIZADA" && reclamo) {
+  try {
+    const { Usuario, Rol } = require("../models");
+
+    const directores = await Usuario.findAll({
+      where: {
+        activo: true,
+      },
+      include: [
+        {
+          model: Rol,
+          as: "rol",
+          where: {
+            nombre: "director",
+          },
+        },
+      ],
+    });
+
+    for (const director of directores) {
+      if (!director.email) continue;
+
+      try {
+        await enviarCorreo({
+          para: director.email,
+
+          asunto:
+            `Orden judicial autorizada - Reclamo N° ${reclamo.numeroReclamo}`,
+
+          texto:
+            `Hola ${director.nombre}.\n\n` +
+            `El Juzgado autorizó la remoción de un vehículo.\n\n` +
+            `Reclamo N°: ${reclamo.numeroReclamo}\n` +
+            `Dirección: ${reclamo.direccion || "Sin dirección"}\n\n` +
+            `El expediente requiere que asignes un jefe de guardia para continuar con la remoción.\n\n` +
+            `Ingresá al Sistema de Tránsito:\n` +
+            `https://transito.informerapido.com.ar`,
+        });
+
+        console.log(
+          `Aviso judicial enviado al director ${director.email}`
+        );
+      } catch (errorEmail) {
+        console.error(
+          `No se pudo enviar el aviso al director ${director.email}:`,
+          errorEmail.message
+        );
+      }
+    }
+  } catch (errorNotificacion) {
+    console.error(
+      "Error preparando aviso judicial al Director:",
+      errorNotificacion.message
+    );
+  }
+}
+
       }
 
       return res.json({

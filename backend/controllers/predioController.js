@@ -12,6 +12,7 @@ const {
   EgresoPredio,
   Acta,
   Infraccion,
+  Emplazamiento,
 } = require("../models");
 
 const {
@@ -915,20 +916,34 @@ if (
       | ACTUALIZAR RECLAMO
       |--------------------------------------------------------------------------
       */
+const estadoAnterior =
+  reclamo.estado;
 
-      const estadoAnterior =
-        reclamo.estado;
+const vehiculosDelReclamo =
+  await Vehiculo.findAll({
+    where: {
+      reclamoId: reclamo.id,
+    },
+    transaction,
+  });
 
-      reclamo.estado =
-        "EN_PREDIO";
+if (vehiculosDelReclamo.length <= 1) {
+  /*
+  |------------------------------------------------------------
+  | SISTEMA VIEJO
+  |------------------------------------------------------------
+  | Un solo vehículo: conservamos el comportamiento anterior.
+  */
+  reclamo.estado =
+    "EN_PREDIO";
 
-      reclamo.etapaActual =
-        "EN_PREDIO";
+  reclamo.etapaActual =
+    "EN_PREDIO";
 
-      await reclamo.save({
-        transaction,
-      });
-
+  await reclamo.save({
+    transaction,
+  });
+}
       /*
       |--------------------------------------------------------------------------
       | ACTUALIZAR VEHÍCULO
@@ -1004,7 +1019,7 @@ if (
         estadoAnterior,
 
         estadoNuevo:
-          "EN_PREDIO",
+  reclamo.estado,
 
         transaction,
       });
@@ -1063,7 +1078,6 @@ const registrarEgreso =
         observaciones,
       } = req.body;
 
-
       /*
       |--------------------------------------------------------------------------
       | DATOS OBLIGATORIOS
@@ -1083,15 +1097,10 @@ const registrarEgreso =
         });
       }
 
-
       /*
       |--------------------------------------------------------------------------
       | DOCUMENTACIÓN OPCIONAL
       |--------------------------------------------------------------------------
-      |
-      | Oficio, libro y página son opcionales.
-      | Se guarda solamente lo que haya sido informado.
-      |
       */
 
       const numeroOficioLimpio =
@@ -1108,7 +1117,6 @@ const registrarEgreso =
         String(
           numeroPagina || ""
         ).trim();
-
 
       /*
       |--------------------------------------------------------------------------
@@ -1137,7 +1145,6 @@ const registrarEgreso =
         });
       }
 
-
       /*
       |--------------------------------------------------------------------------
       | BUSCAR INGRESO
@@ -1162,15 +1169,10 @@ const registrarEgreso =
         });
       }
 
-
       /*
       |--------------------------------------------------------------------------
       | SEGURIDAD SECRETARÍA DE PREDIO
       |--------------------------------------------------------------------------
-      |
-      | Una secretaria de predio solamente puede registrar
-      | egresos del predio que tiene asignado.
-      |
       */
 
       if (
@@ -1208,7 +1210,6 @@ const registrarEgreso =
         }
       }
 
-
       /*
       |--------------------------------------------------------------------------
       | EVITAR DOBLE EGRESO
@@ -1234,7 +1235,6 @@ const registrarEgreso =
             "Este vehículo ya tiene un egreso registrado",
         });
       }
-
 
       /*
       |--------------------------------------------------------------------------
@@ -1271,17 +1271,10 @@ const registrarEgreso =
         });
       }
 
-
       /*
       |--------------------------------------------------------------------------
       | VALIDAR TRASLADO
       |--------------------------------------------------------------------------
-      |
-      | Para trasladar, solamente es obligatorio
-      | seleccionar el predio de destino.
-      |
-      | Oficio, libro y página siguen siendo opcionales.
-      |
       */
 
       let predioDestino = null;
@@ -1342,7 +1335,6 @@ const registrarEgreso =
         }
       }
 
-
       /*
       |--------------------------------------------------------------------------
       | FECHA
@@ -1369,7 +1361,6 @@ const registrarEgreso =
             "La fecha de egreso no es válida",
         });
       }
-
 
       /*
       |--------------------------------------------------------------------------
@@ -1419,13 +1410,6 @@ const registrarEgreso =
                   null
                 : null,
 
-
-            /*
-            |--------------------------------------------------------------------------
-            | DOCUMENTACIÓN OPCIONAL
-            |--------------------------------------------------------------------------
-            */
-
             numeroOficio:
               numeroOficioLimpio ||
               null,
@@ -1438,7 +1422,6 @@ const registrarEgreso =
               numeroPaginaLimpio ||
               null,
 
-
             observaciones:
               observaciones
                 ?.trim() ||
@@ -1448,7 +1431,6 @@ const registrarEgreso =
             transaction,
           }
         );
-
 
       /*
       |--------------------------------------------------------------------------
@@ -1462,7 +1444,6 @@ const registrarEgreso =
       await vehiculo.save({
         transaction,
       });
-
 
       /*
       |--------------------------------------------------------------------------
@@ -1496,7 +1477,6 @@ const registrarEgreso =
               " - "
             )}`
           : "";
-
 
       /*
       |--------------------------------------------------------------------------
@@ -1537,7 +1517,6 @@ const registrarEgreso =
           }: ${tipoEgreso}${textoDocumentacion}`;
       }
 
-
       await registrarHistorial({
         reclamoId:
           reclamo.id,
@@ -1560,31 +1539,141 @@ const registrarEgreso =
         transaction,
       });
 
+      /*
+      |--------------------------------------------------------------------------
+      | VERIFICAR SI QUEDAN ACTUACIONES PENDIENTES
+      |--------------------------------------------------------------------------
+      |
+      | No alcanza con preguntar si todos los vehículos están EGRESADOS.
+      |
+      | Un vehículo puede haber CUMPLIDO el emplazamiento y nunca haber
+      | pasado por el predio.
+      |
+      | Para mantener abierto el reclamo buscamos:
+      |
+      | 1. Emplazamientos hoja todavía abiertos.
+      | 2. Vehículos que siguen dentro del circuito de
+      |    remoción / ingreso / predio.
+      |
+      */
+
+      const [
+        todosLosEmplazamientos,
+        vehiculosDelReclamo,
+      ] =
+        await Promise.all([
+          Emplazamiento.findAll({
+            where: {
+              reclamoId:
+                reclamo.id,
+            },
+
+            transaction,
+          }),
+
+          Vehiculo.findAll({
+            where: {
+              reclamoId:
+                reclamo.id,
+            },
+
+            transaction,
+          }),
+        ]);
 
       /*
       |--------------------------------------------------------------------------
-      | VERIFICAR SI QUEDAN VEHÍCULOS PENDIENTES
+      | EMPLAZAMIENTOS HOJA
+      |--------------------------------------------------------------------------
+      |
+      | Si un emplazamiento tuvo prórroga, el padre ya no cuenta.
+      | Solamente interesa el último de la cadena.
+      |
+      */
+
+      const idsConHijo =
+        new Set(
+          todosLosEmplazamientos
+            .filter(
+              (item) =>
+                item
+                  .emplazamientoAnteriorId
+            )
+            .map(
+              (item) =>
+                Number(
+                  item
+                    .emplazamientoAnteriorId
+                )
+            )
+        );
+
+      const emplazamientosPendientes =
+        todosLosEmplazamientos.filter(
+          (item) => {
+            const esHoja =
+              !idsConHijo.has(
+                Number(item.id)
+              );
+
+            if (!esHoja) {
+              return false;
+            }
+
+            if (
+              [
+                "CUMPLIDO",
+                "CANCELADO",
+              ].includes(
+                item.estado
+              )
+            ) {
+              return false;
+            }
+
+            return true;
+          }
+        );
+
+      /*
+      |--------------------------------------------------------------------------
+      | VEHÍCULOS EN CIRCUITO POSTERIOR
+      |--------------------------------------------------------------------------
+      |
+      | Estos estados significan que todavía hay una gestión real pendiente,
+      | aunque el emplazamiento correspondiente ya no deba volver a controlarse.
+      |
+      */
+
+      const estadosVehiculoPendientes =
+        new Set([
+          "PENDIENTE_REMOCION",
+          "REMOVIDO",
+          "PENDIENTE_INGRESO_PREDIO",
+          "EN_PREDIO",
+        ]);
+
+      const vehiculosConGestionPendiente =
+        vehiculosDelReclamo.filter(
+          (item) =>
+            estadosVehiculoPendientes.has(
+              item.estadoActual
+            )
+        );
+
+      const hayActuacionesPendientes =
+        emplazamientosPendientes.length >
+          0 ||
+        vehiculosConGestionPendiente
+          .length > 0;
+
+      /*
+      |--------------------------------------------------------------------------
+      | RESOLVER RECLAMO
       |--------------------------------------------------------------------------
       */
 
-      const vehiculosPendientes =
-        await Vehiculo.count({
-          where: {
-            reclamoId:
-              reclamo.id,
-
-            estadoActual: {
-              [Op.ne]:
-                "EGRESADO",
-            },
-          },
-
-          transaction,
-        });
-
-      if (
-        vehiculosPendientes === 0
-      ) {
+      if (!hayActuacionesPendientes) {
         await resolverReclamo({
           reclamo,
 
@@ -1597,7 +1686,6 @@ const registrarEgreso =
           transaction,
         });
       }
-
 
       /*
       |--------------------------------------------------------------------------
@@ -1626,9 +1714,12 @@ const registrarEgreso =
             reclamo.estadoExterno,
         },
       });
-
     } catch (error) {
-      await transaction.rollback();
+      if (
+        !transaction.finished
+      ) {
+        await transaction.rollback();
+      }
 
       console.error(
         "Error registrando egreso:",

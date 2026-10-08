@@ -5,8 +5,9 @@ const {
   crearUsuario,
   actualizarUsuario,
   listarRoles,
-    obtenerMiCuenta,
-     eliminarUsuario,
+  obtenerMiCuenta,
+  actualizarMiEmail,
+  eliminarUsuario,
   actualizarMiCuenta,
 } = require(
   "../controllers/usuarioController"
@@ -97,6 +98,10 @@ router.put(
     "administrador"
   ),
   actualizarUsuario
+);
+router.patch(
+  "/mi-email",
+  actualizarMiEmail
 );
 
 router.delete(

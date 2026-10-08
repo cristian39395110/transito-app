@@ -72,6 +72,24 @@ const Foto = sequelize.define(
       allowNull: true,
     },
 
+    /*
+Clave temporal utilizada antes de que
+exista el registro definitivo.
+
+Ejemplo:
+
+vehiculo_1_1728000000000
+
+Permite relacionar las fotos tomadas
+durante la inspección con cada vehículo
+antes de crear Vehiculo, Acta y
+Emplazamiento.
+*/
+referenciaTemporal: {
+  type: DataTypes.STRING(100),
+  allowNull: true,
+},
+
     nombreArchivo: {
       type: DataTypes.STRING(255),
       allowNull: false,
@@ -122,20 +140,23 @@ const Foto = sequelize.define(
     tableName: "fotos",
     timestamps: true,
 
-    indexes: [
-      {
-        fields: ["reclamoId"],
-      },
-      {
-        fields: [
-          "tipoReferencia",
-          "referenciaId",
-        ],
-      },
-      {
-        fields: ["activo"],
-      },
+ indexes: [
+  {
+    fields: ["reclamoId"],
+  },
+  {
+    fields: [
+      "tipoReferencia",
+      "referenciaId",
     ],
+  },
+  {
+    fields: ["referenciaTemporal"],
+  },
+  {
+    fields: ["activo"],
+  },
+],
   }
 );
 

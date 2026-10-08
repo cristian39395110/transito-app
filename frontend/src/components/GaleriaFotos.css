@@ -79,70 +79,90 @@
 | MODAL
 |--------------------------------------------------------------------------
 */
+/*
+|--------------------------------------------------------------------------
+| MODAL FOTO COMPLETA
+|--------------------------------------------------------------------------
+*/
 
 .foto-modal {
   position: fixed;
   inset: 0;
-  z-index: 9999;
+  z-index: 99999;
 
   display: flex;
   align-items: center;
   justify-content: center;
 
-  padding: 15px;
+  padding: 12px;
 
-  background: rgba(
-    0,
-    0,
-    0,
-    0.85
-  );
+  background: rgba(0, 0, 0, 0.9);
+
+  box-sizing: border-box;
+  overflow: hidden;
 }
+
 
 .foto-modal-contenido {
   position: relative;
 
-  width: 100%;
-  max-width: 1000px;
-  max-height: 95vh;
+  width: calc(100vw - 20px);
+  height: calc(100dvh - 20px);
 
-  overflow: auto;
+  display: flex;
+  flex-direction: column;
+
+  align-items: center;
+  justify-content: center;
+
+  overflow: hidden;
 
   border-radius: 12px;
-
-  background: #ffffff;
+  background: #111827;
 }
 
-.foto-modal-contenido img {
+
+/* FOTO ABIERTA */
+.foto-modal-contenido > img {
   display: block;
 
-  width: 100%;
-  max-height: 80vh;
+  width: auto !important;
+  height: auto !important;
 
-  object-fit: contain;
+  max-width: 100% !important;
+  max-height: calc(100dvh - 100px) !important;
+
+  object-fit: contain !important;
+  object-position: center;
+
+  margin: auto;
 
   background: #111827;
 }
 
+
+/* BOTÓN CERRAR */
 .foto-modal-cerrar {
   position: absolute;
+
   top: 10px;
   right: 10px;
-  z-index: 2;
 
-  width: 40px;
-  height: 40px;
+  z-index: 10;
+
+  width: 42px;
+  height: 42px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 0;
 
   border: none;
   border-radius: 50%;
 
-  background: rgba(
-    0,
-    0,
-    0,
-    0.7
-  );
-
+  background: rgba(0, 0, 0, 0.75);
   color: #ffffff;
 
   font-size: 28px;
@@ -151,8 +171,60 @@
   cursor: pointer;
 }
 
+
+/* INFORMACIÓN DE ABAJO */
 .foto-modal-datos {
-  padding: 15px;
+  flex: 0 0 auto;
+
+  width: 100%;
+  box-sizing: border-box;
+
+  padding: 12px 15px;
+
+  background: #ffffff;
+  color: #111827;
+}
+
+.foto-modal-datos p {
+  margin: 6px 0 0;
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| CELULAR
+|--------------------------------------------------------------------------
+*/
+
+@media (max-width: 767px) {
+
+  .foto-modal {
+    padding: 6px;
+  }
+
+  .foto-modal-contenido {
+    max-width: calc(100vw - 12px);
+    max-height: calc(100dvh - 12px);
+  }
+
+  .foto-modal-contenido > img {
+    max-width: calc(100vw - 12px);
+    max-height: calc(100dvh - 75px);
+
+    width: auto;
+    height: auto;
+
+    object-fit: contain;
+  }
+
+  .foto-modal-cerrar {
+    top: 8px;
+    right: 8px;
+
+    width: 44px;
+    height: 44px;
+  }
+
 }
 
 .foto-modal-datos p {

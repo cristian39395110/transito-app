@@ -517,9 +517,10 @@ if (!precinto) {
       cuando el vehículo fue retirado.
     </p>
 
- <FotosReclamo
+<FotosReclamo
   reclamoId={reclamo.id}
   tipoReferencia="REMOCION"
+  referenciaId={vehiculo.id}
   permitirSubir={false}
   maxFotos={1}
 />

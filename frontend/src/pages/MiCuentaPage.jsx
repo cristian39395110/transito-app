@@ -29,6 +29,13 @@ const MiCuentaPage = () => {
     setUsuario,
   ] = useState("");
 
+
+  const [
+  email,
+  setEmail,
+] = useState("");
+
+
   const [
     passwordActual,
     setPasswordActual,
@@ -90,11 +97,15 @@ const MiCuentaPage = () => {
         const datos =
           respuesta.data?.usuario;
 
-        setCuenta(datos);
+      setCuenta(datos);
 
-        setUsuario(
-          datos?.usuario || ""
-        );
+setUsuario(
+  datos?.usuario || ""
+);
+
+setEmail(
+  datos?.email || ""
+);
       } catch (err) {
         console.error(
           "Error cargando cuenta:",
@@ -136,6 +147,29 @@ const MiCuentaPage = () => {
       return;
     }
 
+    if (!email.trim()) {
+  setError(
+    "El correo electrónico no puede quedar vacío"
+  );
+
+  return;
+}
+
+const formatoEmail =
+  /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+if (
+  !formatoEmail.test(
+    email.trim()
+  )
+) {
+  setError(
+    "Ingresá un correo electrónico válido"
+  );
+
+  return;
+}
+
     if (
       passwordNueva &&
       passwordNueva !==
@@ -173,10 +207,15 @@ const MiCuentaPage = () => {
     try {
       setGuardando(true);
 
-      const datos = {
-        usuario:
-          usuario.trim(),
-      };
+   const datos = {
+  usuario:
+    usuario.trim(),
+
+  email:
+    email
+      .trim()
+      .toLowerCase(),
+};
 
       if (passwordNueva) {
         datos.passwordActual =
@@ -205,16 +244,23 @@ const MiCuentaPage = () => {
       setVerNueva(false);
       setVerRepetir(false);
 
-      setCuenta(
-        (anterior) => ({
-          ...anterior,
+  setCuenta(
+  (anterior) => ({
+    ...anterior,
 
-          usuario:
-            respuesta.data?.usuario
-              ?.usuario ||
-            usuario.trim(),
-        })
-      );
+    usuario:
+      respuesta.data?.usuario
+        ?.usuario ||
+      usuario.trim(),
+
+    email:
+      respuesta.data?.usuario
+        ?.email ||
+      email
+        .trim()
+        .toLowerCase(),
+  })
+);
     } catch (err) {
       console.error(
         "Error actualizando cuenta:",
@@ -332,6 +378,39 @@ const MiCuentaPage = () => {
             </label>
 
           </div>
+
+          {/* EMAIL */}
+
+<div className="mi-cuenta-seccion">
+
+  <h2>
+    Correo electrónico
+  </h2>
+
+  <p className="mi-cuenta-ayuda">
+    Las notificaciones de nuevas tareas
+    y actuaciones pendientes se enviarán
+    a este correo.
+  </p>
+
+  <label>
+    Email
+
+    <input
+      type="email"
+      value={email}
+      onChange={(event) =>
+        setEmail(
+          event.target.value
+        )
+      }
+      autoComplete="email"
+      placeholder="ejemplo@gmail.com"
+      disabled={guardando}
+    />
+  </label>
+
+</div>
 
 
           {/* CONTRASEÑA */}

@@ -254,10 +254,37 @@ const JuzgadoPage = () => {
   const obtenerBarrio = (
     item
   ) =>
+
+
     item?.reclamo
       ?.barrio ||
     "";
 
+
+    const obtenerVehiculo = (item) => {
+  const vehiculo = item?.vehiculo;
+
+  if (!vehiculo) {
+    return null;
+  }
+
+  return {
+    identificacion:
+      vehiculo.dominio ||
+      `Vehículo N.º ${
+        vehiculo.numeroInterno ||
+        vehiculo.id
+      }`,
+
+    detalle: [
+      vehiculo.marca,
+      vehiculo.modelo,
+      vehiculo.color,
+    ]
+      .filter(Boolean)
+      .join(" · "),
+  };
+};
   const textoOrden = (
     estado
   ) => {
@@ -342,6 +369,12 @@ const JuzgadoPage = () => {
         (item) => {
           const contenido = [
             item.numeroActa,
+
+            item.vehiculo?.dominio,
+item.vehiculo?.numeroInterno,
+item.vehiculo?.marca,
+item.vehiculo?.modelo,
+item.vehiculo?.color,
 
             item
               .numeroExpedienteJuzgado,
@@ -1083,7 +1116,7 @@ const JuzgadoPage = () => {
               event.target.value
             )
           }
-          placeholder="Buscar reclamo, acta, dirección o expediente..."
+        placeholder="Buscar reclamo, acta, dominio, dirección o expediente..."
         />
       </div>
 
@@ -1132,6 +1165,26 @@ const JuzgadoPage = () => {
                         "—"}
                     </strong>
                   </div>
+
+
+                  {obtenerVehiculo(item) && (
+  <div>
+    <span className="juzgado-etiqueta">
+      Vehículo
+    </span>
+
+    <strong>
+      🚗{" "}
+      {obtenerVehiculo(item).identificacion}
+    </strong>
+
+    {obtenerVehiculo(item).detalle && (
+      <small>
+        {obtenerVehiculo(item).detalle}
+      </small>
+    )}
+  </div>
+)}
 
                   <div>
                     <span className="juzgado-etiqueta">
@@ -1378,31 +1431,47 @@ const JuzgadoPage = () => {
               Infracción
             </h2>
 
-            <div className="juzgado-modal-resumen">
-              <span>
-                Reclamo
-              </span>
+<div className="juzgado-modal-resumen">
+  <span>
+    Reclamo
+  </span>
 
-              <strong>
-                #
-                {obtenerNumeroReclamo(
-                  multaSeleccionada
-                )}
-              </strong>
+  <strong>
+    #
+    {obtenerNumeroReclamo(
+      multaSeleccionada
+    )}
+  </strong>
 
-              <span>
-                Acta
-              </span>
+  <span>
+    Acta
+  </span>
 
-              <strong>
-                N°{" "}
-                {
-                  multaSeleccionada
-                    .numeroActa
-                }
-              </strong>
-            </div>
+  <strong>
+    N°{" "}
+    {
+      multaSeleccionada
+        .numeroActa
+    }
+  </strong>
 
+  {obtenerVehiculo(
+    multaSeleccionada
+  ) && (
+    <>
+      <span>
+        Vehículo
+      </span>
+
+      <strong>
+        🚗{" "}
+        {obtenerVehiculo(
+          multaSeleccionada
+        ).identificacion}
+      </strong>
+    </>
+  )}
+</div>
             <div className="juzgado-campo">
               <label>
                 N° de expediente del
@@ -1519,14 +1588,31 @@ const JuzgadoPage = () => {
                 Acta de Infracción
               </span>
 
-              <strong>
-                N°{" "}
-                {
-                  ordenSolicitudSeleccionada
-                    .numeroActa
-                }
-              </strong>
-            </div>
+        <strong>
+  N°{" "}
+  {
+    ordenSolicitudSeleccionada
+      .numeroActa
+  }
+</strong>
+
+{obtenerVehiculo(
+  ordenSolicitudSeleccionada
+) && (
+  <>
+    <span>
+      Vehículo
+    </span>
+
+    <strong>
+      🚗{" "}
+      {obtenerVehiculo(
+        ordenSolicitudSeleccionada
+      ).identificacion}
+    </strong>
+  </>
+)}
+</div>
 
             {ordenSolicitudSeleccionada
               .detalleAccionPosterior && (
@@ -1635,14 +1721,31 @@ const JuzgadoPage = () => {
                 Acta de Infracción
               </span>
 
-              <strong>
-                N°{" "}
-                {
-                  ordenRespuestaSeleccionada
-                    .numeroActa
-                }
-              </strong>
-            </div>
+          <strong>
+  N°{" "}
+  {
+    ordenRespuestaSeleccionada
+      .numeroActa
+  }
+</strong>
+
+{obtenerVehiculo(
+  ordenRespuestaSeleccionada
+) && (
+  <>
+    <span>
+      Vehículo
+    </span>
+
+    <strong>
+      🚗{" "}
+      {obtenerVehiculo(
+        ordenRespuestaSeleccionada
+      ).identificacion}
+    </strong>
+  </>
+)}
+</div>
 
             <div className="juzgado-pregunta">
               <strong>

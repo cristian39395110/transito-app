@@ -245,12 +245,21 @@ const [
             setError("");
 
 
-           const [
+   const [
   respuestaContexto,
   respuestaPredios,
 ] = await Promise.all([
   api.get(
-    `/remociones/contexto/${id}`
+    `/remociones/contexto/${id}`,
+    {
+      params:
+        infraccionIdUrl
+          ? {
+              infraccionId:
+                infraccionIdUrl,
+            }
+          : {},
+    }
   ),
 
   api.get(
@@ -442,114 +451,135 @@ if (granja) {
     |--------------------------------------------------------------------------
     */
 
-    const finalizar =
-      async () => {
-        const mensaje =
-          validar();
+   const finalizar =
+  async () => {
+    const mensaje =
+      validar();
 
+    if (mensaje) {
+      setError(mensaje);
 
-        if (mensaje) {
-          setError(mensaje);
+      window.scrollTo({
+        top: 0,
+        behavior: "smooth",
+      });
 
-          window.scrollTo({
-            top: 0,
-            behavior: "smooth",
-          });
+      return;
+    }
 
-          return;
-        }
+    const confirmar =
+      window.confirm(
+        "¿Confirmás que el vehículo fue inventariado y retirado de la vía pública?"
+      );
 
+    if (!confirmar) {
+      return;
+    }
 
-        const confirmar =
-          window.confirm(
-            "¿Confirmás que el vehículo fue inventariado y retirado de la vía pública?"
-          );
+    try {
+      setGuardando(true);
+      setError("");
 
+      const infraccionId =
+        infraccionIdUrl ||
+        contexto.infraccion
+          ?.id;
 
-        if (!confirmar) {
-          return;
-        }
+      const respuesta =
+        await api.post(
+          "/remociones/completa",
+          {
+            reclamoId:
+              Number(id),
 
+            vehiculoId:
+              contexto
+                .vehiculo
+                .id,
 
-        try {
-          setGuardando(true);
-          setError("");
+            infraccionId,
 
+            detalleInventario:
+              inventario,
 
-          const infraccionId =
-            infraccionIdUrl ||
-            contexto.infraccion
-              ?.id;
+            observacionesInventario:
+              observacionesInventario
+                .trim() ||
+              null,
 
+            grua:
+              grua.trim() ||
+              null,
 
-          const respuesta =
-            await api.post(
-              "/remociones/completa",
-              {
-                reclamoId:
-                  Number(id),
+            chofer:
+              chofer.trim() ||
+              null,
 
-                vehiculoId:
-                  contexto
-                    .vehiculo
-                    .id,
+            predioDestinoId:
+              Number(
+                predioDestinoId
+              ),
 
-                infraccionId,
+            observacionesRemocion:
+              observacionesRemocion
+                .trim() ||
+              null,
+          }
+        );
 
-                detalleInventario:
-                  inventario,
+      alert(
+        respuesta.data
+          ?.mensaje ||
+        "Remoción registrada."
+      );
 
-              observacionesInventario:
-  observacionesInventario.trim() ||
-  null,
-                grua:
-                  grua.trim() ||
-                  null,
+      /*
+      |--------------------------------------------------------------------------
+      | CONTINUAR CON OTRO VEHÍCULO
+      |--------------------------------------------------------------------------
+      |
+      | Si después de esta remoción todavía queda otro
+      | emplazamiento vencido para controlar dentro del
+      | mismo reclamo, volvemos a la segunda visita.
+      |
+      */
 
-                chofer:
-                  chofer.trim() ||
-                  null,
+      if (
+        respuesta.data
+          ?.continuarSegundaVisita ===
+        true
+      ) {
+        navigate(
+          `/segunda-visita/${id}`
+        );
 
-               predioDestinoId:
-  Number(
-    predioDestinoId
-  ),
+        return;
+      }
 
-observacionesRemocion:
-                  observacionesRemocion
-                    .trim() ||
-                  null,
-              }
-            );
+      /*
+      |--------------------------------------------------------------------------
+      | TRABAJO TERMINADO
+      |--------------------------------------------------------------------------
+      */
 
+      navigate(
+        "/mis-trabajos"
+      );
+    } catch (err) {
+      console.error(
+        "Error registrando remoción:",
+        err
+      );
 
-          alert(
-            respuesta.data
-              ?.mensaje ||
-            "Remoción registrada."
-          );
-
-
-          navigate(
-            "/mis-trabajos"
-          );
-        } catch (err) {
-          console.error(
-            "Error registrando remoción:",
-            err
-          );
-
-
-          setError(
-            err.response?.data
-              ?.mensaje ||
-            "No se pudo registrar la remoción."
-          );
-        } finally {
-          setGuardando(false);
-        }
-      };
-
+      setError(
+        err.response?.data
+          ?.mensaje ||
+        "No se pudo registrar la remoción."
+      );
+    } finally {
+      setGuardando(false);
+    }
+  };
 
     /*
     |--------------------------------------------------------------------------
@@ -862,12 +892,15 @@ observacionesRemocion:
           </div>
 
 
-          <FotosReclamo
-            reclamoId={
-              Number(id)
-            }
-            tipoReferencia="REMOCION"
-          />
+         <FotosReclamo
+  reclamoId={
+    Number(id)
+  }
+  tipoReferencia="REMOCION"
+  referenciaId={
+    vehiculo.id
+  }
+/>
 
         </section>
 

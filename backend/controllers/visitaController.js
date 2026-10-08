@@ -11,6 +11,7 @@ const {
   Asignacion,
   Vehiculo,
   TipoReclamo,
+   Foto,
 } = require("../models");
 
 const {
@@ -54,10 +55,7 @@ const {
 */
 
 const registrarVisita =
-  async (
-    req,
-    res
-  ) => {
+  async (req, res) => {
     const transaction =
       await sequelize.transaction();
 
@@ -73,28 +71,36 @@ const registrarVisita =
         longitudActual,
         precisionGps,
 
+        /*
+        |--------------------------------------------------------------------------
+        | NUEVO FORMATO
+        |--------------------------------------------------------------------------
+        |
+        | Varios vehículos preparados previamente.
+        |
+        */
+        vehiculos = [],
+
+        /*
+        |--------------------------------------------------------------------------
+        | FORMATO ANTERIOR
+        |--------------------------------------------------------------------------
+        |
+        | Se conserva para reclamos que NO sean
+        | de vehículos.
+        |
+        */
         hizoActa = false,
-
         numeroActa = null,
-
-        personaEncontrada =
-          false,
-
+        personaEncontrada = false,
         atendidoPor = null,
-
-        caracterAtendido =
-          null,
-
+        caracterAtendido = null,
         plazoCantidad = null,
-
-        plazoUnidad =
-          "HORAS",
+        plazoUnidad = "HORAS",
 
         vehiculo:
-          vehiculoPayload =
-            null,
+          vehiculoPayload = null,
       } = req.body;
-
 
       /*
       |--------------------------------------------------------------------------
@@ -113,7 +119,6 @@ const registrarVisita =
           });
       }
 
-
       const resultadosPermitidos = [
         "CONSTATADO",
         "NO_CONSTATADO",
@@ -121,7 +126,6 @@ const registrarVisita =
         "NO_SE_PUDO_VERIFICAR",
         "OTRO",
       ];
-
 
       if (
         !resultado ||
@@ -139,7 +143,6 @@ const registrarVisita =
           });
       }
 
-
       if (
         !situacion ||
         !String(
@@ -155,7 +158,6 @@ const registrarVisita =
               "Tenés que indicar qué encontraste.",
           });
       }
-
 
       if (
         latitudActual ===
@@ -177,7 +179,6 @@ const registrarVisita =
           });
       }
 
-
       /*
       |--------------------------------------------------------------------------
       | RECLAMO
@@ -196,7 +197,6 @@ const registrarVisita =
           }
         );
 
-
       if (!reclamo) {
         await transaction.rollback();
 
@@ -207,126 +207,6 @@ const registrarVisita =
               "El reclamo no existe.",
           });
       }
-
-
-      /*
-      |--------------------------------------------------------------------------
-      | TIPO DE RECLAMO
-      |--------------------------------------------------------------------------
-      |
-      | Necesitamos saber si realmente
-      | estamos trabajando con un vehículo.
-      |
-      */
-
-      const tipoReclamo =
-        reclamo.tipoReclamoId
-          ? await TipoReclamo.findByPk(
-              reclamo.tipoReclamoId,
-              {
-                transaction,
-              }
-            )
-          : null;
-
-
-      const nombreTipoNormalizado =
-        String(
-          tipoReclamo?.nombre ||
-            ""
-        )
-          .toLowerCase()
-          .normalize("NFD")
-          .replace(
-            /[\u0300-\u036f]/g,
-            ""
-          );
-
-
-      const esReclamoVehiculo =
-        nombreTipoNormalizado.includes(
-          "vehiculo"
-        ) ||
-        nombreTipoNormalizado.includes(
-          "auto"
-        ) ||
-        nombreTipoNormalizado.includes(
-          "automotor"
-        );
-
-
-      /*
-      |--------------------------------------------------------------------------
-      | SI ES VEHÍCULO, VALIDAR DATOS
-      |--------------------------------------------------------------------------
-      |
-      | Solamente lo exigimos cuando
-      | realmente se constató el problema.
-      |
-      */
-
-      if (
-        resultado ===
-          "CONSTATADO" &&
-        esReclamoVehiculo
-      ) {
-        if (
-          !vehiculoPayload ||
-          typeof vehiculoPayload !==
-            "object"
-        ) {
-          await transaction.rollback();
-
-          return res
-            .status(400)
-            .json({
-              mensaje:
-                "Este reclamo es de vehículo. Tenés que registrar los datos del vehículo antes de finalizar la visita.",
-            });
-        }
-
-
-        const tieneDatosVehiculo =
-          String(
-            vehiculoPayload
-              .dominio || ""
-          ).trim() ||
-          String(
-            vehiculoPayload
-              .marca || ""
-          ).trim() ||
-          String(
-            vehiculoPayload
-              .modelo || ""
-          ).trim() ||
-          String(
-            vehiculoPayload
-              .color || ""
-          ).trim() ||
-          String(
-            vehiculoPayload
-              .descripcion || ""
-          ).trim();
-
-
-        if (!tieneDatosVehiculo) {
-          await transaction.rollback();
-
-          return res
-            .status(400)
-            .json({
-              mensaje:
-                "Cargá al menos un dato para identificar el vehículo.",
-            });
-        }
-      }
-
-
-      /*
-      |--------------------------------------------------------------------------
-      | RECLAMO FINALIZADO
-      |--------------------------------------------------------------------------
-      */
 
       if (
         [
@@ -346,16 +226,53 @@ const registrarVisita =
           });
       }
 
+      /*
+      |--------------------------------------------------------------------------
+      | TIPO DE RECLAMO
+      |--------------------------------------------------------------------------
+      */
+
+      const tipoReclamo =
+        reclamo.tipoReclamoId
+          ? await TipoReclamo.findByPk(
+              reclamo.tipoReclamoId,
+              {
+                transaction,
+              }
+            )
+          : null;
+
+      const nombreTipoNormalizado =
+        String(
+          tipoReclamo?.nombre ||
+            ""
+        )
+          .toLowerCase()
+          .normalize("NFD")
+          .replace(
+            /[\u0300-\u036f]/g,
+            ""
+          );
+
+      const esReclamoVehiculo =
+        nombreTipoNormalizado.includes(
+          "vehiculo"
+        ) ||
+        nombreTipoNormalizado.includes(
+          "auto"
+        ) ||
+        nombreTipoNormalizado.includes(
+          "automotor"
+        );
 
       /*
       |--------------------------------------------------------------------------
-      | BUSCAR TAREA ACTIVA
+      | TAREA ACTIVA
       |--------------------------------------------------------------------------
       */
 
       let tareaActiva =
         null;
-
 
       if (
         req.usuario.rol ===
@@ -395,7 +312,6 @@ const registrarVisita =
                 .LOCK.UPDATE,
           });
 
-
         if (!tareaActiva) {
           await transaction.rollback();
 
@@ -407,15 +323,6 @@ const registrarVisita =
             });
         }
 
-
-        /*
-        Esta ruta corresponde a
-        la primera visita.
-
-        La segunda visita se procesa
-        mediante verificacionController.
-        */
-
         if (
           tareaActiva.etapa ===
           "SEGUNDA_VISITA"
@@ -426,15 +333,14 @@ const registrarVisita =
             .status(409)
             .json({
               mensaje:
-                "Este trabajo corresponde a una segunda visita. Debe utilizarse la verificación posterior al emplazamiento.",
+                "Este trabajo corresponde a una segunda visita.",
             });
         }
       }
 
-
       /*
       |--------------------------------------------------------------------------
-      | COMPATIBILIDAD INSPECTOR ACTUAL
+      | INSPECTOR ACTUAL
       |--------------------------------------------------------------------------
       */
 
@@ -459,553 +365,928 @@ const registrarVisita =
           });
       }
 
-
       /*
       |--------------------------------------------------------------------------
-      | VALIDACIONES DEL ACTA DE VÍA PÚBLICA
+      | NORMALIZAR VEHÍCULOS
       |--------------------------------------------------------------------------
       */
 
-      const debeCrearActa =
-        hizoActa === true;
-
-
-      if (debeCrearActa) {
-        if (
-          resultado !==
-          "CONSTATADO"
-        ) {
-          await transaction.rollback();
-
-          return res
-            .status(400)
-            .json({
-              mensaje:
-                "Solo se puede registrar un Acta de Vía Pública cuando el problema fue constatado.",
-            });
-        }
-
-
-        if (
-          !numeroActa ||
-          !String(
-            numeroActa
-          ).trim()
-        ) {
-          await transaction.rollback();
-
-          return res
-            .status(400)
-            .json({
-              mensaje:
-                "Ingresá el número del Acta de Vía Pública.",
-            });
-        }
-
-
-        const cantidad =
-          Number(
-            plazoCantidad
-          );
-
-
-        if (
-          !Number.isFinite(
-            cantidad
-          ) ||
-          cantidad <= 0
-        ) {
-          await transaction.rollback();
-
-          return res
-            .status(400)
-            .json({
-              mensaje:
-                "El plazo indicado no es válido.",
-            });
-        }
-
-
-        if (
-          ![
-            "HORAS",
-            "DIAS",
-          ].includes(
-            plazoUnidad
-          )
-        ) {
-          await transaction.rollback();
-
-          return res
-            .status(400)
-            .json({
-              mensaje:
-                "La unidad del plazo no es válida.",
-            });
-        }
-
-
-        const actaExistente =
-          await Acta.findOne({
-            where: {
-              numeroActa:
-                String(
-                  numeroActa
-                ).trim(),
-            },
-
-            transaction,
-          });
-
-
-        if (actaExistente) {
-          await transaction.rollback();
-
-          return res
-            .status(409)
-            .json({
-              mensaje:
-                "Ese número de Acta ya está registrado.",
-            });
-        }
-
-
-        const emplazamientoVigente =
-          await Emplazamiento.findOne({
-            where: {
-              reclamoId:
-                reclamo.id,
-
-              estado:
-                "VIGENTE",
-            },
-
-            transaction,
-          });
-
-
-        if (
-          emplazamientoVigente
-        ) {
-          await transaction.rollback();
-
-          return res
-            .status(409)
-            .json({
-              mensaje:
-                "Este reclamo ya tiene un emplazamiento vigente.",
-            });
-        }
-      }
-
-
-      /*
-      |--------------------------------------------------------------------------
-      | CREAR / ACTUALIZAR VEHÍCULO
-      |--------------------------------------------------------------------------
-      |
-      | Acá estaba lo que nos faltaba.
-      |
-      | El TipoReclamo "Vehículo" solamente
-      | dice QUÉ clase de reclamo es.
-      |
-      | Ahora además creamos el vehículo
-      | real dentro de la tabla vehiculos.
-      |
-      */
-
-      let vehiculo =
-        null;
-
+      let vehiculosPayload =
+        [];
 
       if (
         resultado ===
           "CONSTATADO" &&
         esReclamoVehiculo
       ) {
-        /*
-        Primero buscamos si este reclamo
-        ya tiene un vehículo.
+        if (
+          Array.isArray(
+            vehiculos
+          ) &&
+          vehiculos.length > 0
+        ) {
+          vehiculosPayload =
+            vehiculos;
+        } else if (
+          vehiculoPayload &&
+          typeof vehiculoPayload ===
+            "object"
+        ) {
+          /*
+          Compatibilidad con frontend anterior.
+          */
 
-        Esto evita duplicarlo si por algún
-        motivo se vuelve a guardar.
-        */
+          vehiculosPayload = [
+            {
+              ...vehiculoPayload,
 
-        vehiculo =
-          await Vehiculo.findOne({
-            where: {
-              reclamoId:
-                reclamo.id,
+              hizoActa,
+
+              numeroActa,
+
+              personaEncontrada,
+
+              atendidoPor,
+
+              caracterAtendido,
+
+              plazoCantidad,
+
+              plazoUnidad,
             },
+          ];
+        } else {
+          await transaction.rollback();
 
-            order: [
-              [
-                "id",
-                "DESC",
-              ],
-            ],
+          return res
+            .status(400)
+            .json({
+              mensaje:
+                "Tenés que registrar al menos un vehículo.",
+            });
+        }
+      }
 
-            transaction,
+      /*
+      |--------------------------------------------------------------------------
+      | VALIDAR VEHÍCULOS
+      |--------------------------------------------------------------------------
+      */
 
-            lock:
-              transaction
-                .LOCK.UPDATE,
-          });
+      const numerosActaRecibidos =
+        new Set();
 
+      const idsVehiculosRecibidos =
+        new Set();
 
-        /*
-        Si todavía no existe,
-        generamos número interno.
-        */
+        const fotosEmplazamientoPorVehiculo = new Map();
+      if (
+        resultado ===
+          "CONSTATADO" &&
+        esReclamoVehiculo
+      ) {
+        for (
+          let indice = 0;
+          indice <
+          vehiculosPayload.length;
+          indice += 1
+        ) {
+          const item =
+            vehiculosPayload[
+              indice
+            ];
 
-        if (!vehiculo) {
-          const ultimoNumero =
-            await Vehiculo.max(
-              "numeroInterno",
-              {
-                transaction,
-              }
+          const numero =
+            indice + 1;
+
+          /*
+          ---------------------------------------------------------------
+          OBJETO VÁLIDO
+          ---------------------------------------------------------------
+          */
+
+          if (
+            !item ||
+            typeof item !==
+              "object"
+          ) {
+            await transaction.rollback();
+
+            return res
+              .status(400)
+              .json({
+                mensaje:
+                  `Los datos del vehículo ${numero} no son válidos.`,
+              });
+          }
+
+          /*
+          ---------------------------------------------------------------
+          ID REAL DEL VEHÍCULO
+          ---------------------------------------------------------------
+          */
+
+          const vehiculoId =
+            Number(
+              item.id
             );
 
+          if (
+            !Number.isInteger(
+              vehiculoId
+            ) ||
+            vehiculoId <= 0
+          ) {
+            await transaction.rollback();
 
-          const siguienteNumero =
-            Number(
-              ultimoNumero || 0
-            ) + 1;
+            return res
+              .status(400)
+              .json({
+                mensaje:
+                  `El vehículo ${numero} no fue preparado correctamente.`,
+              });
+          }
 
+          if (
+            idsVehiculosRecibidos.has(
+              vehiculoId
+            )
+          ) {
+            await transaction.rollback();
 
-          vehiculo =
-            await Vehiculo.create(
-              {
-                numeroInterno:
-                  siguienteNumero,
+            return res
+              .status(409)
+              .json({
+                mensaje:
+                  `El vehículo ${numero} está repetido en la visita.`,
+              });
+          }
+
+          idsVehiculosRecibidos.add(
+            vehiculoId
+          );
+
+          /*
+          ---------------------------------------------------------------
+          VEHÍCULO PREPARADO
+          ---------------------------------------------------------------
+          */
+
+          const vehiculoPreparado =
+            await Vehiculo.findOne({
+              where: {
+                id:
+                  vehiculoId,
 
                 reclamoId:
                   reclamo.id,
 
-                dominio:
-                  vehiculoPayload
-                    .dominio
+                origenRegistro:
+                  "CIRCUITO_NORMAL",
+              },
+
+              transaction,
+            });
+
+          if (
+            !vehiculoPreparado
+          ) {
+            await transaction.rollback();
+
+            return res
+              .status(404)
+              .json({
+                mensaje:
+                  `No se encontró el vehículo ${numero} preparado para este reclamo.`,
+              });
+          }
+
+          /*
+          ---------------------------------------------------------------
+          DATOS MÍNIMOS
+          ---------------------------------------------------------------
+          */
+
+          const tieneDatos =
+            String(
+              item.dominio ||
+                ""
+            ).trim() ||
+            String(
+              item.marca ||
+                ""
+            ).trim() ||
+            String(
+              item.modelo ||
+                ""
+            ).trim() ||
+            String(
+              item.color ||
+                ""
+            ).trim() ||
+            String(
+              item.descripcion ||
+                ""
+            ).trim();
+
+          if (!tieneDatos) {
+            await transaction.rollback();
+
+            return res
+              .status(400)
+              .json({
+                mensaje:
+                  `Cargá al menos un dato para identificar el vehículo ${numero}.`,
+              });
+          }
+
+          /*
+          ---------------------------------------------------------------
+          FOTO DEL VEHÍCULO
+          ---------------------------------------------------------------
+          |
+          | Obligatoria para TODOS los vehículos.
+          |
+          */
+
+          const fotoVehiculo =
+            await Foto.findOne({
+              where: {
+                reclamoId:
+                  reclamo.id,
+
+                tipoReferencia:
+                  "VEHICULO",
+
+                referenciaId:
+                  vehiculoId,
+
+                activo:
+                  true,
+              },
+
+              transaction,
+            });
+
+          if (!fotoVehiculo) {
+            await transaction.rollback();
+
+            return res
+              .status(400)
+              .json({
+                mensaje:
+                  `Falta la foto del vehículo ${numero}.`,
+              });
+          }
+
+          /*
+          ---------------------------------------------------------------
+          ¿SE HIZO ACTA?
+          ---------------------------------------------------------------
+          |
+          | Puede ser:
+          |
+          | true  -> sí se emplazó.
+          | false -> no se emplazó.
+          |
+          | NO obligamos a que todos tengan acta.
+          |
+          */
+
+          const itemHizoActa =
+            item.hizoActa ===
+            true;
+
+          /*
+          ---------------------------------------------------------------
+          SI HUBO ACTA
+          ---------------------------------------------------------------
+          */
+
+          if (itemHizoActa) {
+            /*
+            NÚMERO DE ACTA
+            */
+
+            const numeroActaItem =
+              String(
+                item.numeroActa ||
+                  ""
+              ).trim();
+
+            if (!numeroActaItem) {
+              await transaction.rollback();
+
+              return res
+                .status(400)
+                .json({
+                  mensaje:
+                    `Ingresá el número del Acta de Vía Pública del vehículo ${numero}.`,
+                });
+            }
+
+            /*
+            No repetir dentro de esta visita.
+            */
+
+            if (
+              numerosActaRecibidos.has(
+                numeroActaItem
+              )
+            ) {
+              await transaction.rollback();
+
+              return res
+                .status(409)
+                .json({
+                  mensaje:
+                    `El Acta ${numeroActaItem} está repetida en esta visita.`,
+                });
+            }
+
+            numerosActaRecibidos.add(
+              numeroActaItem
+            );
+
+            /*
+            No repetir contra la BD.
+            */
+
+            const actaExistente =
+              await Acta.findOne({
+                where: {
+                  numeroActa:
+                    numeroActaItem,
+                },
+
+                transaction,
+              });
+
+            if (actaExistente) {
+              await transaction.rollback();
+
+              return res
+                .status(409)
+                .json({
+                  mensaje:
+                    `El Acta ${numeroActaItem} ya está registrada.`,
+                });
+            }
+
+            /*
+            PLAZO
+            */
+
+            const cantidad =
+              Number(
+                item.plazoCantidad
+              );
+
+            if (
+              !Number.isFinite(
+                cantidad
+              ) ||
+              cantidad <= 0
+            ) {
+              await transaction.rollback();
+
+              return res
+                .status(400)
+                .json({
+                  mensaje:
+                    `El plazo del vehículo ${numero} no es válido.`,
+                });
+            }
+
+            const unidad =
+              item.plazoUnidad ||
+              "HORAS";
+
+            if (
+              ![
+                "HORAS",
+                "DIAS",
+              ].includes(
+                unidad
+              )
+            ) {
+              await transaction.rollback();
+
+              return res
+                .status(400)
+                .json({
+                  mensaje:
+                    `La unidad del plazo del vehículo ${numero} no es válida.`,
+                });
+            }
+
+            /*
+            FOTO DEL ACTA / EMPLAZAMIENTO
+
+            Antes de crear el Emplazamiento real,
+            esta foto está vinculada al vehiculo.id.
+            */
+
+            const fotoEmplazamiento =
+              await Foto.findOne({
+                where: {
+                  reclamoId:
+                    reclamo.id,
+
+                  tipoReferencia:
+                    "EMPLAZAMIENTO",
+
+                  referenciaId:
+                    vehiculoId,
+
+                  activo:
+                    true,
+                },
+
+                transaction,
+              });
+
+            if (
+              !fotoEmplazamiento
+            ) {
+              await transaction.rollback();
+
+              return res
+                .status(400)
+                .json({
+                  mensaje:
+                    `Falta la foto del Acta de emplazamiento del vehículo ${numero}.`,
+                });
+            }
+
+            fotosEmplazamientoPorVehiculo.set(
+  Number(vehiculoId),
+  fotoEmplazamiento.id
+);
+          }
+        }
+      }
+
+      /*
+      |--------------------------------------------------------------------------
+      | RESULTADOS DE LA VISITA
+      |--------------------------------------------------------------------------
+      */
+
+      const resultadosVehiculos =
+        [];
+
+      let huboActa =
+        false;
+
+      /*
+      |--------------------------------------------------------------------------
+      | RECLAMO DE VEHÍCULOS
+      |--------------------------------------------------------------------------
+      */
+
+      if (
+        resultado ===
+          "CONSTATADO" &&
+        esReclamoVehiculo
+      ) {
+        for (
+          let indice = 0;
+          indice <
+          vehiculosPayload.length;
+          indice += 1
+        ) {
+          const item =
+            vehiculosPayload[
+              indice
+            ];
+
+          /*
+          ---------------------------------------------------------------
+          VEHÍCULO YA PREPARADO
+          ---------------------------------------------------------------
+          */
+
+          const vehiculo =
+            await Vehiculo.findOne({
+              where: {
+                id:
+                  Number(
+                    item.id
+                  ),
+
+                reclamoId:
+                  reclamo.id,
+
+                origenRegistro:
+                  "CIRCUITO_NORMAL",
+              },
+
+              transaction,
+
+              lock:
+                transaction
+                  .LOCK.UPDATE,
+            });
+
+          if (!vehiculo) {
+            throw new Error(
+              `No se encontró el vehículo preparado con ID ${item.id}.`
+            );
+          }
+
+          /*
+          ---------------------------------------------------------------
+          COMPLETAR DATOS DEL VEHÍCULO
+          ---------------------------------------------------------------
+          */
+
+          vehiculo.dominio =
+            String(
+              item.dominio ||
+                ""
+            )
+              .trim()
+              .toUpperCase() ||
+            null;
+
+          vehiculo.marca =
+            String(
+              item.marca ||
+                ""
+            ).trim() ||
+            null;
+
+          vehiculo.modelo =
+            String(
+              item.modelo ||
+                ""
+            ).trim() ||
+            null;
+
+          vehiculo.color =
+            String(
+              item.color ||
+                ""
+            ).trim() ||
+            null;
+
+          vehiculo.tipoVehiculo =
+            String(
+              item.tipoVehiculo ||
+                "AUTOMOVIL"
+            ).trim() ||
+            "AUTOMOVIL";
+
+          vehiculo.descripcion =
+            String(
+              item.descripcion ||
+                ""
+            ).trim() ||
+            null;
+
+          /*
+          Si NO se hizo emplazamiento,
+          sigue en vía pública.
+          */
+
+          vehiculo.estadoActual =
+            "EN_VIA_PUBLICA";
+
+          await vehiculo.save({
+            transaction,
+          });
+
+          /*
+          ---------------------------------------------------------------
+          CONSTATACIÓN DEL VEHÍCULO
+          ---------------------------------------------------------------
+          */
+
+          const constatacion =
+            await Constatacion.create(
+              {
+                reclamoId:
+                  reclamo.id,
+
+                inspectorId:
+                  req.usuario.id,
+
+                vehiculoId:
+                  vehiculo.id,
+
+                resultado,
+
+                situacion:
+                  String(
+                    situacion
+                  ).trim(),
+
+                observaciones:
+                  observaciones
                     ? String(
-                        vehiculoPayload
-                          .dominio
+                        observaciones
+                      ).trim() ||
+                      null
+                    : null,
+
+                latitudActual:
+                  Number(
+                    latitudActual
+                  ),
+
+                longitudActual:
+                  Number(
+                    longitudActual
+                  ),
+
+                precisionGps:
+                  precisionGps
+                    ? Number(
+                        precisionGps
                       )
-                        .trim()
-                        .toUpperCase() ||
-                      null
                     : null,
-
-                marca:
-                  vehiculoPayload
-                    .marca
-                    ? String(
-                        vehiculoPayload
-                          .marca
-                      ).trim() ||
-                      null
-                    : null,
-
-                modelo:
-                  vehiculoPayload
-                    .modelo
-                    ? String(
-                        vehiculoPayload
-                          .modelo
-                      ).trim() ||
-                      null
-                    : null,
-
-                color:
-                  vehiculoPayload
-                    .color
-                    ? String(
-                        vehiculoPayload
-                          .color
-                      ).trim() ||
-                      null
-                    : null,
-
-                tipoVehiculo:
-                  vehiculoPayload
-                    .tipoVehiculo
-                    ? String(
-                        vehiculoPayload
-                          .tipoVehiculo
-                      ).trim() ||
-                      null
-                    : "AUTOMOVIL",
-
-                descripcion:
-                  vehiculoPayload
-                    .descripcion
-                    ? String(
-                        vehiculoPayload
-                          .descripcion
-                      ).trim() ||
-                      null
-                    : null,
-
-                estadoActual:
-                  "EN_VIA_PUBLICA",
               },
               {
                 transaction,
               }
             );
-        } else {
+
+          let acta =
+            null;
+
+          let emplazamiento =
+            null;
+
+          const itemHizoActa =
+            item.hizoActa ===
+            true;
+
           /*
-          Si ya existe, actualizamos
-          solamente los datos recibidos.
+          ---------------------------------------------------------------
+          ACTA + EMPLAZAMIENTO
+          ---------------------------------------------------------------
+          |
+          | Solamente para ESTE vehículo
+          | si el inspector indicó que lo emplazó.
+          |
           */
 
-          vehiculo.dominio =
-            vehiculoPayload
-              .dominio
-              ? String(
-                  vehiculoPayload
-                    .dominio
-                )
-                  .trim()
-                  .toUpperCase() ||
-                vehiculo.dominio
-              : vehiculo.dominio;
+          if (itemHizoActa) {
+            huboActa = true;
 
+            const fechaHora =
+              new Date();
 
-          vehiculo.marca =
-            vehiculoPayload
-              .marca
-              ? String(
-                  vehiculoPayload
-                    .marca
-                ).trim() ||
-                vehiculo.marca
-              : vehiculo.marca;
+            const unidad =
+              item.plazoUnidad ||
+              "HORAS";
 
+            const cantidad =
+              Number(
+                item.plazoCantidad
+              );
 
-          vehiculo.modelo =
-            vehiculoPayload
-              .modelo
-              ? String(
-                  vehiculoPayload
-                    .modelo
-                ).trim() ||
-                vehiculo.modelo
-              : vehiculo.modelo;
+            const plazoHoras =
+              convertirPlazoAHoras(
+                cantidad,
+                unidad
+              );
 
+            const fechaVencimiento =
+              calcularFechaVencimiento(
+                fechaHora,
+                cantidad,
+                unidad
+              );
 
-          vehiculo.color =
-            vehiculoPayload
-              .color
-              ? String(
-                  vehiculoPayload
-                    .color
-                ).trim() ||
-                vehiculo.color
-              : vehiculo.color;
-
-
-          vehiculo.tipoVehiculo =
-            vehiculoPayload
-              .tipoVehiculo ||
-            vehiculo.tipoVehiculo;
-
-
-          vehiculo.descripcion =
-            vehiculoPayload
-              .descripcion
-              ? String(
-                  vehiculoPayload
-                    .descripcion
-                ).trim() ||
-                vehiculo.descripcion
-              : vehiculo.descripcion;
-
-
-          await vehiculo.save({
-            transaction,
-          });
-        }
-      }
-
-
-      /*
-      |--------------------------------------------------------------------------
-      | CONSTATACIÓN
-      |--------------------------------------------------------------------------
-      */
-
-      const constatacion =
-        await Constatacion.create(
-          {
-            reclamoId:
-              reclamo.id,
-
-            inspectorId:
-              req.usuario.id,
+            if (
+              !plazoHoras ||
+              !fechaVencimiento
+            ) {
+              throw new Error(
+                "No se pudo calcular el vencimiento del emplazamiento."
+              );
+            }
 
             /*
-            Si es reclamo de vehículo,
-            dejamos la constatación unida
-            al vehículo real.
+            -------------------------------------------------------------
+            ACTA DE VÍA PÚBLICA
+            -------------------------------------------------------------
             */
 
-            vehiculoId:
-              vehiculo?.id ||
-              null,
+            acta =
+              await Acta.create(
+                {
+                  reclamoId:
+                    reclamo.id,
 
-            resultado,
+                  constatacionId:
+                    constatacion.id,
 
-            situacion:
-              String(
-                situacion
-              ).trim(),
+                  vehiculoId:
+                    vehiculo.id,
 
-            observaciones:
-              observaciones
-                ? String(
+                  inspectorId:
+                    req.usuario.id,
+
+                  numeroActa:
+                    String(
+                      item.numeroActa
+                    ).trim(),
+
+                  tipo:
+                    "VIA_PUBLICA",
+
+                  fechaHora,
+
+                  lugar:
+                    reclamo.direccion ||
+                    null,
+
+                  personaEncontrada:
+                    Boolean(
+                      item.personaEncontrada
+                    ),
+
+                  atendidoPor:
+                    item.personaEncontrada &&
+                    item.atendidoPor
+                      ? String(
+                          item.atendidoPor
+                        ).trim() ||
+                        null
+                      : null,
+
+                  caracterAtendido:
+                    item.personaEncontrada &&
+                    item.caracterAtendido
+                      ? item.caracterAtendido
+                      : null,
+
+                  situacion:
+                    String(
+                      situacion
+                    ).trim(),
+
+                  plazoHoras,
+
+                  observaciones:
                     observaciones
-                  ).trim() ||
-                  null
-                : null,
+                      ? String(
+                          observaciones
+                        ).trim() ||
+                        null
+                      : null,
+                },
+                {
+                  transaction,
+                }
+              );
 
-            latitudActual:
-              Number(
-                latitudActual
-              ),
+            /*
+            -------------------------------------------------------------
+            EMPLAZAMIENTO
+            -------------------------------------------------------------
+            */
 
-            longitudActual:
-              Number(
-                longitudActual
-              ),
+            emplazamiento =
+              await Emplazamiento.create(
+                {
+                  reclamoId:
+                    reclamo.id,
 
-            precisionGps:
-              precisionGps
-                ? Number(
-                    precisionGps
-                  )
-                : null,
-          },
-          {
-            transaction,
+                  actaId:
+                    acta.id,
+
+                  vehiculoId:
+                    vehiculo.id,
+
+                  inspectorId:
+                    req.usuario.id,
+
+                  fechaHora,
+
+                  plazoCantidad:
+                    cantidad,
+
+                  plazoUnidad:
+                    unidad,
+
+                  plazoHoras,
+
+                  fechaVencimiento,
+
+                  estado:
+                    "VIGENTE",
+
+                  observaciones:
+                    observaciones
+                      ? String(
+                          observaciones
+                        ).trim() ||
+                        null
+                      : null,
+                },
+                {
+                  transaction,
+                }
+              );
+
+            /*
+            -------------------------------------------------------------
+            FOTO DEL EMPLAZAMIENTO
+            -------------------------------------------------------------
+            |
+            | Mientras se estaba cargando:
+            |
+            | referenciaId = vehiculo.id
+            |
+            | Ahora que existe el emplazamiento:
+            |
+            | referenciaId = emplazamiento.id
+            |
+            */
+
+const fotoEmplazamientoId =
+  fotosEmplazamientoPorVehiculo.get(
+    Number(vehiculo.id)
+  );
+
+if (!fotoEmplazamientoId) {
+  throw new Error(
+    `No se encontró la foto del emplazamiento del vehículo ${vehiculo.id}.`
+  );
+}
+
+await Foto.update(
+  {
+    referenciaId: emplazamiento.id,
+  },
+  {
+    where: {
+      id: fotoEmplazamientoId,
+    },
+    transaction,
+  }
+);
+
+            /*
+            -------------------------------------------------------------
+            ESTADO DEL VEHÍCULO
+            -------------------------------------------------------------
+            */
+
+            vehiculo.estadoActual =
+              "EMPLAZADO";
+
+            await vehiculo.save({
+              transaction,
+            });
           }
-        );
 
+          /*
+          ---------------------------------------------------------------
+          RESULTADO DEL VEHÍCULO
+          ---------------------------------------------------------------
+          */
 
-      let acta =
-        null;
-
-      let emplazamiento =
-        null;
-
-
-      /*
-      |--------------------------------------------------------------------------
-      | ACTA + EMPLAZAMIENTO
-      |--------------------------------------------------------------------------
-      */
-
-      if (debeCrearActa) {
-        const fechaHora =
-          new Date();
-
-
-        const plazoHoras =
-          convertirPlazoAHoras(
-            Number(
-              plazoCantidad
-            ),
-            plazoUnidad
-          );
-
-
-        const fechaVencimiento =
-          calcularFechaVencimiento(
-            fechaHora,
-            Number(
-              plazoCantidad
-            ),
-            plazoUnidad
-          );
-
-
-        if (
-          !plazoHoras ||
-          !fechaVencimiento
-        ) {
-          throw new Error(
-            "No se pudo calcular el vencimiento del emplazamiento."
-          );
+          resultadosVehiculos.push({
+            vehiculo,
+            constatacion,
+            acta,
+            emplazamiento,
+          });
         }
-
-
+      } else {
         /*
         |--------------------------------------------------------------------------
-        | ACTA DE VÍA PÚBLICA
+        | RECLAMOS QUE NO SON DE VEHÍCULOS
         |--------------------------------------------------------------------------
+        |
+        | Conservamos el comportamiento anterior.
+        |
         */
 
-        acta =
-          await Acta.create(
+        const constatacion =
+          await Constatacion.create(
             {
               reclamoId:
                 reclamo.id,
 
-              constatacionId:
-                constatacion.id,
-
-              /*
-              También dejamos el Acta
-              vinculada al vehículo.
-              */
-
-              vehiculoId:
-                vehiculo?.id ||
-                null,
-
               inspectorId:
                 req.usuario.id,
 
-              numeroActa:
-                String(
-                  numeroActa
-                ).trim(),
-
-              tipo:
-                "VIA_PUBLICA",
-
-              fechaHora,
-
-              lugar:
-                reclamo.direccion ||
+              vehiculoId:
                 null,
 
-              personaEncontrada:
-                Boolean(
-                  personaEncontrada
-                ),
-
-              atendidoPor:
-                personaEncontrada &&
-                atendidoPor
-                  ? String(
-                      atendidoPor
-                    ).trim() ||
-                    null
-                  : null,
-
-              caracterAtendido:
-                personaEncontrada &&
-                caracterAtendido
-                  ? caracterAtendido
-                  : null,
+              resultado,
 
               situacion:
                 String(
                   situacion
                 ).trim(),
 
-              plazoHoras,
-
               observaciones:
                 observaciones
                   ? String(
@@ -1013,57 +1294,22 @@ const registrarVisita =
                     ).trim() ||
                     null
                   : null,
-            },
-            {
-              transaction,
-            }
-          );
 
-
-        /*
-        |--------------------------------------------------------------------------
-        | EMPLAZAMIENTO
-        |--------------------------------------------------------------------------
-        */
-
-        emplazamiento =
-          await Emplazamiento.create(
-            {
-              reclamoId:
-                reclamo.id,
-
-              actaId:
-                acta.id,
-                
-                vehiculoId:
-        vehiculo?.id ||
-        null,
-
-              inspectorId:
-                req.usuario.id,
-
-              fechaHora,
-
-              plazoCantidad:
+              latitudActual:
                 Number(
-                  plazoCantidad
+                  latitudActual
                 ),
 
-              plazoUnidad,
+              longitudActual:
+                Number(
+                  longitudActual
+                ),
 
-              plazoHoras,
-
-              fechaVencimiento,
-
-              estado:
-                "VIGENTE",
-
-              observaciones:
-                observaciones
-                  ? String(
-                      observaciones
-                    ).trim() ||
-                    null
+              precisionGps:
+                precisionGps
+                  ? Number(
+                      precisionGps
+                    )
                   : null,
             },
             {
@@ -1071,27 +1317,283 @@ const registrarVisita =
             }
           );
 
+        let acta =
+          null;
+
+        let emplazamiento =
+          null;
 
         /*
-        Si es vehículo y quedó emplazado,
-        actualizamos su situación.
+        ---------------------------------------------------------------
+        ACTA TRADICIONAL
+        ---------------------------------------------------------------
         */
 
-        if (vehiculo) {
-          vehiculo.estadoActual =
-            "EMPLAZADO";
+        if (
+          resultado ===
+            "CONSTATADO" &&
+          hizoActa === true
+        ) {
+          if (
+            !numeroActa ||
+            !String(
+              numeroActa
+            ).trim()
+          ) {
+            await transaction.rollback();
 
-          await vehiculo.save({
-            transaction,
-          });
+            return res
+              .status(400)
+              .json({
+                mensaje:
+                  "Ingresá el número del Acta de Vía Pública.",
+              });
+          }
+
+          const cantidad =
+            Number(
+              plazoCantidad
+            );
+
+          if (
+            !Number.isFinite(
+              cantidad
+            ) ||
+            cantidad <= 0
+          ) {
+            await transaction.rollback();
+
+            return res
+              .status(400)
+              .json({
+                mensaje:
+                  "El plazo indicado no es válido.",
+              });
+          }
+
+          if (
+            ![
+              "HORAS",
+              "DIAS",
+            ].includes(
+              plazoUnidad
+            )
+          ) {
+            await transaction.rollback();
+
+            return res
+              .status(400)
+              .json({
+                mensaje:
+                  "La unidad del plazo no es válida.",
+              });
+          }
+
+          /*
+          ---------------------------------------------------------------
+          ACTA REPETIDA
+          ---------------------------------------------------------------
+          */
+
+          const actaExistente =
+            await Acta.findOne({
+              where: {
+                numeroActa:
+                  String(
+                    numeroActa
+                  ).trim(),
+              },
+
+              transaction,
+            });
+
+          if (actaExistente) {
+            await transaction.rollback();
+
+            return res
+              .status(409)
+              .json({
+                mensaje:
+                  "Ese número de Acta ya está registrado.",
+              });
+          }
+
+          const fechaHora =
+            new Date();
+
+          const plazoHoras =
+            convertirPlazoAHoras(
+              cantidad,
+              plazoUnidad
+            );
+
+          const fechaVencimiento =
+            calcularFechaVencimiento(
+              fechaHora,
+              cantidad,
+              plazoUnidad
+            );
+
+          if (
+            !plazoHoras ||
+            !fechaVencimiento
+          ) {
+            throw new Error(
+              "No se pudo calcular el vencimiento del emplazamiento."
+            );
+          }
+
+          /*
+          ---------------------------------------------------------------
+          ACTA
+          ---------------------------------------------------------------
+          */
+
+          acta =
+            await Acta.create(
+              {
+                reclamoId:
+                  reclamo.id,
+
+                constatacionId:
+                  constatacion.id,
+
+                vehiculoId:
+                  null,
+
+                inspectorId:
+                  req.usuario.id,
+
+                numeroActa:
+                  String(
+                    numeroActa
+                  ).trim(),
+
+                tipo:
+                  "VIA_PUBLICA",
+
+                fechaHora,
+
+                lugar:
+                  reclamo.direccion ||
+                  null,
+
+                personaEncontrada:
+                  Boolean(
+                    personaEncontrada
+                  ),
+
+                atendidoPor:
+                  personaEncontrada &&
+                  atendidoPor
+                    ? String(
+                        atendidoPor
+                      ).trim() ||
+                      null
+                    : null,
+
+                caracterAtendido:
+                  personaEncontrada &&
+                  caracterAtendido
+                    ? caracterAtendido
+                    : null,
+
+                situacion:
+                  String(
+                    situacion
+                  ).trim(),
+
+                plazoHoras,
+
+                observaciones:
+                  observaciones
+                    ? String(
+                        observaciones
+                      ).trim() ||
+                      null
+                    : null,
+              },
+              {
+                transaction,
+              }
+            );
+
+          /*
+          ---------------------------------------------------------------
+          EMPLAZAMIENTO
+          ---------------------------------------------------------------
+          */
+
+          emplazamiento =
+            await Emplazamiento.create(
+              {
+                reclamoId:
+                  reclamo.id,
+
+                actaId:
+                  acta.id,
+
+                vehiculoId:
+                  null,
+
+                inspectorId:
+                  req.usuario.id,
+
+                fechaHora,
+
+                plazoCantidad:
+                  cantidad,
+
+                plazoUnidad,
+
+                plazoHoras,
+
+                fechaVencimiento,
+
+                estado:
+                  "VIGENTE",
+
+                observaciones:
+                  observaciones
+                    ? String(
+                        observaciones
+                      ).trim() ||
+                      null
+                    : null,
+              },
+              {
+                transaction,
+              }
+            );
+
+          huboActa = true;
         }
-      }
 
+        resultadosVehiculos.push({
+          vehiculo: null,
+          constatacion,
+          acta,
+          emplazamiento,
+        });
+      }
 
       /*
       |--------------------------------------------------------------------------
       | ESTADO DEL RECLAMO
       |--------------------------------------------------------------------------
+      |
+      | ESTA LÓGICA SE CONSERVA.
+      |
+      | Si al menos UNO de los vehículos
+      | tiene emplazamiento:
+      |
+      | EN_SEGUIMIENTO / ESPERANDO_PLAZO
+      |
+      | Si hay vehículos pero NINGUNO fue emplazado:
+      |
+      | PENDIENTE_ACTUACION /
+      | PENDIENTE_DECISION_JEFE
+      |
       */
 
       const estadoAnterior =
@@ -1100,65 +1602,34 @@ const registrarVisita =
       let estadoNuevo;
       let etapaNueva;
 
-
       if (
-  resultado === "RESUELTO_EN_LUGAR" ||
-  resultado === "NO_CONSTATADO"
-) {
-  /*
-  |--------------------------------------------------------------------------
-  | LISTO PARA CERRAR POR SECRETARÍA
-  |--------------------------------------------------------------------------
-  |
-  | RESUELTO_EN_LUGAR:
-  | El inspector comprobó que el problema ya estaba solucionado.
-  |
-  | NO_CONSTATADO:
-  | El inspector fue al lugar pero no encontró lo denunciado.
-  |
-  | En ambos casos la actuación del inspector termina y el reclamo
-  | pasa a la misma bandeja que Secretaría ya utiliza para cerrar.
-  |
-  | El resultado de la constatación NO se modifica, por lo tanto
-  | Secretaría puede distinguir qué ocurrió.
-  |
-  */
+        resultado ===
+          "RESUELTO_EN_LUGAR" ||
+        resultado ===
+          "NO_CONSTATADO"
+      ) {
+        estadoNuevo =
+          "RESUELTO";
 
-  estadoNuevo =
-    "RESUELTO";
+        etapaNueva =
+          "FINALIZADO";
 
-  etapaNueva =
-    "FINALIZADO";
+        reclamo.estadoExterno =
+          "LISTO_PARA_CERRAR";
 
-  reclamo.estadoExterno =
-    "LISTO_PARA_CERRAR";
-
-  reclamo.fechaResolucion =
-    new Date();
-} else if (
-  resultado ===
-    "CONSTATADO" &&
-  debeCrearActa
-) {
-        /*
-        El inspector terminó su primera
-        visita, pero el reclamo sigue.
-
-        Ahora se espera el vencimiento
-        del emplazamiento.
-        */
-
+        reclamo.fechaResolucion =
+          new Date();
+      } else if (
+        resultado ===
+          "CONSTATADO" &&
+        huboActa
+      ) {
         estadoNuevo =
           "EN_SEGUIMIENTO";
 
         etapaNueva =
           "ESPERANDO_PLAZO";
       } else {
-        /*
-        No se resolvió automáticamente.
-        El jefe deberá decidir cómo sigue.
-        */
-
         estadoNuevo =
           "PENDIENTE_ACTUACION";
 
@@ -1166,39 +1637,22 @@ const registrarVisita =
           "PENDIENTE_DECISION_JEFE";
       }
 
-
       reclamo.estado =
         estadoNuevo;
 
       reclamo.etapaActual =
         etapaNueva;
 
-
-      /*
-      |--------------------------------------------------------------------------
-      | LIBERAR INSPECTOR ACTUAL
-      |--------------------------------------------------------------------------
-      |
-      | La salida terminó.
-      |
-      | El reclamo puede seguir activo,
-      | pero esta tarea del inspector
-      | ya terminó.
-      |
-      */
-
       reclamo.inspectorId =
         null;
-
 
       await reclamo.save({
         transaction,
       });
 
-
       /*
       |--------------------------------------------------------------------------
-      | FINALIZAR TAREA
+      | FINALIZAR TAREA DEL INSPECTOR
       |--------------------------------------------------------------------------
       */
 
@@ -1209,12 +1663,10 @@ const registrarVisita =
         tareaActiva.fechaFinalizacion =
           new Date();
 
-
         await tareaActiva.save({
           transaction,
         });
       }
-
 
       /*
       |--------------------------------------------------------------------------
@@ -1222,62 +1674,58 @@ const registrarVisita =
       |--------------------------------------------------------------------------
       */
 
-      let descripcion =
+      let descripcionHistorial =
         "El inspector registró y finalizó su visita.";
-
 
       if (
         resultado ===
         "RESUELTO_EN_LUGAR"
       ) {
-        descripcion =
+        descripcionHistorial =
           "El inspector verificó que el problema ya estaba solucionado. La visita quedó finalizada.";
       }
-
 
       if (
         resultado ===
         "NO_CONSTATADO"
       ) {
-        descripcion =
+        descripcionHistorial =
           "El inspector realizó la visita pero no encontró el problema denunciado. Su tarea quedó finalizada.";
       }
-
 
       if (
         resultado ===
         "NO_SE_PUDO_VERIFICAR"
       ) {
-        descripcion =
+        descripcionHistorial =
           "El inspector no pudo verificar el reclamo. Su tarea quedó finalizada y requiere decisión del jefe.";
       }
 
+      /*
+      Vehículos:
+      contamos cuántos encontró
+      y cuántos efectivamente emplazó.
+      */
 
       if (
         resultado ===
           "CONSTATADO" &&
-        !debeCrearActa
+        esReclamoVehiculo
       ) {
-        descripcion =
-          esReclamoVehiculo &&
-          vehiculo
-            ? `El inspector constató el reclamo y registró el vehículo interno N.º ${vehiculo.numeroInterno}. No realizó Acta de Vía Pública.`
-            : "El inspector constató que el problema continúa, pero no realizó Acta de Vía Pública. Su tarea quedó finalizada.";
+        const cantidadVehiculos =
+          resultadosVehiculos.length;
+
+        const cantidadActas =
+          resultadosVehiculos.filter(
+            (item) =>
+              Boolean(
+                item.acta
+              )
+          ).length;
+
+        descripcionHistorial =
+          `Primera visita finalizada. Se registraron ${cantidadVehiculos} vehículo(s) y se realizaron ${cantidadActas} Acta(s) de Vía Pública.`;
       }
-
-
-      if (
-        resultado ===
-          "CONSTATADO" &&
-        debeCrearActa
-      ) {
-        descripcion =
-          esReclamoVehiculo &&
-          vehiculo
-            ? `Primera visita finalizada. Se registró el vehículo interno N.º ${vehiculo.numeroInterno}, se realizó el Acta de Vía Pública ${acta.numeroActa} y comenzó el plazo del emplazamiento.`
-            : `Primera visita finalizada. Se realizó el Acta de Vía Pública ${acta.numeroActa} y comenzó el plazo del emplazamiento.`;
-      }
-
 
       await registrarHistorial({
         reclamoId:
@@ -1287,11 +1735,12 @@ const registrarVisita =
           req.usuario.id,
 
         accion:
-          debeCrearActa
+          huboActa
             ? "PRIMERA_VISITA_FINALIZADA_CON_ACTA"
             : "PRIMERA_VISITA_FINALIZADA",
 
-        descripcion,
+        descripcion:
+          descripcionHistorial,
 
         estadoAnterior,
 
@@ -1299,7 +1748,6 @@ const registrarVisita =
 
         transaction,
       });
-
 
       /*
       |--------------------------------------------------------------------------
@@ -1309,12 +1757,15 @@ const registrarVisita =
 
       await transaction.commit();
 
-
       /*
       |--------------------------------------------------------------------------
       | RESPUESTA
       |--------------------------------------------------------------------------
       */
+
+      const primerResultado =
+        resultadosVehiculos[0] ||
+        {};
 
       return res
         .status(201)
@@ -1322,23 +1773,41 @@ const registrarVisita =
           ok: true,
 
           mensaje:
-            debeCrearActa
-              ? "Primera visita finalizada. El reclamo quedó esperando el vencimiento del plazo."
+            huboActa
+              ? "Primera visita finalizada. El reclamo quedó esperando el vencimiento de los emplazamientos."
               : "Visita finalizada correctamente.",
 
-          constatacion,
-
-          acta,
-
-          emplazamiento,
-
           /*
-          Esto nos permite comprobar
-          desde frontend que realmente
-          quedó creado.
+          Todos los vehículos.
           */
 
-          vehiculo,
+          vehiculos:
+            resultadosVehiculos,
+
+          /*
+          Compatibilidad con pantallas
+          que todavía esperan uno solo.
+          */
+
+          constatacion:
+            primerResultado
+              .constatacion ||
+            null,
+
+          acta:
+            primerResultado
+              .acta ||
+            null,
+
+          emplazamiento:
+            primerResultado
+              .emplazamiento ||
+            null,
+
+          vehiculo:
+            primerResultado
+              .vehiculo ||
+            null,
 
           tarea:
             tareaActiva
@@ -1386,12 +1855,10 @@ const registrarVisita =
         );
       }
 
-
       console.error(
         "Error registrando visita:",
         error
       );
-
 
       return res
         .status(500)
@@ -1408,7 +1875,6 @@ const registrarVisita =
         });
     }
   };
-
   /*
 |--------------------------------------------------------------------------
 | OBTENER PRIMERA VISITA
@@ -1425,6 +1891,12 @@ const obtenerPrimeraVisita =
         reclamoId,
       } = req.params;
 
+      /*
+      |--------------------------------------------------------------------------
+      | RECLAMO
+      |--------------------------------------------------------------------------
+      */
+
       const reclamo =
         await Reclamo.findByPk(
           reclamoId
@@ -1435,20 +1907,32 @@ const obtenerPrimeraVisita =
           .status(404)
           .json({
             ok: false,
+
             mensaje:
               "El reclamo no existe.",
           });
       }
 
-
       /*
       |--------------------------------------------------------------------------
-      | ÚLTIMA CONSTATACIÓN DE PRIMERA VISITA
+      | CONSTATACIONES DE LA PRIMERA VISITA
       |--------------------------------------------------------------------------
+      |
+      | Antes se buscaba una sola constatación.
+      |
+      | Ahora un reclamo de vehículos puede tener:
+      |
+      | vehículo 1 -> constatación 1
+      | vehículo 2 -> constatación 2
+      | vehículo 3 -> constatación 3
+      |
+      | Por eso recuperamos todas las constataciones
+      | correspondientes a la primera visita.
+      |
       */
 
-      const constatacion =
-        await Constatacion.findOne({
+      const constataciones =
+        await Constatacion.findAll({
           where: {
             reclamoId:
               reclamo.id,
@@ -1459,11 +1943,22 @@ const obtenerPrimeraVisita =
               "createdAt",
               "ASC",
             ],
+            [
+              "id",
+              "ASC",
+            ],
           ],
         });
 
+      /*
+      |--------------------------------------------------------------------------
+      | TODAVÍA NO HAY VISITA
+      |--------------------------------------------------------------------------
+      */
 
-      if (!constatacion) {
+      if (
+        !constataciones.length
+      ) {
         return res.json({
           ok: true,
 
@@ -1473,19 +1968,34 @@ const obtenerPrimeraVisita =
 
           minutosRestantes: 0,
 
+          fechaLimiteEdicion:
+            null,
+
           visita: null,
         });
       }
 
+      /*
+      |--------------------------------------------------------------------------
+      | PRIMERA CONSTATACIÓN
+      |--------------------------------------------------------------------------
+      |
+      | Se mantiene como referencia para:
+      |
+      | - seguridad
+      | - autor de la visita
+      | - ventana de edición
+      | - compatibilidad con frontend anterior
+      |
+      */
+
+      const constatacion =
+        constataciones[0];
 
       /*
       |--------------------------------------------------------------------------
       | SEGURIDAD DEL INSPECTOR
       |--------------------------------------------------------------------------
-      |
-      | Un inspector solamente puede consultar
-      | su propia primera visita desde esta ruta.
-      |
       */
 
       if (
@@ -1502,23 +2012,37 @@ const obtenerPrimeraVisita =
           .status(403)
           .json({
             ok: false,
+
             mensaje:
               "Esta visita fue realizada por otro inspector.",
           });
       }
 
-
       /*
       |--------------------------------------------------------------------------
-      | ACTA DE VÍA PÚBLICA
+      | IDS DE LAS CONSTATACIONES
       |--------------------------------------------------------------------------
       */
 
-      const acta =
-        await Acta.findOne({
+      const constatacionIds =
+        constataciones.map(
+          (item) =>
+            item.id
+        );
+
+      /*
+      |--------------------------------------------------------------------------
+      | ACTAS DE VÍA PÚBLICA
+      |--------------------------------------------------------------------------
+      */
+
+      const actas =
+        await Acta.findAll({
           where: {
-            constatacionId:
-              constatacion.id,
+            constatacionId: {
+              [Op.in]:
+                constatacionIds,
+            },
 
             tipo:
               "VIA_PUBLICA",
@@ -1536,44 +2060,64 @@ const obtenerPrimeraVisita =
           order: [
             [
               "createdAt",
-              "DESC",
+              "ASC",
+            ],
+            [
+              "id",
+              "ASC",
             ],
           ],
         });
 
-
       /*
       |--------------------------------------------------------------------------
-      | EMPLAZAMIENTO
+      | IDS DE ACTAS
       |--------------------------------------------------------------------------
       */
 
-      const emplazamiento =
-        acta
-          ? await Emplazamiento.findOne({
+      const actaIds =
+        actas.map(
+          (item) =>
+            item.id
+        );
+
+      /*
+      |--------------------------------------------------------------------------
+      | EMPLAZAMIENTOS
+      |--------------------------------------------------------------------------
+      */
+
+      const emplazamientos =
+        actaIds.length > 0
+          ? await Emplazamiento.findAll({
               where: {
-                actaId:
-                  acta.id,
+                actaId: {
+                  [Op.in]:
+                    actaIds,
+                },
               },
 
               order: [
                 [
                   "createdAt",
-                  "DESC",
+                  "ASC",
+                ],
+                [
+                  "id",
+                  "ASC",
                 ],
               ],
             })
-          : null;
-
+          : [];
 
       /*
       |--------------------------------------------------------------------------
-      | VEHÍCULO
+      | VEHÍCULOS
       |--------------------------------------------------------------------------
       */
 
-      const vehiculo =
-        await Vehiculo.findOne({
+      const vehiculos =
+        await Vehiculo.findAll({
           where: {
             reclamoId:
               reclamo.id,
@@ -1587,14 +2131,114 @@ const obtenerPrimeraVisita =
           ],
         });
 
+      /*
+      |--------------------------------------------------------------------------
+      | ARMAR RESULTADO POR VEHÍCULO
+      |--------------------------------------------------------------------------
+      |
+      | Cada elemento queda:
+      |
+      | {
+      |   vehiculo,
+      |   constatacion,
+      |   acta,
+      |   emplazamiento
+      | }
+      |
+      */
+
+      const resultadosVehiculos =
+        vehiculos.map(
+          (vehiculo) => {
+            const constatacionVehiculo =
+              constataciones.find(
+                (item) =>
+                  Number(
+                    item.vehiculoId
+                  ) ===
+                  Number(
+                    vehiculo.id
+                  )
+              ) ||
+              null;
+
+            const actaVehiculo =
+              actas.find(
+                (item) =>
+                  Number(
+                    item.vehiculoId
+                  ) ===
+                  Number(
+                    vehiculo.id
+                  )
+              ) ||
+              null;
+
+            const emplazamientoVehiculo =
+              actaVehiculo
+                ? emplazamientos.find(
+                    (item) =>
+                      Number(
+                        item.actaId
+                      ) ===
+                      Number(
+                        actaVehiculo.id
+                      )
+                  ) ||
+                  null
+                : null;
+
+            return {
+              vehiculo,
+
+              constatacion:
+                constatacionVehiculo,
+
+              acta:
+                actaVehiculo,
+
+              emplazamiento:
+                emplazamientoVehiculo,
+            };
+          }
+        );
+
+      /*
+      |--------------------------------------------------------------------------
+      | COMPATIBILIDAD CON RECLAMOS NO VEHICULARES
+      |--------------------------------------------------------------------------
+      |
+      | En un reclamo que no tenga vehículos igualmente
+      | necesitamos devolver su constatación/acta/
+      | emplazamiento como antes.
+      |
+      */
+
+      const primeraActa =
+        actas[0] ||
+        null;
+
+      const primerEmplazamiento =
+        primeraActa
+          ? emplazamientos.find(
+              (item) =>
+                Number(
+                  item.actaId
+                ) ===
+                Number(
+                  primeraActa.id
+                )
+            ) ||
+            null
+          : null;
 
       /*
       |--------------------------------------------------------------------------
       | VENTANA DE EDICIÓN
       |--------------------------------------------------------------------------
       |
-      | Se cuentan 60 minutos desde
-      | la creación de la constatación.
+      | Conservamos exactamente el criterio existente:
+      | 60 minutos desde la primera constatación.
       |
       */
 
@@ -1648,6 +2292,25 @@ const obtenerPrimeraVisita =
             )
           : 0;
 
+      /*
+      |--------------------------------------------------------------------------
+      | PRIMER RESULTADO
+      |--------------------------------------------------------------------------
+      |
+      | Lo usamos únicamente para mantener compatibilidad
+      | con el frontend anterior.
+      |
+      */
+
+      const primerResultado =
+        resultadosVehiculos[0] ||
+        null;
+
+      /*
+      |--------------------------------------------------------------------------
+      | RESPUESTA
+      |--------------------------------------------------------------------------
+      */
 
       return res.json({
         ok: true,
@@ -1662,13 +2325,59 @@ const obtenerPrimeraVisita =
           limiteEdicion,
 
         visita: {
-          constatacion,
+          /*
+          ---------------------------------------------------------------
+          NUEVO FORMATO
+          ---------------------------------------------------------------
+          */
 
-          acta,
+          vehiculos:
+            resultadosVehiculos,
 
-          emplazamiento,
+          constataciones,
 
-          vehiculo,
+          actas,
+
+          emplazamientos,
+
+          /*
+          ---------------------------------------------------------------
+          FORMATO ANTERIOR
+          ---------------------------------------------------------------
+          |
+          | Se mantiene para no romper componentes
+          | que todavía lean:
+          |
+          | visita.constatacion
+          | visita.acta
+          | visita.emplazamiento
+          | visita.vehiculo
+          |
+          */
+
+          constatacion:
+            primerResultado
+              ?.constatacion ||
+            constatacion ||
+            null,
+
+          acta:
+            primerResultado
+              ?.acta ||
+            primeraActa ||
+            null,
+
+          emplazamiento:
+            primerResultado
+              ?.emplazamiento ||
+            primerEmplazamiento ||
+            null,
+
+          vehiculo:
+            primerResultado
+              ?.vehiculo ||
+            vehiculos[0] ||
+            null,
         },
       });
     } catch (error) {
@@ -1687,7 +2396,6 @@ const obtenerPrimeraVisita =
         });
     }
   };
-
 
 /*
 |--------------------------------------------------------------------------
@@ -1716,14 +2424,23 @@ const editarPrimeraVisita =
         longitudActual,
         precisionGps,
 
+        /*
+        Formato anterior.
+        */
         personaEncontrada,
         atendidoPor,
         caracterAtendido,
 
         vehiculo:
           vehiculoPayload,
-      } = req.body;
 
+        /*
+        Nuevo formato:
+        varios vehículos.
+        */
+        vehiculos =
+          [],
+      } = req.body;
 
       /*
       |--------------------------------------------------------------------------
@@ -1743,7 +2460,6 @@ const editarPrimeraVisita =
           }
         );
 
-
       if (!reclamo) {
         await transaction.rollback();
 
@@ -1757,15 +2473,14 @@ const editarPrimeraVisita =
           });
       }
 
-
       /*
       |--------------------------------------------------------------------------
-      | CONSTATACIÓN ORIGINAL
+      | CONSTATACIONES DE LA PRIMERA VISITA
       |--------------------------------------------------------------------------
       */
 
-      const constatacion =
-        await Constatacion.findOne({
+      const constataciones =
+        await Constatacion.findAll({
           where: {
             reclamoId:
               reclamo.id,
@@ -1774,6 +2489,10 @@ const editarPrimeraVisita =
           order: [
             [
               "createdAt",
+              "ASC",
+            ],
+            [
+              "id",
               "ASC",
             ],
           ],
@@ -1785,8 +2504,9 @@ const editarPrimeraVisita =
               .LOCK.UPDATE,
         });
 
-
-      if (!constatacion) {
+      if (
+        !constataciones.length
+      ) {
         await transaction.rollback();
 
         return res
@@ -1799,6 +2519,20 @@ const editarPrimeraVisita =
           });
       }
 
+      /*
+      |--------------------------------------------------------------------------
+      | PRIMERA CONSTATACIÓN
+      |--------------------------------------------------------------------------
+      |
+      | Todas las constataciones creadas por la visita
+      | pertenecen al mismo inspector.
+      |
+      | Usamos la primera para seguridad y plazo.
+      |
+      */
+
+      const primeraConstatacion =
+        constataciones[0];
 
       /*
       |--------------------------------------------------------------------------
@@ -1814,12 +2548,11 @@ const editarPrimeraVisita =
         req.usuario.rol ===
           "inspector" &&
         Number(
-          constatacion.inspectorId
+          primeraConstatacion.inspectorId
         ) ===
           Number(
             req.usuario.id
           );
-
 
       if (
         !esAdministrador &&
@@ -1837,7 +2570,6 @@ const editarPrimeraVisita =
           });
       }
 
-
       /*
       |--------------------------------------------------------------------------
       | LÍMITE DE 60 MINUTOS
@@ -1847,7 +2579,7 @@ const editarPrimeraVisita =
       if (!esAdministrador) {
         const fechaRegistro =
           new Date(
-            constatacion.createdAt
+            primeraConstatacion.createdAt
           );
 
         const limiteEdicion =
@@ -1855,7 +2587,6 @@ const editarPrimeraVisita =
             fechaRegistro.getTime() +
               60 * 60 * 1000
           );
-
 
         if (
           new Date() >
@@ -1877,116 +2608,133 @@ const editarPrimeraVisita =
         }
       }
 
-
       /*
       |--------------------------------------------------------------------------
-      | QUÉ PERMITIMOS CORREGIR
+      | IMPORTANTE
       |--------------------------------------------------------------------------
       |
-      | No modificamos:
+      | Esta edición NO modifica:
       |
       | - resultado
-      | - si hizo Acta o no
-      | - número del Acta
-      | - plazo del emplazamiento
+      | - estado del reclamo
+      | - etapa del reclamo
+      | - si hubo acta
+      | - número de acta
+      | - plazo
+      | - fecha de vencimiento
+      | - emplazamiento
       |
-      | Porque esas decisiones ya modificaron
-      | el flujo administrativo del reclamo.
-      |
-      | Sí permitimos corregir datos descriptivos.
+      | Solamente permite corregir
+      | información descriptiva.
       |
       */
-
-      if (
-        situacion !==
-          undefined &&
-        String(
-          situacion
-        ).trim()
-      ) {
-        constatacion.situacion =
-          String(
-            situacion
-          ).trim();
-      }
-
-
-      if (
-        observaciones !==
-        undefined
-      ) {
-        constatacion.observaciones =
-          String(
-            observaciones || ""
-          ).trim() ||
-          null;
-      }
-
-
-      if (
-        latitudActual !==
-          undefined &&
-        latitudActual !==
-          null
-      ) {
-        constatacion.latitudActual =
-          Number(
-            latitudActual
-          );
-      }
-
-
-      if (
-        longitudActual !==
-          undefined &&
-        longitudActual !==
-          null
-      ) {
-        constatacion.longitudActual =
-          Number(
-            longitudActual
-          );
-      }
-
-
-      if (
-        precisionGps !==
-          undefined
-      ) {
-        constatacion.precisionGps =
-          precisionGps ===
-            null ||
-          precisionGps ===
-            ""
-            ? null
-            : Number(
-                precisionGps
-              );
-      }
-
-
-      await constatacion.save({
-        transaction,
-      });
-
 
       /*
       |--------------------------------------------------------------------------
-      | ACTA
+      | ACTUALIZAR CONSTATACIONES
       |--------------------------------------------------------------------------
       |
-      | Si hubo Acta, permitimos corregir
-      | quién atendió y observaciones.
+      | Situación, observaciones y GPS corresponden
+      | a la visita.
       |
-      | NO cambiamos número ni plazo.
+      | En el flujo de varios vehículos tenemos una
+      | constatación por vehículo, por lo que mantenemos
+      | esos datos sincronizados.
       |
       */
 
-      const acta =
-        await Acta.findOne({
+      for (
+        const constatacion
+        of constataciones
+      ) {
+        if (
+          situacion !==
+            undefined &&
+          String(
+            situacion
+          ).trim()
+        ) {
+          constatacion.situacion =
+            String(
+              situacion
+            ).trim();
+        }
+
+        if (
+          observaciones !==
+            undefined
+        ) {
+          constatacion.observaciones =
+            String(
+              observaciones ||
+                ""
+            ).trim() ||
+            null;
+        }
+
+        if (
+          latitudActual !==
+            undefined &&
+          latitudActual !==
+            null
+        ) {
+          constatacion.latitudActual =
+            Number(
+              latitudActual
+            );
+        }
+
+        if (
+          longitudActual !==
+            undefined &&
+          longitudActual !==
+            null
+        ) {
+          constatacion.longitudActual =
+            Number(
+              longitudActual
+            );
+        }
+
+        if (
+          precisionGps !==
+            undefined
+        ) {
+          constatacion.precisionGps =
+            precisionGps ===
+              null ||
+            precisionGps ===
+              ""
+              ? null
+              : Number(
+                  precisionGps
+                );
+        }
+
+        await constatacion.save({
+          transaction,
+        });
+      }
+
+      /*
+      |--------------------------------------------------------------------------
+      | ACTAS DE LA PRIMERA VISITA
+      |--------------------------------------------------------------------------
+      */
+
+      const constatacionIds =
+        constataciones.map(
+          (item) =>
+            item.id
+        );
+
+      const actas =
+        await Acta.findAll({
           where: {
-            constatacionId:
-              constatacion.id,
+            constatacionId: {
+              [Op.in]:
+                constatacionIds,
+            },
 
             tipo:
               "VIA_PUBLICA",
@@ -1999,97 +2747,6 @@ const editarPrimeraVisita =
                 anulada: null,
               },
             ],
-          },
-
-          transaction,
-
-          lock:
-            transaction
-              .LOCK.UPDATE,
-        });
-
-
-      if (acta) {
-        if (
-          personaEncontrada !==
-          undefined
-        ) {
-          acta.personaEncontrada =
-            Boolean(
-              personaEncontrada
-            );
-        }
-
-
-        if (
-          atendidoPor !==
-          undefined
-        ) {
-          acta.atendidoPor =
-            acta.personaEncontrada
-              ? String(
-                  atendidoPor || ""
-                ).trim() ||
-                null
-              : null;
-        }
-
-
-        if (
-          caracterAtendido !==
-          undefined
-        ) {
-          acta.caracterAtendido =
-            acta.personaEncontrada
-              ? caracterAtendido ||
-                null
-              : null;
-        }
-
-
-        if (
-          situacion !==
-            undefined &&
-          String(
-            situacion
-          ).trim()
-        ) {
-          acta.situacion =
-            String(
-              situacion
-            ).trim();
-        }
-
-
-        if (
-          observaciones !==
-          undefined
-        ) {
-          acta.observaciones =
-            String(
-              observaciones || ""
-            ).trim() ||
-            null;
-        }
-
-
-        await acta.save({
-          transaction,
-        });
-      }
-
-
-      /*
-      |--------------------------------------------------------------------------
-      | VEHÍCULO
-      |--------------------------------------------------------------------------
-      */
-
-      let vehiculo =
-        await Vehiculo.findOne({
-          where: {
-            reclamoId:
-              reclamo.id,
           },
 
           order: [
@@ -2106,101 +2763,608 @@ const editarPrimeraVisita =
               .LOCK.UPDATE,
         });
 
+      /*
+      |--------------------------------------------------------------------------
+      | NUEVO FORMATO: VARIOS VEHÍCULOS
+      |--------------------------------------------------------------------------
+      */
+
+      const vehiculosPayload =
+        Array.isArray(
+          vehiculos
+        )
+          ? vehiculos
+          : [];
+
+      const resultadosVehiculos =
+        [];
 
       if (
-        vehiculo &&
-        vehiculoPayload &&
-        typeof vehiculoPayload ===
-          "object"
+        vehiculosPayload.length >
+        0
       ) {
-        if (
-          vehiculoPayload.dominio !==
-          undefined
+        /*
+        No permitimos IDs repetidos
+        en la misma petición.
+        */
+
+        const idsRecibidos =
+          new Set();
+
+        for (
+          let indice = 0;
+          indice <
+          vehiculosPayload.length;
+          indice += 1
         ) {
-          vehiculo.dominio =
-            String(
-              vehiculoPayload.dominio ||
-                ""
+          const item =
+            vehiculosPayload[
+              indice
+            ];
+
+          const numero =
+            indice + 1;
+
+          if (
+            !item ||
+            typeof item !==
+              "object"
+          ) {
+            await transaction.rollback();
+
+            return res
+              .status(400)
+              .json({
+                ok: false,
+
+                mensaje:
+                  `Los datos del vehículo ${numero} no son válidos.`,
+              });
+          }
+
+          const vehiculoId =
+            Number(
+              item.id
+            );
+
+          if (
+            !Number.isInteger(
+              vehiculoId
+            ) ||
+            vehiculoId <= 0
+          ) {
+            await transaction.rollback();
+
+            return res
+              .status(400)
+              .json({
+                ok: false,
+
+                mensaje:
+                  `El vehículo ${numero} no tiene un ID válido.`,
+              });
+          }
+
+          if (
+            idsRecibidos.has(
+              vehiculoId
             )
-              .trim()
-              .toUpperCase() ||
+          ) {
+            await transaction.rollback();
+
+            return res
+              .status(409)
+              .json({
+                ok: false,
+
+                mensaje:
+                  `El vehículo ${numero} está repetido en la edición.`,
+              });
+          }
+
+          idsRecibidos.add(
+            vehiculoId
+          );
+
+          /*
+          Vehículo real del reclamo.
+          */
+
+          const vehiculo =
+            await Vehiculo.findOne({
+              where: {
+                id:
+                  vehiculoId,
+
+                reclamoId:
+                  reclamo.id,
+              },
+
+              transaction,
+
+              lock:
+                transaction
+                  .LOCK.UPDATE,
+            });
+
+          if (!vehiculo) {
+            await transaction.rollback();
+
+            return res
+              .status(404)
+              .json({
+                ok: false,
+
+                mensaje:
+                  `No se encontró el vehículo ${numero} en este reclamo.`,
+              });
+          }
+
+          /*
+          ---------------------------------------------------------------
+          DATOS DESCRIPTIVOS DEL VEHÍCULO
+          ---------------------------------------------------------------
+          */
+
+          if (
+            item.dominio !==
+            undefined
+          ) {
+            vehiculo.dominio =
+              String(
+                item.dominio ||
+                  ""
+              )
+                .trim()
+                .toUpperCase() ||
+              null;
+          }
+
+          if (
+            item.marca !==
+            undefined
+          ) {
+            vehiculo.marca =
+              String(
+                item.marca ||
+                  ""
+              ).trim() ||
+              null;
+          }
+
+          if (
+            item.modelo !==
+            undefined
+          ) {
+            vehiculo.modelo =
+              String(
+                item.modelo ||
+                  ""
+              ).trim() ||
+              null;
+          }
+
+          if (
+            item.color !==
+            undefined
+          ) {
+            vehiculo.color =
+              String(
+                item.color ||
+                  ""
+              ).trim() ||
+              null;
+          }
+
+          if (
+            item.tipoVehiculo !==
+            undefined
+          ) {
+            vehiculo.tipoVehiculo =
+              item.tipoVehiculo ||
+              vehiculo.tipoVehiculo;
+          }
+
+          if (
+            item.descripcion !==
+            undefined
+          ) {
+            vehiculo.descripcion =
+              String(
+                item.descripcion ||
+                  ""
+              ).trim() ||
+              null;
+          }
+
+          await vehiculo.save({
+            transaction,
+          });
+
+          /*
+          ---------------------------------------------------------------
+          CONSTATACIÓN DEL VEHÍCULO
+          ---------------------------------------------------------------
+          */
+
+          const constatacionVehiculo =
+            constataciones.find(
+              (constatacion) =>
+                Number(
+                  constatacion.vehiculoId
+                ) ===
+                Number(
+                  vehiculo.id
+                )
+            ) ||
             null;
+
+          /*
+          ---------------------------------------------------------------
+          ACTA DEL VEHÍCULO
+          ---------------------------------------------------------------
+          |
+          | Solamente permitimos modificar:
+          |
+          | - personaEncontrada
+          | - atendidoPor
+          | - caracterAtendido
+          | - situación
+          | - observaciones
+          |
+          | NO número de acta.
+          | NO plazo.
+          |
+          */
+
+          const acta =
+            actas.find(
+              (itemActa) =>
+                Number(
+                  itemActa.vehiculoId
+                ) ===
+                Number(
+                  vehiculo.id
+                )
+            ) ||
+            null;
+
+          if (acta) {
+            if (
+              item.personaEncontrada !==
+              undefined
+            ) {
+              acta.personaEncontrada =
+                Boolean(
+                  item.personaEncontrada
+                );
+            }
+
+            if (
+              item.atendidoPor !==
+              undefined
+            ) {
+              acta.atendidoPor =
+                acta.personaEncontrada
+                  ? String(
+                      item.atendidoPor ||
+                        ""
+                    ).trim() ||
+                    null
+                  : null;
+            }
+
+            if (
+              item.caracterAtendido !==
+              undefined
+            ) {
+              acta.caracterAtendido =
+                acta.personaEncontrada
+                  ? item.caracterAtendido ||
+                    null
+                  : null;
+            }
+
+            if (
+              situacion !==
+                undefined &&
+              String(
+                situacion
+              ).trim()
+            ) {
+              acta.situacion =
+                String(
+                  situacion
+                ).trim();
+            }
+
+            if (
+              observaciones !==
+                undefined
+            ) {
+              acta.observaciones =
+                String(
+                  observaciones ||
+                    ""
+                ).trim() ||
+                null;
+            }
+
+            await acta.save({
+              transaction,
+            });
+          }
+
+          resultadosVehiculos.push({
+            vehiculo,
+
+            constatacion:
+              constatacionVehiculo,
+
+            acta,
+          });
         }
+      } else {
+        /*
+        |--------------------------------------------------------------------------
+        | FORMATO ANTERIOR
+        |--------------------------------------------------------------------------
+        |
+        | Se conserva para no romper la pantalla anterior
+        | o reclamos que todavía utilicen vehiculo.
+        |
+        */
 
+        const constatacion =
+          primeraConstatacion;
 
-        if (
-          vehiculoPayload.marca !==
-          undefined
-        ) {
-          vehiculo.marca =
+        const acta =
+          actas.find(
+            (item) =>
+              Number(
+                item.constatacionId
+              ) ===
+              Number(
+                constatacion.id
+              )
+          ) ||
+          null;
+
+        /*
+        ACTA
+        */
+
+        if (acta) {
+          if (
+            personaEncontrada !==
+            undefined
+          ) {
+            acta.personaEncontrada =
+              Boolean(
+                personaEncontrada
+              );
+          }
+
+          if (
+            atendidoPor !==
+            undefined
+          ) {
+            acta.atendidoPor =
+              acta.personaEncontrada
+                ? String(
+                    atendidoPor ||
+                      ""
+                  ).trim() ||
+                  null
+                : null;
+          }
+
+          if (
+            caracterAtendido !==
+            undefined
+          ) {
+            acta.caracterAtendido =
+              acta.personaEncontrada
+                ? caracterAtendido ||
+                  null
+                : null;
+          }
+
+          if (
+            situacion !==
+              undefined &&
             String(
-              vehiculoPayload.marca ||
-                ""
-            ).trim() ||
-            null;
+              situacion
+            ).trim()
+          ) {
+            acta.situacion =
+              String(
+                situacion
+              ).trim();
+          }
+
+          if (
+            observaciones !==
+              undefined
+          ) {
+            acta.observaciones =
+              String(
+                observaciones ||
+                  ""
+              ).trim() ||
+              null;
+          }
+
+          await acta.save({
+            transaction,
+          });
         }
 
+        /*
+        VEHÍCULO ANTERIOR
+        */
+
+        let vehiculo =
+          null;
 
         if (
-          vehiculoPayload.modelo !==
-          undefined
+          vehiculoPayload &&
+          typeof vehiculoPayload ===
+            "object"
         ) {
-          vehiculo.modelo =
-            String(
-              vehiculoPayload.modelo ||
-                ""
-            ).trim() ||
-            null;
+          /*
+          Si viene ID lo usamos.
+          Si es una visita vieja sin ID en el payload,
+          mantenemos el comportamiento anterior y
+          buscamos el primero.
+          */
+
+          const vehiculoId =
+            Number(
+              vehiculoPayload.id
+            );
+
+          if (
+            Number.isInteger(
+              vehiculoId
+            ) &&
+            vehiculoId > 0
+          ) {
+            vehiculo =
+              await Vehiculo.findOne({
+                where: {
+                  id:
+                    vehiculoId,
+
+                  reclamoId:
+                    reclamo.id,
+                },
+
+                transaction,
+
+                lock:
+                  transaction
+                    .LOCK.UPDATE,
+              });
+          } else {
+            vehiculo =
+              await Vehiculo.findOne({
+                where: {
+                  reclamoId:
+                    reclamo.id,
+                },
+
+                order: [
+                  [
+                    "id",
+                    "ASC",
+                  ],
+                ],
+
+                transaction,
+
+                lock:
+                  transaction
+                    .LOCK.UPDATE,
+              });
+          }
+
+          if (vehiculo) {
+            if (
+              vehiculoPayload.dominio !==
+              undefined
+            ) {
+              vehiculo.dominio =
+                String(
+                  vehiculoPayload.dominio ||
+                    ""
+                )
+                  .trim()
+                  .toUpperCase() ||
+                null;
+            }
+
+            if (
+              vehiculoPayload.marca !==
+              undefined
+            ) {
+              vehiculo.marca =
+                String(
+                  vehiculoPayload.marca ||
+                    ""
+                ).trim() ||
+                null;
+            }
+
+            if (
+              vehiculoPayload.modelo !==
+              undefined
+            ) {
+              vehiculo.modelo =
+                String(
+                  vehiculoPayload.modelo ||
+                    ""
+                ).trim() ||
+                null;
+            }
+
+            if (
+              vehiculoPayload.color !==
+              undefined
+            ) {
+              vehiculo.color =
+                String(
+                  vehiculoPayload.color ||
+                    ""
+                ).trim() ||
+                null;
+            }
+
+            if (
+              vehiculoPayload.tipoVehiculo !==
+              undefined
+            ) {
+              vehiculo.tipoVehiculo =
+                vehiculoPayload
+                  .tipoVehiculo ||
+                vehiculo.tipoVehiculo;
+            }
+
+            if (
+              vehiculoPayload.descripcion !==
+              undefined
+            ) {
+              vehiculo.descripcion =
+                String(
+                  vehiculoPayload.descripcion ||
+                    ""
+                ).trim() ||
+                null;
+            }
+
+            await vehiculo.save({
+              transaction,
+            });
+          }
         }
 
-
-        if (
-          vehiculoPayload.color !==
-          undefined
-        ) {
-          vehiculo.color =
-            String(
-              vehiculoPayload.color ||
-                ""
-            ).trim() ||
-            null;
-        }
-
-
-        if (
-          vehiculoPayload.tipoVehiculo !==
-          undefined
-        ) {
-          vehiculo.tipoVehiculo =
-            vehiculoPayload
-              .tipoVehiculo ||
-            vehiculo.tipoVehiculo;
-        }
-
-
-        if (
-          vehiculoPayload.descripcion !==
-          undefined
-        ) {
-          vehiculo.descripcion =
-            String(
-              vehiculoPayload.descripcion ||
-                ""
-            ).trim() ||
-            null;
-        }
-
-
-        await vehiculo.save({
-          transaction,
+        resultadosVehiculos.push({
+          vehiculo,
+          constatacion,
+          acta,
         });
       }
-
 
       /*
       |--------------------------------------------------------------------------
       | HISTORIAL
       |--------------------------------------------------------------------------
+      |
+      | Fijate que estadoAnterior y estadoNuevo
+      | siguen siendo exactamente el mismo.
+      |
+      | EDITAR NO CAMBIA EL ESTADO.
+      |
       */
 
       await registrarHistorial({
@@ -2225,9 +3389,23 @@ const editarPrimeraVisita =
         transaction,
       });
 
+      /*
+      |--------------------------------------------------------------------------
+      | COMMIT
+      |--------------------------------------------------------------------------
+      */
 
       await transaction.commit();
 
+      /*
+      |--------------------------------------------------------------------------
+      | RESPUESTA
+      |--------------------------------------------------------------------------
+      */
+
+      const primerResultado =
+        resultadosVehiculos[0] ||
+        {};
 
       return res.json({
         ok: true,
@@ -2235,11 +3413,37 @@ const editarPrimeraVisita =
         mensaje:
           "La visita fue actualizada correctamente.",
 
-        constatacion,
+        /*
+        Nuevo formato.
+        */
 
-        acta,
+        vehiculos:
+          resultadosVehiculos,
 
-        vehiculo,
+        constataciones,
+
+        actas,
+
+        /*
+        Compatibilidad con frontend anterior.
+        */
+
+        constatacion:
+          primerResultado
+            .constatacion ||
+          primeraConstatacion ||
+          null,
+
+        acta:
+          primerResultado
+            .acta ||
+          actas[0] ||
+          null,
+
+        vehiculo:
+          primerResultado
+            .vehiculo ||
+          null,
       });
     } catch (error) {
       try {
@@ -2253,12 +3457,10 @@ const editarPrimeraVisita =
         );
       }
 
-
       console.error(
         "Error editando primera visita:",
         error
       );
-
 
       return res
         .status(500)
@@ -2267,6 +3469,781 @@ const editarPrimeraVisita =
 
           mensaje:
             "No se pudo editar la visita.",
+
+          error:
+            process.env
+              .NODE_ENV ===
+            "development"
+              ? error.message
+              : undefined,
+        });
+    }
+  };
+
+  /*
+|--------------------------------------------------------------------------
+| PREPARAR VEHÍCULOS DE LA PRIMERA VISITA
+|--------------------------------------------------------------------------
+|
+| Crea los vehículos antes de finalizar la visita.
+|
+| Esto permite obtener vehiculoId reales para:
+|
+| - foto de cada vehículo
+| - Acta de Vía Pública
+| - emplazamiento
+| - foto del emplazamiento
+|
+| No finaliza la visita.
+| No cambia el estado del reclamo.
+| No finaliza la tarea del inspector.
+|
+*/
+
+const prepararVehiculos =
+  async (req, res) => {
+    const transaction =
+      await sequelize.transaction();
+
+    try {
+      const reclamoId =
+        Number(
+          req.params.reclamoId
+        );
+
+      const cantidad =
+        Number(
+          req.body.cantidad
+        );
+
+      /*
+      |--------------------------------------------------------------------------
+      | VALIDACIONES
+      |--------------------------------------------------------------------------
+      */
+
+      if (
+        !Number.isInteger(
+          reclamoId
+        ) ||
+        reclamoId <= 0
+      ) {
+        await transaction.rollback();
+
+        return res
+          .status(400)
+          .json({
+            ok: false,
+
+            mensaje:
+              "El reclamo no es válido.",
+          });
+      }
+
+      if (
+        !Number.isInteger(
+          cantidad
+        ) ||
+        cantidad < 1 ||
+        cantidad > 20
+      ) {
+        await transaction.rollback();
+
+        return res
+          .status(400)
+          .json({
+            ok: false,
+
+            mensaje:
+              "La cantidad de vehículos debe estar entre 1 y 20.",
+          });
+      }
+
+      /*
+      |--------------------------------------------------------------------------
+      | RECLAMO
+      |--------------------------------------------------------------------------
+      */
+
+      const reclamo =
+        await Reclamo.findByPk(
+          reclamoId,
+          {
+            transaction,
+
+            lock:
+              transaction
+                .LOCK.UPDATE,
+          }
+        );
+
+      if (!reclamo) {
+        await transaction.rollback();
+
+        return res
+          .status(404)
+          .json({
+            ok: false,
+
+            mensaje:
+              "El reclamo no existe.",
+          });
+      }
+
+      if (
+        [
+          "RESUELTO",
+          "ANULADO",
+        ].includes(
+          reclamo.estado
+        )
+      ) {
+        await transaction.rollback();
+
+        return res
+          .status(400)
+          .json({
+            ok: false,
+
+            mensaje:
+              "Este reclamo ya está finalizado.",
+          });
+      }
+
+      /*
+      |--------------------------------------------------------------------------
+      | SEGURIDAD DEL INSPECTOR
+      |--------------------------------------------------------------------------
+      */
+
+      if (
+        req.usuario.rol ===
+        "inspector"
+      ) {
+        const tareaActiva =
+          await Asignacion.findOne({
+            where: {
+              reclamoId:
+                reclamo.id,
+
+              tipo:
+                "INSPECTOR",
+
+              asignadoAId:
+                req.usuario.id,
+
+              estadoTarea: {
+                [Op.in]: [
+                  "PENDIENTE",
+                  "EN_CURSO",
+                ],
+              },
+            },
+
+            order: [
+              [
+                "fechaAsignacion",
+                "DESC",
+              ],
+            ],
+
+            transaction,
+          });
+
+        if (!tareaActiva) {
+          await transaction.rollback();
+
+          return res
+            .status(403)
+            .json({
+              ok: false,
+
+              mensaje:
+                "No tenés una tarea activa para este reclamo.",
+            });
+        }
+
+        if (
+          tareaActiva.etapa ===
+          "SEGUNDA_VISITA"
+        ) {
+          await transaction.rollback();
+
+          return res
+            .status(409)
+            .json({
+              ok: false,
+
+              mensaje:
+                "Esta tarea corresponde a una segunda visita.",
+            });
+        }
+
+        if (
+          reclamo.inspectorId &&
+          Number(
+            reclamo.inspectorId
+          ) !==
+            Number(
+              req.usuario.id
+            )
+        ) {
+          await transaction.rollback();
+
+          return res
+            .status(403)
+            .json({
+              ok: false,
+
+              mensaje:
+                "Este reclamo está asignado actualmente a otro inspector.",
+            });
+        }
+      }
+
+      /*
+      |--------------------------------------------------------------------------
+      | VEHÍCULOS YA PREPARADOS
+      |--------------------------------------------------------------------------
+      */
+
+      let existentes =
+        await Vehiculo.findAll({
+          where: {
+            reclamoId:
+              reclamo.id,
+
+            origenRegistro:
+              "CIRCUITO_NORMAL",
+          },
+
+          order: [
+            [
+              "id",
+              "ASC",
+            ],
+          ],
+
+          transaction,
+
+          lock:
+            transaction
+              .LOCK.UPDATE,
+        });
+
+      const cantidadAnterior =
+        existentes.length;
+
+      /*
+      |--------------------------------------------------------------------------
+      | REDUCIR CANTIDAD
+      |--------------------------------------------------------------------------
+      |
+      | Ejemplo:
+      |
+      | preparó 4
+      | después se dio cuenta que era 1
+      |
+      | Conservamos los primeros y revisamos
+      | los que sobran.
+      |
+      | Solamente eliminamos un vehículo preparado
+      | que todavía no tenga información real asociada.
+      |
+      */
+
+      if (
+        existentes.length >
+        cantidad
+      ) {
+        const sobrantes =
+          existentes.slice(
+            cantidad
+          );
+
+        /*
+        Primero verificamos TODOS.
+        No borramos ninguno hasta saber
+        que todos los sobrantes se pueden eliminar.
+        */
+
+        for (
+          const vehiculo
+          of sobrantes
+        ) {
+          /*
+          ---------------------------------------------------------------
+          FOTO DEL VEHÍCULO
+          ---------------------------------------------------------------
+          */
+
+          const fotoVehiculo =
+            await Foto.findOne({
+              where: {
+                reclamoId:
+                  reclamo.id,
+
+                tipoReferencia:
+                  "VEHICULO",
+
+                referenciaId:
+                  vehiculo.id,
+
+                activo:
+                  true,
+              },
+
+              transaction,
+            });
+
+          /*
+          ---------------------------------------------------------------
+          FOTO DE EMPLAZAMIENTO TEMPORAL
+          ---------------------------------------------------------------
+          |
+          | Antes de finalizar, la foto del acta usa
+          | temporalmente vehiculo.id como referenciaId.
+          |
+          */
+
+          const fotoEmplazamiento =
+            await Foto.findOne({
+              where: {
+                reclamoId:
+                  reclamo.id,
+
+                tipoReferencia:
+                  "EMPLAZAMIENTO",
+
+                referenciaId:
+                  vehiculo.id,
+
+                activo:
+                  true,
+              },
+
+              transaction,
+            });
+
+          /*
+          ---------------------------------------------------------------
+          CONSTATACIÓN
+          ---------------------------------------------------------------
+          */
+
+          const constatacion =
+            await Constatacion.findOne({
+              where: {
+                reclamoId:
+                  reclamo.id,
+
+                vehiculoId:
+                  vehiculo.id,
+              },
+
+              transaction,
+            });
+
+          /*
+          ---------------------------------------------------------------
+          ACTA
+          ---------------------------------------------------------------
+          */
+
+          const acta =
+            await Acta.findOne({
+              where: {
+                reclamoId:
+                  reclamo.id,
+
+                vehiculoId:
+                  vehiculo.id,
+              },
+
+              transaction,
+            });
+
+          /*
+          ---------------------------------------------------------------
+          EMPLAZAMIENTO
+          ---------------------------------------------------------------
+          */
+
+          const emplazamiento =
+            await Emplazamiento.findOne({
+              where: {
+                reclamoId:
+                  reclamo.id,
+
+                vehiculoId:
+                  vehiculo.id,
+              },
+
+              transaction,
+            });
+
+          /*
+          ---------------------------------------------------------------
+          DATOS CARGADOS EN EL VEHÍCULO
+          ---------------------------------------------------------------
+          */
+
+          const tieneDatos =
+            Boolean(
+              String(
+                vehiculo.dominio ||
+                  ""
+              ).trim() ||
+              String(
+                vehiculo.marca ||
+                  ""
+              ).trim() ||
+              String(
+                vehiculo.modelo ||
+                  ""
+              ).trim() ||
+              String(
+                vehiculo.color ||
+                  ""
+              ).trim() ||
+              String(
+                vehiculo.descripcion ||
+                  ""
+              ).trim()
+            );
+
+          /*
+          ---------------------------------------------------------------
+          NO BORRAR SI YA SE TRABAJÓ
+          ---------------------------------------------------------------
+          */
+
+          if (
+            fotoVehiculo ||
+            fotoEmplazamiento ||
+            constatacion ||
+            acta ||
+            emplazamiento ||
+            tieneDatos
+          ) {
+            await transaction.rollback();
+
+            return res
+              .status(409)
+              .json({
+                ok: false,
+
+                codigo:
+                  "VEHICULO_YA_CARGADO",
+
+                mensaje:
+                  `No se puede reducir a ${cantidad} vehículo(s) porque el vehículo interno N° ${vehiculo.numeroInterno} ya tiene información o fotografías cargadas.`,
+
+                vehiculoId:
+                  vehiculo.id,
+
+                numeroInterno:
+                  vehiculo.numeroInterno,
+
+                cantidadActual:
+                  existentes.length,
+              });
+          }
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | TODOS LOS SOBRANTES ESTÁN VACÍOS
+        |--------------------------------------------------------------------------
+        |
+        | Ahora sí podemos eliminarlos.
+        |
+        */
+
+        const idsEliminar =
+          sobrantes.map(
+            (vehiculo) =>
+              vehiculo.id
+          );
+
+        if (
+          idsEliminar.length >
+          0
+        ) {
+          await Vehiculo.destroy({
+            where: {
+              id: {
+                [Op.in]:
+                  idsEliminar,
+              },
+
+              reclamoId:
+                reclamo.id,
+            },
+
+            transaction,
+          });
+        }
+
+        /*
+        Volvemos a cargar los que quedaron.
+        */
+
+        existentes =
+          await Vehiculo.findAll({
+            where: {
+              reclamoId:
+                reclamo.id,
+
+              origenRegistro:
+                "CIRCUITO_NORMAL",
+            },
+
+            order: [
+              [
+                "id",
+                "ASC",
+              ],
+            ],
+
+            transaction,
+
+            lock:
+              transaction
+                .LOCK.UPDATE,
+          });
+      }
+
+      /*
+      |--------------------------------------------------------------------------
+      | VEHÍCULOS QUE QUEDAN
+      |--------------------------------------------------------------------------
+      */
+
+      const vehiculos = [
+        ...existentes,
+      ];
+
+      const faltan =
+        cantidad -
+        vehiculos.length;
+
+      /*
+      |--------------------------------------------------------------------------
+      | CREAR LOS QUE FALTAN
+      |--------------------------------------------------------------------------
+      */
+
+      if (faltan > 0) {
+        let ultimoNumero =
+          await Vehiculo.max(
+            "numeroInterno",
+            {
+              transaction,
+            }
+          );
+
+        ultimoNumero =
+          Number(
+            ultimoNumero ||
+              0
+          );
+
+        for (
+          let indice = 0;
+          indice < faltan;
+          indice += 1
+        ) {
+          ultimoNumero += 1;
+
+          const vehiculo =
+            await Vehiculo.create(
+              {
+                numeroInterno:
+                  ultimoNumero,
+
+                reclamoId:
+                  reclamo.id,
+
+                origenRegistro:
+                  "CIRCUITO_NORMAL",
+
+                dominio:
+                  null,
+
+                marca:
+                  null,
+
+                modelo:
+                  null,
+
+                color:
+                  null,
+
+                tipoVehiculo:
+                  "AUTOMOVIL",
+
+                descripcion:
+                  null,
+
+                estadoActual:
+                  "EN_VIA_PUBLICA",
+              },
+              {
+                transaction,
+              }
+            );
+
+          vehiculos.push(
+            vehiculo
+          );
+        }
+      }
+
+      /*
+      |--------------------------------------------------------------------------
+      | HISTORIAL
+      |--------------------------------------------------------------------------
+      */
+
+      if (
+        cantidadAnterior !==
+        vehiculos.length
+      ) {
+        const accion =
+          cantidadAnterior <
+          vehiculos.length
+            ? "VEHICULOS_PREPARADOS"
+            : "PREPARACION_VEHICULOS_REDUCIDA";
+
+        const descripcion =
+          cantidadAnterior <
+          vehiculos.length
+            ? `Se prepararon ${vehiculos.length} vehículo(s) para realizar la primera visita.`
+            : `Se corrigió la preparación de vehículos de ${cantidadAnterior} a ${vehiculos.length}.`;
+
+        await registrarHistorial({
+          reclamoId:
+            reclamo.id,
+
+          usuarioId:
+            req.usuario.id,
+
+          accion,
+
+          descripcion,
+
+          estadoAnterior:
+            reclamo.estado,
+
+          estadoNuevo:
+            reclamo.estado,
+
+          transaction,
+        });
+      }
+
+      /*
+      |--------------------------------------------------------------------------
+      | COMMIT
+      |--------------------------------------------------------------------------
+      */
+
+      await transaction.commit();
+
+      /*
+      |--------------------------------------------------------------------------
+      | RESPUESTA
+      |--------------------------------------------------------------------------
+      */
+
+      return res
+        .status(
+          cantidadAnterior ===
+            vehiculos.length
+            ? 200
+            : 201
+        )
+        .json({
+          ok: true,
+
+          mensaje:
+            cantidadAnterior >
+            vehiculos.length
+              ? `La cantidad fue corregida a ${vehiculos.length} vehículo(s).`
+              : faltan > 0
+              ? `${vehiculos.length} vehículo(s) preparados correctamente.`
+              : "Los vehículos ya estaban preparados.",
+
+          cantidad:
+            vehiculos.length,
+
+          vehiculos:
+            vehiculos.map(
+              (vehiculo) => ({
+                id:
+                  vehiculo.id,
+
+                numeroInterno:
+                  vehiculo.numeroInterno,
+
+                reclamoId:
+                  vehiculo.reclamoId,
+
+                dominio:
+                  vehiculo.dominio,
+
+                marca:
+                  vehiculo.marca,
+
+                modelo:
+                  vehiculo.modelo,
+
+                color:
+                  vehiculo.color,
+
+                tipoVehiculo:
+                  vehiculo.tipoVehiculo,
+
+                descripcion:
+                  vehiculo.descripcion,
+
+                estadoActual:
+                  vehiculo.estadoActual,
+              })
+            ),
+        });
+    } catch (error) {
+      try {
+        await transaction.rollback();
+      } catch (
+        rollbackError
+      ) {
+        console.error(
+          "Error haciendo rollback:",
+          rollbackError
+        );
+      }
+
+      console.error(
+        "Error preparando vehículos:",
+        error
+      );
+
+      return res
+        .status(500)
+        .json({
+          ok: false,
+
+          mensaje:
+            "No se pudieron preparar los vehículos.",
+
+          error:
+            process.env
+              .NODE_ENV ===
+            "development"
+              ? error.message
+              : undefined,
         });
     }
   };
@@ -2275,4 +4252,5 @@ module.exports = {
   registrarVisita,
   obtenerPrimeraVisita,
   editarPrimeraVisita,
+   prepararVehiculos,
 };

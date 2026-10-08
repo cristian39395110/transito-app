@@ -4,6 +4,7 @@ const express =
 const {
   registrarVisita,
   obtenerPrimeraVisita,
+   prepararVehiculos,
   editarPrimeraVisita,
 } = require(
   "../controllers/visitaController"
@@ -53,6 +54,22 @@ router.post(
 |
 */
 
+/*
+|--------------------------------------------------------------------------
+| PREPARAR VEHÍCULOS
+|--------------------------------------------------------------------------
+*/
+
+router.post(
+  "/preparar-vehiculos/:reclamoId",
+
+  permitirRoles(
+    "administrador",
+    "inspector"
+  ),
+
+  prepararVehiculos
+);
 router.get(
   "/primera/:reclamoId",
   permitirRoles(

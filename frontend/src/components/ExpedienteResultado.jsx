@@ -89,6 +89,40 @@ const ESTADOS = {
     "Anulado",
 };
 
+/*
+|--------------------------------------------------------------------------
+| ESTADOS DEL VEHÍCULO
+|--------------------------------------------------------------------------
+|
+| Estos textos son los que verá el usuario.
+| Evitamos mostrar nombres internos como EN_PREDIO,
+| PENDIENTE_REMOCION, etc.
+|
+*/
+
+const ESTADOS_VEHICULO = {
+  EN_VIA_PUBLICA:
+    "En la vía pública",
+
+  EMPLAZADO:
+    "Emplazado",
+
+  PENDIENTE_REMOCION:
+    "Pendiente de retiro",
+
+  REMOVIDO:
+    "Vehículo retirado",
+
+  PENDIENTE_INGRESO_PREDIO:
+    "En traslado al predio",
+
+  EN_PREDIO:
+    "En el predio municipal",
+
+  EGRESADO:
+    "Egresado del predio",
+};
+
 const obtenerEstado = (
   reclamo
 ) =>
@@ -101,6 +135,77 @@ const obtenerEstado = (
   reclamo?.etapaActual ||
   reclamo?.estado ||
   "Sin estado";
+
+const obtenerEstadoVehiculo = (
+  vehiculo
+) => {
+  const estado =
+    vehiculo?.estadoActual;
+
+    if (
+  estado === "PENDIENTE_REMOCION" &&
+  vehiculo?.esperandoOrdenJudicial
+) {
+  return "⏳ Esperando orden judicial";
+}
+
+      const estadosPosteriores = [
+    "PENDIENTE_REMOCION",
+    "REMOVIDO",
+    "PENDIENTE_INGRESO_PREDIO",
+    "EN_PREDIO",
+    "EGRESADO",
+  ];
+
+  if (
+    vehiculo?.cumplioSegundaVisita === true &&
+    !estadosPosteriores.includes(estado)
+  ) {
+    return "✅ Cumplido";
+  }
+
+  if (!estado) {
+    return "Sin estado informado";
+  }
+
+  return (
+    ESTADOS_VEHICULO[
+      estado
+    ] ||
+    estado
+      .replaceAll("_", " ")
+      .toLowerCase()
+      .replace(
+        /^\w/,
+        (letra) =>
+          letra.toUpperCase()
+      )
+  );
+};
+
+const obtenerIdentificacionVehiculo = (
+  vehiculo
+) => {
+  const dominio =
+    String(
+      vehiculo?.dominio ||
+        ""
+    ).trim();
+
+  if (dominio) {
+    return dominio.toUpperCase();
+  }
+
+  const numeroInterno =
+    vehiculo?.numeroInterno ||
+    vehiculo?.id;
+
+  if (numeroInterno) {
+    return `Vehículo N.º ${numeroInterno}`;
+  }
+
+  return "Vehículo";
+};
 
 const obtenerCoincidencia = (
   expediente
@@ -140,6 +245,33 @@ const ExpedienteResultado = ({
   const reclamo =
     expediente?.reclamo ||
     {};
+
+  /*
+  |--------------------------------------------------------------------------
+  | VEHÍCULOS
+  |--------------------------------------------------------------------------
+  |
+  | Sistema nuevo:
+  | expediente.vehiculos
+  |
+  | Compatibilidad:
+  | si por algún motivo solamente viene expediente.vehiculo,
+  | también lo mostramos.
+  |
+  */
+
+  const vehiculos =
+    Array.isArray(
+      expediente?.vehiculos
+    ) &&
+    expediente.vehiculos
+      .length > 0
+      ? expediente.vehiculos
+      : expediente?.vehiculo
+        ? [
+            expediente.vehiculo,
+          ]
+        : [];
 
   const tipo =
     reclamo
@@ -181,12 +313,6 @@ const ExpedienteResultado = ({
   |--------------------------------------------------------------------------
   | ELIMINAR
   |--------------------------------------------------------------------------
-  |
-  | Solamente aparece cuando permitirEliminar === true.
-  |
-  | stopPropagation evita que al tocar eliminar
-  | también se abra el expediente.
-  |
   */
 
   const manejarEliminar =
@@ -273,15 +399,53 @@ const ExpedienteResultado = ({
           Estado
         </span>
 
-        <span className="expediente-estado-texto">
-          {obtenerEstado(
-            reclamo
+        <div className="expediente-estado-contenido">
+          <span className="expediente-estado-texto">
+            {obtenerEstado(
+              reclamo
+            )}
+          </span>
+
+          {vehiculos.length >
+            0 && (
+            <div className="expediente-vehiculos">
+              {vehiculos.length >
+                1 && (
+                <div className="expediente-vehiculos-cantidad">
+                  {vehiculos.length} vehículos
+                </div>
+              )}
+
+              {vehiculos.map(
+                (
+                  vehiculo
+                ) => (
+                  <div
+                    key={
+                      vehiculo.id
+                    }
+                    className="expediente-vehiculo"
+                  >
+                    <strong className="expediente-vehiculo-identificacion">
+                      {obtenerIdentificacionVehiculo(
+                        vehiculo
+                      )}
+                    </strong>
+
+                    <span className="expediente-vehiculo-estado">
+                      {obtenerEstadoVehiculo(
+                        vehiculo
+                      )}
+                    </span>
+                  </div>
+                )
+              )}
+            </div>
           )}
-        </span>
+        </div>
       </div>
 
       <div className="expediente-acciones-resultado">
-
         {permitirEliminar && (
           <button
             type="button"
@@ -298,7 +462,6 @@ const ExpedienteResultado = ({
         <div className="expediente-flecha">
           ›
         </div>
-
       </div>
     </div>
   );

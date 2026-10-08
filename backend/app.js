@@ -4,6 +4,12 @@ const express = require("express");
 const cors = require("cors");
 
 const {
+  iniciarVencimientosJob,
+} = require(
+  "./jobs/vencimientosJob"
+);
+
+const {
   sequelize,
 } = require("./models");
 
@@ -279,16 +285,25 @@ const iniciarServidor =
         "MySQL conectado correctamente"
       );
 
-   await sequelize.sync({ alter: false });
-      console.log(
-        "Modelos sincronizados"
-      );
+ // En producción, las tablas se actualizan manualmente.
+// No modificamos la estructura de MariaDB al iniciar.
+console.log(
+  "Estructura de base de datos administrada manualmente"
+);
 
       await inicializarSistema();
 
       console.log(
         "Sistema inicializado"
       );
+
+      /*
+|--------------------------------------------------------------------------
+| CONTROL AUTOMÁTICO DE VENCIMIENTOS
+|--------------------------------------------------------------------------
+*/
+
+iniciarVencimientosJob();
 
       app.listen(
         PORT,

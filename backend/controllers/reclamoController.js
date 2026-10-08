@@ -3,12 +3,18 @@ const {
 } = require("sequelize");
 
 const {
+  enviarCorreo,
+} = require("../services/emailService");
+
+const {
   Reclamo,
   TipoReclamo,
   Usuario,
   Asignacion,
+  Rol,
   Infraccion,
   Constatacion,
+  Vehiculo,
 } = require("../models");
 
 const {
@@ -68,6 +74,28 @@ const includeReclamo = [
       "id",
       "nombre",
     ],
+  },
+    {
+    model: Vehiculo,
+    as: "vehiculos",
+    required: false,
+    include: [
+      {
+        model: Infraccion,
+        as: "infracciones",
+        required: false,
+        separate: true,
+        order: [["createdAt", "DESC"]],
+      },
+    ],
+  },
+
+  {
+    model: Infraccion,
+    as: "infracciones",
+    required: false,
+    separate: true,
+    order: [["createdAt", "DESC"]],
   },
 ];
 
@@ -441,6 +469,10 @@ const crearReclamo =
         longitudDenunciada,
         tipoReclamoId,
         observaciones,
+
+        // Se usa únicamente para saber si
+        // Claudia eligió un jefe al cargarlo.
+        jefeGuardiaId,
       } = req.body;
 
 
@@ -554,6 +586,197 @@ const crearReclamo =
         });
 
 
+      /*
+      |--------------------------------------------------------------------------
+      | NOTIFICAR AL DIRECTOR
+      |--------------------------------------------------------------------------
+      |
+      | Solamente avisamos al Director cuando NO se eligió
+      | un Jefe de Guardia al momento de cargar el reclamo.
+      |
+      | Si se eligió un jefe, ReclamoForm hará después
+      | la asignación y asignarJefeGuardia notificará
+      | directamente a ese jefe.
+      |
+      | Si falla Gmail, el reclamo YA fue creado.
+      | El error de correo nunca rompe la carga.
+      |
+      */
+
+      if (!jefeGuardiaId) {
+        try {
+          const directores =
+            await Usuario.findAll({
+              where: {
+                activo: true,
+              },
+
+              include: [
+                {
+                  model: Rol,
+                  as: "rol",
+
+                  where: {
+                    nombre:
+                      "director",
+                  },
+
+                  attributes: [
+                    "id",
+                    "nombre",
+                  ],
+                },
+              ],
+            });
+
+
+          for (
+            const director
+            of directores
+          ) {
+            if (!director.email) {
+              continue;
+            }
+
+
+            await enviarCorreo({
+              para:
+                director.email,
+
+              asunto:
+                `Nuevo reclamo pendiente de asignación N° ${reclamo.numeroReclamo}`,
+
+              texto:
+                `Hola ${director.nombre}.\n\n` +
+                `Se cargó un nuevo reclamo que está pendiente de asignación a un Jefe de Guardia.\n\n` +
+                `Reclamo N°: ${reclamo.numeroReclamo}\n` +
+                `Dirección: ${reclamo.direccion || "Sin dirección"}\n` +
+                `Tipo: ${tipo.nombre || "Sin especificar"}\n\n` +
+               `Ingresá a https://transito.informerapido.com.ar para ver tu tarea pendiente y asignar el reclamo.\n\n` +
+                `Este es un mensaje automático. No es necesario responder.`,
+
+              html: `
+                <div
+                  style="
+                    font-family: Arial, sans-serif;
+                    max-width: 600px;
+                  "
+                >
+                  <h2>
+                    Sistema de Tránsito
+                  </h2>
+
+                  <p>
+                    Hola
+                    <strong>
+                      ${director.nombre}
+                    </strong>.
+                  </p>
+
+                  <p>
+                    Se cargó un nuevo reclamo
+                    que está
+                    <strong>
+                      pendiente de asignación
+                    </strong>
+                    a un Jefe de Guardia.
+                  </p>
+
+                  <div
+                    style="
+                      padding: 15px;
+                      border: 1px solid #dddddd;
+                      border-radius: 8px;
+                      margin: 20px 0;
+                    "
+                  >
+                    <p
+                      style="
+                        margin: 0 0 8px 0;
+                      "
+                    >
+                      <strong>
+                        Reclamo N°:
+                      </strong>
+
+                      ${reclamo.numeroReclamo}
+                    </p>
+
+                    <p
+                      style="
+                        margin: 0 0 8px 0;
+                      "
+                    >
+                      <strong>
+                        Dirección:
+                      </strong>
+
+                      ${reclamo.direccion || "Sin dirección"}
+                    </p>
+
+                    <p
+                      style="
+                        margin: 0;
+                      "
+                    >
+                      <strong>
+                        Tipo:
+                      </strong>
+
+                      ${tipo.nombre || "Sin especificar"}
+                    </p>
+                  </div>
+
+                 <p>
+  Ingresá al Sistema de Tránsito para ver
+  tu tarea pendiente y asignar el reclamo.
+</p>
+
+<div style="text-align: center; margin: 25px 0;">
+  <a
+    href="https://transito.informerapido.com.ar"
+    target="_blank"
+    style="
+      display: inline-block;
+      background-color: #2563eb;
+      color: #ffffff;
+      padding: 14px 24px;
+      border-radius: 8px;
+      text-decoration: none;
+      font-size: 15px;
+      font-weight: bold;
+    "
+  >
+    Ingresar al Sistema de Tránsito
+  </a>
+</div>
+
+                  <hr />
+
+                  <small>
+                    Este es un mensaje automático.
+                    No es necesario responder.
+                  </small>
+                </div>
+              `,
+            });
+
+
+            console.log(
+              `Email enviado al Director ${director.nombre} (${director.email})`
+            );
+          }
+        } catch (
+          errorEmail
+        ) {
+          console.error(
+            "El reclamo fue creado correctamente, pero no se pudo enviar el email al Director:",
+            errorEmail.message
+          );
+        }
+      }
+
+
       return res
         .status(201)
         .json({
@@ -581,7 +804,6 @@ const crearReclamo =
         });
     }
   };
-
 /*
 |--------------------------------------------------------------------------
 | ACTUALIZAR RECLAMO
@@ -1336,6 +1558,11 @@ const listarMisTrabajos =
         );
       }
 
+      /*
+      |--------------------------------------------------------------------------
+      | ASIGNACIONES DEL INSPECTOR
+      |--------------------------------------------------------------------------
+      */
 
       const asignaciones =
         await Asignacion.findAll({
@@ -1371,214 +1598,484 @@ const listarMisTrabajos =
           ],
         });
 
+      /*
+      |--------------------------------------------------------------------------
+      | RECLAMOS INVOLUCRADOS
+      |--------------------------------------------------------------------------
+      |
+      | Se conserva para compatibilidad con las asignaciones históricas.
+      |
+      */
 
-  const idsReclamosTrabajos =
-  asignaciones
-    .map(
-      (asignacion) =>
-        Number(
-          asignacion.reclamoId
-        )
-    )
-    .filter(Boolean);
+      const idsReclamosTrabajos = [
+        ...new Set(
+          asignaciones
+            .map(
+              (asignacion) =>
+                Number(
+                  asignacion.reclamoId
+                )
+            )
+            .filter(Boolean)
+        ),
+      ];
 
+      /*
+      |--------------------------------------------------------------------------
+      | INFRACCIONES EXACTAS DE LAS ASIGNACIONES NUEVAS
+      |--------------------------------------------------------------------------
+      |
+      | Sistema nuevo:
+      |
+      | Asignacion.infraccionId
+      |        ↓
+      | Infraccion exacta
+      |
+      */
 
-const infraccionesPostJuzgado =
-  idsReclamosTrabajos.length
-    ? await Infraccion.findAll({
-        where: {
-          reclamoId: {
-            [Op.in]:
-              idsReclamosTrabajos,
-          },
+      const idsInfraccionesExactas = [
+        ...new Set(
+          asignaciones
+            .map(
+              (asignacion) =>
+                Number(
+                  asignacion.infraccionId
+                )
+            )
+            .filter(Boolean)
+        ),
+      ];
 
-          anulada:
-            false,
+      const infraccionesExactas =
+        idsInfraccionesExactas.length
+          ? await Infraccion.findAll({
+              where: {
+                id: {
+                  [Op.in]:
+                    idsInfraccionesExactas,
+                },
 
-          requiereOrdenRemocion:
-            true,
+                anulada:
+                  false,
+              },
+            })
+          : [];
 
-          estadoOrdenRemocion:
-            "AUTORIZADA",
-        },
+      const infraccionPorId =
+        new Map();
 
-        order: [
-          [
-            "id",
-            "DESC",
-          ],
-        ],
-      })
-    : [];
-
-    const infraccionesRetiroInmediato =
-  idsReclamosTrabajos.length
-    ? await Infraccion.findAll({
-        where: {
-          reclamoId: {
-            [Op.in]:
-              idsReclamosTrabajos,
-          },
-
-          anulada:
-            false,
-
-          accionPosterior:
-            "RETIRO_INMEDIATO",
-        },
-
-        order: [
-          [
-            "id",
-            "DESC",
-          ],
-        ],
-      })
-    : [];
-
-
-const infraccionRetiroPorReclamo =
-  new Map();
-
-
-for (
-  const infraccion of
-  infraccionesRetiroInmediato
-) {
-  const reclamoId =
-    Number(
-      infraccion.reclamoId
-    );
-
-  if (
-    !infraccionRetiroPorReclamo.has(
-      reclamoId
-    )
-  ) {
-    infraccionRetiroPorReclamo.set(
-      reclamoId,
-      infraccion
-    );
-  }
-}
-
-
-const infraccionAutorizadaPorReclamo =
-  new Map();
-
-
-for (
-  const infraccion of
-  infraccionesPostJuzgado
-) {
-  const reclamoId =
-    Number(
-      infraccion.reclamoId
-    );
-
-  if (
-    !infraccionAutorizadaPorReclamo.has(
-      reclamoId
-    )
-  ) {
-    infraccionAutorizadaPorReclamo.set(
-      reclamoId,
-      infraccion
-    );
-  }
-}
-
-
-const trabajos =
-  asignaciones.map(
-    (
-      asignacion
-    ) => {
-      const tarea =
-        asignacion.toJSON();
-
-
-    const reclamoId =
-  Number(
-    tarea.reclamoId
-  );
-
-
-const esRemocionInmediata =
-  tarea.etapa ===
-    "SEGUNDA_VISITA" &&
-  tarea.reclamo
-    ?.etapaActual ===
-    "REMOCION_EN_CURSO";
-
-
-const infraccionRelacionada =
-  tarea.etapa ===
-  "POST_JUZGADO"
-    ? infraccionAutorizadaPorReclamo.get(
-        reclamoId
-      )
-    : esRemocionInmediata
-      ? infraccionRetiroPorReclamo.get(
-          reclamoId
-        )
-      : null;
-
-
-      return {
-        id:
-          tarea.id,
-
-        asignacionId:
-          tarea.id,
-
-        etapa:
-          tarea.etapa,
-
-        estadoTarea:
-          tarea.estadoTarea,
-
-        fechaAsignacion:
-          tarea.fechaAsignacion,
-
-        fechaFinalizacion:
-          tarea.fechaFinalizacion,
-
-        observacionesAsignacion:
-          tarea.observaciones,
-
-        reclamo:
-          tarea.reclamo,
-
-        infraccion:
-  infraccionRelacionada
-    ? {
-        id:
-          infraccionRelacionada.id,
-
-        numeroActa:
-          infraccionRelacionada.numeroActa,
-
-        accionPosterior:
-          infraccionRelacionada.accionPosterior,
-
-        estadoJuzgado:
-          infraccionRelacionada.estadoJuzgado,
-
-        requiereOrdenRemocion:
-          infraccionRelacionada.requiereOrdenRemocion,
-
-        estadoOrdenRemocion:
-          infraccionRelacionada.estadoOrdenRemocion,
-
-        fechaRespuestaOrdenRemocion:
-          infraccionRelacionada.fechaRespuestaOrdenRemocion,
+      for (
+        const infraccion of
+        infraccionesExactas
+      ) {
+        infraccionPorId.set(
+          Number(
+            infraccion.id
+          ),
+          infraccion
+        );
       }
-    : null,
-      };
-    }
-  );
 
+      /*
+      |--------------------------------------------------------------------------
+      | COMPATIBILIDAD - POST JUZGADO DEL SISTEMA VIEJO
+      |--------------------------------------------------------------------------
+      |
+      | Las asignaciones históricas no tienen infraccionId.
+      |
+      | Por eso seguimos buscando las infracciones autorizadas.
+      |
+      | IMPORTANTE:
+      | no vamos a elegir "la última" si existen varias para el mismo
+      | reclamo. Solamente hacemos fallback cuando hay UNA sola opción.
+      |
+      */
+
+      const infraccionesPostJuzgado =
+        idsReclamosTrabajos.length
+          ? await Infraccion.findAll({
+              where: {
+                reclamoId: {
+                  [Op.in]:
+                    idsReclamosTrabajos,
+                },
+
+                anulada:
+                  false,
+
+                requiereOrdenRemocion:
+                  true,
+
+                estadoOrdenRemocion:
+                  "AUTORIZADA",
+              },
+
+              order: [
+                [
+                  "id",
+                  "DESC",
+                ],
+              ],
+            })
+          : [];
+
+      /*
+      |--------------------------------------------------------------------------
+      | COMPATIBILIDAD - RETIRO INMEDIATO
+      |--------------------------------------------------------------------------
+      */
+
+      const infraccionesRetiroInmediato =
+        idsReclamosTrabajos.length
+          ? await Infraccion.findAll({
+              where: {
+                reclamoId: {
+                  [Op.in]:
+                    idsReclamosTrabajos,
+                },
+
+                anulada:
+                  false,
+
+                accionPosterior:
+                  "RETIRO_INMEDIATO",
+              },
+
+              order: [
+                [
+                  "id",
+                  "DESC",
+                ],
+              ],
+            })
+          : [];
+
+      /*
+      |--------------------------------------------------------------------------
+      | AGRUPAR INFRACCIONES POR RECLAMO
+      |--------------------------------------------------------------------------
+      |
+      | No colapsamos a una sola.
+      |
+      */
+
+      const autorizadasPorReclamo =
+        new Map();
+
+      for (
+        const infraccion of
+        infraccionesPostJuzgado
+      ) {
+        const reclamoId =
+          Number(
+            infraccion.reclamoId
+          );
+
+        if (
+          !autorizadasPorReclamo.has(
+            reclamoId
+          )
+        ) {
+          autorizadasPorReclamo.set(
+            reclamoId,
+            []
+          );
+        }
+
+        autorizadasPorReclamo
+          .get(reclamoId)
+          .push(infraccion);
+      }
+
+      const retirosPorReclamo =
+        new Map();
+
+      for (
+        const infraccion of
+        infraccionesRetiroInmediato
+      ) {
+        const reclamoId =
+          Number(
+            infraccion.reclamoId
+          );
+
+        if (
+          !retirosPorReclamo.has(
+            reclamoId
+          )
+        ) {
+          retirosPorReclamo.set(
+            reclamoId,
+            []
+          );
+        }
+
+        retirosPorReclamo
+          .get(reclamoId)
+          .push(infraccion);
+      }
+
+      /*
+      |--------------------------------------------------------------------------
+      | ARMAR TRABAJOS
+      |--------------------------------------------------------------------------
+      */
+
+      const trabajos =
+        asignaciones.map(
+          (
+            asignacion
+          ) => {
+            const tarea =
+              asignacion.toJSON();
+
+            const reclamoId =
+              Number(
+                tarea.reclamoId
+              );
+
+            const infraccionId =
+              Number(
+                tarea.infraccionId
+              );
+
+            const vehiculoId =
+              Number(
+                tarea.vehiculoId
+              );
+
+            const esRemocionInmediata =
+              tarea.etapa ===
+                "SEGUNDA_VISITA" &&
+              tarea.reclamo
+                ?.etapaActual ===
+                "REMOCION_EN_CURSO";
+
+            let infraccionRelacionada =
+              null;
+
+            /*
+            |--------------------------------------------------------------------------
+            | SISTEMA NUEVO
+            |--------------------------------------------------------------------------
+            |
+            | Si la asignación conoce la infracción exacta,
+            | no se adivina nada.
+            |
+            */
+
+            if (
+              infraccionId
+            ) {
+              infraccionRelacionada =
+                infraccionPorId.get(
+                  infraccionId
+                ) ||
+                null;
+            }
+
+            /*
+            |--------------------------------------------------------------------------
+            | COMPATIBILIDAD POR VEHÍCULO
+            |--------------------------------------------------------------------------
+            |
+            | Si por algún motivo existe vehiculoId pero todavía no
+            | infraccionId, intentamos identificarla por vehículo.
+            |
+            */
+
+            if (
+              !infraccionRelacionada &&
+              vehiculoId &&
+              tarea.etapa ===
+                "POST_JUZGADO"
+            ) {
+              const candidatas =
+                (
+                  autorizadasPorReclamo.get(
+                    reclamoId
+                  ) ||
+                  []
+                ).filter(
+                  (infraccion) =>
+                    Number(
+                      infraccion.vehiculoId
+                    ) ===
+                    vehiculoId
+                );
+
+              if (
+                candidatas.length ===
+                1
+              ) {
+                infraccionRelacionada =
+                  candidatas[0];
+              }
+            }
+
+            /*
+            |--------------------------------------------------------------------------
+            | SISTEMA VIEJO
+            |--------------------------------------------------------------------------
+            |
+            | Las asignaciones históricas pueden no tener vehiculoId
+            | ni infraccionId.
+            |
+            | Solamente usamos fallback si existe UNA infracción posible.
+            |
+            | Si existen varias, no elegimos una al azar.
+            |
+            */
+
+            if (
+              !infraccionRelacionada &&
+              tarea.etapa ===
+                "POST_JUZGADO"
+            ) {
+              const candidatas =
+                autorizadasPorReclamo.get(
+                  reclamoId
+                ) ||
+                [];
+
+              if (
+                candidatas.length ===
+                1
+              ) {
+                infraccionRelacionada =
+                  candidatas[0];
+              }
+            }
+
+            /*
+            |--------------------------------------------------------------------------
+            | RETIRO INMEDIATO
+            |--------------------------------------------------------------------------
+            |
+            | Conservamos el funcionamiento anterior.
+            |
+            | Si existe vehiculoId intentamos usarlo.
+            | Para históricos sin relación exacta solamente hacemos
+            | fallback cuando existe una única infracción posible.
+            |
+            */
+
+            if (
+              !infraccionRelacionada &&
+              esRemocionInmediata
+            ) {
+              const candidatas =
+                retirosPorReclamo.get(
+                  reclamoId
+                ) ||
+                [];
+
+              if (
+                vehiculoId
+              ) {
+                const porVehiculo =
+                  candidatas.filter(
+                    (infraccion) =>
+                      Number(
+                        infraccion.vehiculoId
+                      ) ===
+                      vehiculoId
+                  );
+
+                if (
+                  porVehiculo.length ===
+                    1
+                ) {
+                  infraccionRelacionada =
+                    porVehiculo[0];
+                }
+              }
+
+              if (
+                !infraccionRelacionada &&
+                candidatas.length ===
+                  1
+              ) {
+                infraccionRelacionada =
+                  candidatas[0];
+              }
+            }
+
+            return {
+              id:
+                tarea.id,
+
+              asignacionId:
+                tarea.id,
+
+              etapa:
+                tarea.etapa,
+
+              estadoTarea:
+                tarea.estadoTarea,
+
+              fechaAsignacion:
+                tarea.fechaAsignacion,
+
+              fechaFinalizacion:
+                tarea.fechaFinalizacion,
+
+              observacionesAsignacion:
+                tarea.observaciones,
+
+              /*
+              |--------------------------------------------------------------
+              | REFERENCIAS EXACTAS
+              |--------------------------------------------------------------
+              */
+
+              vehiculoId:
+                tarea.vehiculoId ||
+                infraccionRelacionada
+                  ?.vehiculoId ||
+                null,
+
+              infraccionId:
+                tarea.infraccionId ||
+                infraccionRelacionada
+                  ?.id ||
+                null,
+
+              reclamo:
+                tarea.reclamo,
+
+              infraccion:
+                infraccionRelacionada
+                  ? {
+                      id:
+                        infraccionRelacionada.id,
+
+                      vehiculoId:
+                        infraccionRelacionada.vehiculoId ||
+                        null,
+
+                      numeroActa:
+                        infraccionRelacionada.numeroActa,
+
+                      accionPosterior:
+                        infraccionRelacionada.accionPosterior,
+
+                      estadoJuzgado:
+                        infraccionRelacionada.estadoJuzgado,
+
+                      requiereOrdenRemocion:
+                        infraccionRelacionada.requiereOrdenRemocion,
+
+                      estadoOrdenRemocion:
+                        infraccionRelacionada.estadoOrdenRemocion,
+
+                      fechaRespuestaOrdenRemocion:
+                        infraccionRelacionada.fechaRespuestaOrdenRemocion,
+                    }
+                  : null,
+            };
+          }
+        );
 
       /*
       |--------------------------------------------------------------------------
@@ -1611,10 +2108,15 @@ const infraccionRelacionada =
 
               observaciones:
                 trabajo.observacionesAsignacion,
+
+              vehiculoId:
+                trabajo.vehiculoId,
+
+              infraccionId:
+                trabajo.infraccionId,
             },
           })
         );
-
 
       return res.json({
         ok: true,
@@ -1629,7 +2131,6 @@ const infraccionRelacionada =
         error
       );
 
-
       return res
         .status(500)
         .json({
@@ -1640,7 +2141,6 @@ const infraccionRelacionada =
         });
     }
   };
-
 
 /*
 |--------------------------------------------------------------------------

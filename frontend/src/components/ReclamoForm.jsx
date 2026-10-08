@@ -364,6 +364,13 @@ const [
                 form.longitudDenunciada
               )
             : null,
+
+              jefeGuardiaId:
+    !editando &&
+    permitirAsignarJefe &&
+    jefeGuardiaId
+      ? Number(jefeGuardiaId)
+      : null,
       };
 
       try {

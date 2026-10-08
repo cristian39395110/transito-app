@@ -11,6 +11,7 @@ const {
   InventarioVehiculo,
  Remocion,
 Predio,
+Emplazamiento,
 Asignacion,
 } = require("../models");
 
@@ -49,7 +50,314 @@ const validarInspector = (
   );
 };
 
+const actualizarEstadoReclamoDespuesDeRemocion = async ({
+  reclamo,
+  vehiculoRemovido,
+  transaction,
+}) => {
+  const vehiculos = await Vehiculo.findAll({
+    where: {
+      reclamoId: reclamo.id,
+    },
+    transaction,
+  });
 
+  /*
+  |--------------------------------------------------------------------------
+  | COMPATIBILIDAD CON SISTEMA VIEJO
+  |--------------------------------------------------------------------------
+  |
+  | Si el reclamo tiene un solo vehículo, conservamos exactamente
+  | el comportamiento histórico.
+  |
+  */
+
+  if (vehiculos.length <= 1) {
+    reclamo.estado = "PENDIENTE_ACTUACION";
+    reclamo.etapaActual = "PENDIENTE_INGRESO_PREDIO";
+    reclamo.inspectorId = null;
+    reclamo.fechaResolucion = null;
+
+    await reclamo.save({
+      transaction,
+    });
+
+    return {
+      modo: "COMPATIBILIDAD",
+      hayOtroParaControlarAhora: false,
+      hayOtroEsperandoPlazo: false,
+    };
+  }
+
+  /*
+  |--------------------------------------------------------------------------
+  | SISTEMA NUEVO - VARIOS VEHÍCULOS
+  |--------------------------------------------------------------------------
+  */
+
+  const emplazamientos = await Emplazamiento.findAll({
+    where: {
+      reclamoId: reclamo.id,
+    },
+    transaction,
+  });
+
+  const idsConHijo = new Set(
+    emplazamientos
+      .filter(
+        (item) =>
+          item.emplazamientoAnteriorId
+      )
+      .map(
+        (item) =>
+          Number(
+            item.emplazamientoAnteriorId
+          )
+      )
+  );
+
+  const vehiculosPorId = new Map(
+    vehiculos.map(
+      (vehiculo) => [
+        Number(vehiculo.id),
+        vehiculo,
+      ]
+    )
+  );
+
+  const estadosFueraDeControl = new Set([
+    "PENDIENTE_REMOCION",
+    "REMOVIDO",
+    "PENDIENTE_INGRESO_PREDIO",
+    "EN_PREDIO",
+    "EGRESADO",
+  ]);
+
+  const ahora = new Date();
+
+  /*
+  |--------------------------------------------------------------------------
+  | EMPLAZAMIENTOS ABIERTOS DE OTROS VEHÍCULOS
+  |--------------------------------------------------------------------------
+  |
+  | Solamente miramos la hoja actual de cada cadena.
+  |
+  | original -> prórroga
+  |
+  | El original ya no cuenta.
+  |
+  */
+
+  const pendientes = emplazamientos.filter(
+    (emplazamiento) => {
+      if (
+        idsConHijo.has(
+          Number(emplazamiento.id)
+        )
+      ) {
+        return false;
+      }
+
+      if (
+        ["CUMPLIDO", "CANCELADO"].includes(
+          emplazamiento.estado
+        )
+      ) {
+        return false;
+      }
+
+      /*
+      | Si pertenece al vehículo que acabamos de remover,
+      | ya no forma parte del circuito de control.
+      */
+
+      if (
+        vehiculoRemovido &&
+        Number(emplazamiento.vehiculoId) ===
+          Number(vehiculoRemovido.id)
+      ) {
+        return false;
+      }
+
+      /*
+      | Tampoco cuentan vehículos que ya están en
+      | remoción, predio o egresados.
+      */
+
+      if (emplazamiento.vehiculoId) {
+        const vehiculo =
+          vehiculosPorId.get(
+            Number(
+              emplazamiento.vehiculoId
+            )
+          );
+
+        if (
+          vehiculo &&
+          estadosFueraDeControl.has(
+            vehiculo.estadoActual
+          )
+        ) {
+          return false;
+        }
+      }
+
+      return true;
+    }
+  );
+
+  const pendientesVencidos =
+    pendientes.filter(
+      (emplazamiento) => {
+        if (
+          emplazamiento.estado ===
+          "VENCIDO"
+        ) {
+          return true;
+        }
+
+        if (
+          emplazamiento.estado !==
+            "VIGENTE" ||
+          !emplazamiento.fechaVencimiento
+        ) {
+          return false;
+        }
+
+        const vencimiento =
+          new Date(
+            emplazamiento.fechaVencimiento
+          );
+
+        if (
+          Number.isNaN(
+            vencimiento.getTime()
+          )
+        ) {
+          return false;
+        }
+
+        return vencimiento <= ahora;
+      }
+    );
+
+  const pendientesEnPlazo =
+    pendientes.filter(
+      (emplazamiento) => {
+        if (
+          emplazamiento.estado !==
+            "VIGENTE" ||
+          !emplazamiento.fechaVencimiento
+        ) {
+          return false;
+        }
+
+        const vencimiento =
+          new Date(
+            emplazamiento.fechaVencimiento
+          );
+
+        if (
+          Number.isNaN(
+            vencimiento.getTime()
+          )
+        ) {
+          return false;
+        }
+
+        return vencimiento > ahora;
+      }
+    );
+
+  /*
+  |--------------------------------------------------------------------------
+  | PRIORIDAD 1 - HAY OTRO VEHÍCULO PARA CONTROLAR AHORA
+  |--------------------------------------------------------------------------
+  */
+
+  if (pendientesVencidos.length > 0) {
+    reclamo.estado =
+      "PENDIENTE_ACTUACION";
+
+    reclamo.etapaActual =
+      "SEGUNDA_VISITA";
+
+    /*
+    | No borramos inspectorId acá.
+    |
+    | Puede ser la misma tarea y el inspector todavía
+    | tiene otro vehículo para controlar.
+    */
+
+    reclamo.fechaResolucion = null;
+
+    await reclamo.save({
+      transaction,
+    });
+
+    return {
+      modo: "MULTIVEHICULO",
+      hayOtroParaControlarAhora: true,
+      hayOtroEsperandoPlazo:
+        pendientesEnPlazo.length > 0,
+    };
+  }
+
+  /*
+  |--------------------------------------------------------------------------
+  | PRIORIDAD 2 - HAY OTRO VEHÍCULO ESPERANDO PLAZO
+  |--------------------------------------------------------------------------
+  */
+
+  if (pendientesEnPlazo.length > 0) {
+    reclamo.estado =
+      "EN_SEGUIMIENTO";
+
+    reclamo.etapaActual =
+      "ESPERANDO_PLAZO";
+
+    reclamo.inspectorId = null;
+    reclamo.fechaResolucion = null;
+
+    await reclamo.save({
+      transaction,
+    });
+
+    return {
+      modo: "MULTIVEHICULO",
+      hayOtroParaControlarAhora: false,
+      hayOtroEsperandoPlazo: true,
+    };
+  }
+
+  /*
+  |--------------------------------------------------------------------------
+  | NO QUEDA OTRO EMPLAZAMIENTO
+  |--------------------------------------------------------------------------
+  |
+  | El vehículo removido todavía tiene que ingresar al predio.
+  |
+  */
+
+  reclamo.estado =
+    "PENDIENTE_ACTUACION";
+
+  reclamo.etapaActual =
+    "PENDIENTE_INGRESO_PREDIO";
+
+  reclamo.inspectorId = null;
+  reclamo.fechaResolucion = null;
+
+  await reclamo.save({
+    transaction,
+  });
+
+  return {
+    modo: "MULTIVEHICULO",
+    hayOtroParaControlarAhora: false,
+    hayOtroEsperandoPlazo: false,
+  };
+};
 /*
 |--------------------------------------------------------------------------
 | CONTEXTO PARA PÁGINA DE REMOCIÓN
@@ -64,6 +372,10 @@ const obtenerContextoRemocion =
           req.params.reclamoId
         );
 
+        const infraccionId =
+  Number(
+    req.query.infraccionId
+  ) || null;
 
       if (!reclamoId) {
         return res.status(400).json({
@@ -103,51 +415,117 @@ const obtenerContextoRemocion =
       }
 
 
-      const vehiculo =
-        await Vehiculo.findOne({
-          where: {
-            reclamoId,
-          },
+     let infraccion = null;
+let vehiculo = null;
 
-          order: [
-            ["id", "DESC"],
-          ],
-        });
+/*
+|--------------------------------------------------------------------------
+| SISTEMA NUEVO
+|--------------------------------------------------------------------------
+|
+| La segunda visita manda exactamente la infracción
+| que originó esta remoción.
+|
+| Esto es obligatorio para reclamos con varios vehículos.
+|
+*/
 
+if (infraccionId) {
+  infraccion =
+    await Infraccion.findOne({
+      where: {
+        id: infraccionId,
+        reclamoId,
+        anulada: false,
+      },
+    });
 
-      if (!vehiculo) {
-        return res.status(404).json({
-          ok: false,
-          mensaje:
-            "Este reclamo no tiene un vehículo registrado",
-        });
-      }
+  if (!infraccion) {
+    return res.status(404).json({
+      ok: false,
+      mensaje:
+        "La Acta de Infracción indicada no pertenece a este reclamo",
+    });
+  }
 
+  if (!infraccion.vehiculoId) {
+    return res.status(400).json({
+      ok: false,
+      mensaje:
+        "La Acta de Infracción no tiene un vehículo asociado",
+    });
+  }
 
-      const infraccion =
-        await Infraccion.findOne({
-          where: {
-            reclamoId,
-            vehiculoId:
-              vehiculo.id,
-            anulada:
-              false,
-          },
+  vehiculo =
+    await Vehiculo.findOne({
+      where: {
+        id: infraccion.vehiculoId,
+        reclamoId,
+      },
+    });
 
-          order: [
-            ["id", "DESC"],
-          ],
-        });
+  if (!vehiculo) {
+    return res.status(404).json({
+      ok: false,
+      mensaje:
+        "El vehículo asociado a la infracción no fue encontrado",
+    });
+  }
+}
 
+/*
+|--------------------------------------------------------------------------
+| SISTEMA VIEJO
+|--------------------------------------------------------------------------
+|
+| Las pantallas anteriores podían entrar a remoción
+| sin mandar infraccionId.
+|
+| Conservamos ese comportamiento solamente como
+| compatibilidad histórica.
+|
+*/
 
-      if (!infraccion) {
-        return res.status(400).json({
-          ok: false,
+else {
+  vehiculo =
+    await Vehiculo.findOne({
+      where: {
+        reclamoId,
+      },
+      order: [
+        ["id", "DESC"],
+      ],
+    });
 
-          mensaje:
-            "No se puede remover el vehículo porque no tiene Acta de Infracción registrada",
-        });
-      }
+  if (!vehiculo) {
+    return res.status(404).json({
+      ok: false,
+      mensaje:
+        "Este reclamo no tiene un vehículo registrado",
+    });
+  }
+
+  infraccion =
+    await Infraccion.findOne({
+      where: {
+        reclamoId,
+        vehiculoId:
+          vehiculo.id,
+        anulada: false,
+      },
+      order: [
+        ["id", "DESC"],
+      ],
+    });
+
+  if (!infraccion) {
+    return res.status(400).json({
+      ok: false,
+      mensaje:
+        "No se puede remover el vehículo porque no tiene Acta de Infracción registrada",
+    });
+  }
+}
 
 
       const inventario =
@@ -908,18 +1286,12 @@ destino:
       });
 
 
-      reclamo.estado =
-        "PENDIENTE_ACTUACION";
-
-      reclamo.etapaActual =
-        "PENDIENTE_INGRESO_PREDIO";
-
-      reclamo.inspectorId =
-        null;
-
-      await reclamo.save({
-        transaction,
-      });
+  const estadoPostRemocion =
+  await actualizarEstadoReclamoDespuesDeRemocion({
+    reclamo,
+    vehiculoRemovido: vehiculo,
+    transaction,
+  });
 
 
       const tarea =
@@ -950,17 +1322,28 @@ destino:
         });
 
 
-      if (tarea) {
-        tarea.estadoTarea =
-          "FINALIZADA";
+   if (tarea) {
+  if (
+    estadoPostRemocion
+      .hayOtroParaControlarAhora
+  ) {
+    tarea.estadoTarea =
+      "EN_CURSO";
 
-        tarea.fechaFinalizacion =
-          new Date();
+    tarea.fechaFinalizacion =
+      null;
+  } else {
+    tarea.estadoTarea =
+      "FINALIZADA";
 
-        await tarea.save({
-          transaction,
-        });
-      }
+    tarea.fechaFinalizacion =
+      new Date();
+  }
+
+  await tarea.save({
+    transaction,
+  });
+}
 
 
       await registrarHistorial({
@@ -1044,33 +1427,35 @@ const registrarRemocionCompleta =
         reclamoId,
         vehiculoId,
         infraccionId,
-
         detalleInventario,
         observacionesInventario,
-
-      grua,
-chofer,
-predioDestinoId,
-destino,
-observacionesRemocion,
+        grua,
+        chofer,
+        predioDestinoId,
+        destino,
+        observacionesRemocion,
       } = req.body;
 
+      /*
+      |--------------------------------------------------------------------------
+      | VALIDACIONES BÁSICAS
+      |--------------------------------------------------------------------------
+      */
 
-if (
-  !reclamoId ||
-  !vehiculoId ||
-  !infraccionId ||
-  !predioDestinoId
-) {
-  await transaction.rollback();
+      if (
+        !reclamoId ||
+        !vehiculoId ||
+        !infraccionId ||
+        !predioDestinoId
+      ) {
+        await transaction.rollback();
 
-  return res.status(400).json({
-    ok: false,
-    mensaje:
-      "Faltan datos del reclamo, vehículo, Acta de Infracción o destino del vehículo",
-  });
-}
-
+        return res.status(400).json({
+          ok: false,
+          mensaje:
+            "Faltan datos del reclamo, vehículo, Acta de Infracción o destino del vehículo",
+        });
+      }
 
       if (
         !detalleInventario ||
@@ -1087,12 +1472,16 @@ if (
 
         return res.status(400).json({
           ok: false,
-
           mensaje:
             "Debe completar el inventario del vehículo antes de retirarlo",
         });
       }
 
+      /*
+      |--------------------------------------------------------------------------
+      | RECLAMO
+      |--------------------------------------------------------------------------
+      */
 
       const reclamo =
         await Reclamo.findByPk(
@@ -1101,7 +1490,6 @@ if (
             transaction,
           }
         );
-
 
       if (!reclamo) {
         await transaction.rollback();
@@ -1112,7 +1500,6 @@ if (
             "Reclamo no encontrado",
         });
       }
-
 
       if (
         !validarInspector(
@@ -1129,20 +1516,21 @@ if (
         });
       }
 
+      /*
+      |--------------------------------------------------------------------------
+      | VEHÍCULO EXACTO
+      |--------------------------------------------------------------------------
+      */
 
       const vehiculo =
         await Vehiculo.findOne({
           where: {
-            id:
-              vehiculoId,
-
+            id: vehiculoId,
             reclamoId:
               reclamo.id,
           },
-
           transaction,
         });
-
 
       if (!vehiculo) {
         await transaction.rollback();
@@ -1154,78 +1542,51 @@ if (
         });
       }
 
-
       /*
-      INFRACCIÓN OBLIGATORIA.
+      |--------------------------------------------------------------------------
+      | INFRACCIÓN EXACTA DEL VEHÍCULO
+      |--------------------------------------------------------------------------
       */
 
       const infraccion =
         await Infraccion.findOne({
           where: {
-            id:
-              infraccionId,
-
+            id: infraccionId,
             reclamoId:
               reclamo.id,
-
             vehiculoId:
               vehiculo.id,
-
-            anulada:
-              false,
+            anulada: false,
           },
-
           transaction,
         });
-
 
       if (!infraccion) {
         await transaction.rollback();
 
         return res.status(400).json({
           ok: false,
-
           mensaje:
             "No se puede retirar el vehículo sin una Acta de Infracción válida",
         });
       }
 
+      /*
+      |--------------------------------------------------------------------------
+      | EVITAR DOBLE REMOCIÓN
+      |--------------------------------------------------------------------------
+      */
 
       const remocionAnterior =
         await Remocion.findOne({
           where: {
             reclamoId:
               reclamo.id,
-
             vehiculoId:
               vehiculo.id,
           },
-
           transaction,
         });
-
-        const predioDestino =
-  await Predio.findOne({
-    where: {
-      id: Number(
-        predioDestinoId
-      ),
-      activo: true,
-    },
-
-    transaction,
-  });
-
-if (!predioDestino) {
-  await transaction.rollback();
-
-  return res.status(400).json({
-    ok: false,
-    mensaje:
-      "El destino seleccionado no existe o está inactivo",
-  });
-}
-
 
       if (remocionAnterior) {
         await transaction.rollback();
@@ -1237,9 +1598,37 @@ if (!predioDestino) {
         });
       }
 
+      /*
+      |--------------------------------------------------------------------------
+      | DESTINO
+      |--------------------------------------------------------------------------
+      */
+
+      const predioDestino =
+        await Predio.findOne({
+          where: {
+            id: Number(
+              predioDestinoId
+            ),
+            activo: true,
+          },
+          transaction,
+        });
+
+      if (!predioDestino) {
+        await transaction.rollback();
+
+        return res.status(400).json({
+          ok: false,
+          mensaje:
+            "El destino seleccionado no existe o está inactivo",
+        });
+      }
 
       /*
-      INVENTARIO
+      |--------------------------------------------------------------------------
+      | INVENTARIO
+      |--------------------------------------------------------------------------
       */
 
       const inventario =
@@ -1270,9 +1659,10 @@ if (!predioDestino) {
           }
         );
 
-
       /*
-      REMOCIÓN
+      |--------------------------------------------------------------------------
+      | REMOCIÓN
+      |--------------------------------------------------------------------------
       */
 
       const remocion =
@@ -1304,11 +1694,11 @@ if (!predioDestino) {
               chofer?.trim() ||
               null,
 
-           predioDestinoId:
-  predioDestino.id,
+            predioDestinoId:
+              predioDestino.id,
 
-destino:
-  predioDestino.nombre,
+            destino:
+              predioDestino.nombre,
 
             observaciones:
               observacionesRemocion
@@ -1320,6 +1710,11 @@ destino:
           }
         );
 
+      /*
+      |--------------------------------------------------------------------------
+      | VEHÍCULO
+      |--------------------------------------------------------------------------
+      */
 
       vehiculo.estadoActual =
         "PENDIENTE_INGRESO_PREDIO";
@@ -1328,30 +1723,31 @@ destino:
         transaction,
       });
 
-
       /*
-      El auto salió de la calle,
-      pero todavía Predio tiene
-      que registrar el ingreso.
+      |--------------------------------------------------------------------------
+      | ESTADO GENERAL DEL RECLAMO
+      |--------------------------------------------------------------------------
+      |
+      | Esta función ya distingue:
+      |
+      | - otro vehículo vencido para controlar ahora
+      | - otro vehículo todavía dentro del plazo
+      | - ningún otro emplazamiento pendiente
+      |
       */
 
-      reclamo.estado =
-        "PENDIENTE_ACTUACION";
-
-      reclamo.etapaActual =
-        "PENDIENTE_INGRESO_PREDIO";
-
-      reclamo.inspectorId =
-        null;
-
-      await reclamo.save({
-        transaction,
-      });
-
+      const estadoPostRemocion =
+        await actualizarEstadoReclamoDespuesDeRemocion({
+          reclamo,
+          vehiculoRemovido:
+            vehiculo,
+          transaction,
+        });
 
       /*
-      Terminamos la tarea que tenía
-      el inspector.
+      |--------------------------------------------------------------------------
+      | TAREA DEL INSPECTOR
+      |--------------------------------------------------------------------------
       */
 
       const tarea =
@@ -1381,19 +1777,44 @@ destino:
           transaction,
         });
 
-
       if (tarea) {
-        tarea.estadoTarea =
-          "FINALIZADA";
+        if (
+          estadoPostRemocion
+            .hayOtroParaControlarAhora
+        ) {
+          /*
+          | Queda otro vehículo vencido
+          | dentro de esta misma visita.
+          */
 
-        tarea.fechaFinalizacion =
-          new Date();
+          tarea.estadoTarea =
+            "EN_CURSO";
+
+          tarea.fechaFinalizacion =
+            null;
+        } else {
+          /*
+          | No queda otro vehículo para
+          | controlar en esta visita.
+          */
+
+          tarea.estadoTarea =
+            "FINALIZADA";
+
+          tarea.fechaFinalizacion =
+            new Date();
+        }
 
         await tarea.save({
           transaction,
         });
       }
 
+      /*
+      |--------------------------------------------------------------------------
+      | HISTORIAL - INVENTARIO
+      |--------------------------------------------------------------------------
+      */
 
       await registrarHistorial({
         reclamoId:
@@ -1417,6 +1838,11 @@ destino:
         transaction,
       });
 
+      /*
+      |--------------------------------------------------------------------------
+      | HISTORIAL - REMOCIÓN
+      |--------------------------------------------------------------------------
+      */
 
       await registrarHistorial({
         reclamoId:
@@ -1440,15 +1866,28 @@ destino:
         transaction,
       });
 
+      /*
+      |--------------------------------------------------------------------------
+      | CONFIRMAR
+      |--------------------------------------------------------------------------
+      */
 
       await transaction.commit();
 
+      /*
+      |--------------------------------------------------------------------------
+      | RESPUESTA AL FRONTEND
+      |--------------------------------------------------------------------------
+      */
 
       return res.status(201).json({
         ok: true,
 
         mensaje:
-          "Inventario y remoción registrados. El vehículo quedó pendiente de ingreso al predio.",
+          estadoPostRemocion
+            .hayOtroParaControlarAhora
+            ? "Remoción registrada. Todavía queda otro vehículo para controlar en este reclamo."
+            : "Inventario y remoción registrados. El vehículo quedó pendiente de ingreso al predio.",
 
         inventario,
         remocion,
@@ -1456,20 +1895,50 @@ destino:
 
         etapaActual:
           reclamo.etapaActual,
+
+        /*
+        | Estos datos permiten que
+        | RemocionVehiculoPage decida
+        | correctamente dónde continuar.
+        */
+
+        hayOtroParaControlarAhora:
+          estadoPostRemocion
+            .hayOtroParaControlarAhora,
+
+        hayOtroEsperandoPlazo:
+          estadoPostRemocion
+            .hayOtroEsperandoPlazo,
+
+        continuarSegundaVisita:
+          estadoPostRemocion
+            .hayOtroParaControlarAhora ===
+          true,
+
+        tareaFinalizada:
+          !estadoPostRemocion
+            .hayOtroParaControlarAhora,
       });
     } catch (error) {
-      if (
-        !transaction.finished
-      ) {
-        await transaction.rollback();
-      }
-
-
       console.error(
-        "Error registrando remoción completa:",
+        "ERROR ORIGINAL registrarRemocionCompleta:",
         error
       );
 
+      if (
+        !transaction.finished
+      ) {
+        try {
+          await transaction.rollback();
+        } catch (
+          rollbackError
+        ) {
+          console.error(
+            "ERROR SECUNDARIO haciendo rollback:",
+            rollbackError.message
+          );
+        }
+      }
 
       return res.status(500).json({
         ok: false,
@@ -1482,7 +1951,6 @@ destino:
       });
     }
   };
-
 
 module.exports = {
   obtenerContextoRemocion,

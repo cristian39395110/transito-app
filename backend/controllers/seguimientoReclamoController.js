@@ -9,6 +9,7 @@ const {
   Usuario,
 
   Vehiculo,
+  Foto,
   Remocion,
   InventarioVehiculo,
   IngresoPredio,
@@ -141,29 +142,28 @@ const obtenerSeguimientoReclamo =
               ) === usuarioId
           );
 
+        const esJefeActual =
+          Number(
+            reclamo.jefeGuardiaId
+          ) === usuarioId;
 
-      const esJefeActual =
-  Number(
-    reclamo.jefeGuardiaId
-  ) === usuarioId;
-
-const esControlDisponible =
-  reclamo.etapaActual ===
-  "PENDIENTE_SEGUNDA_VISITA";
+        const esControlDisponible =
+          reclamo.etapaActual ===
+          "PENDIENTE_SEGUNDA_VISITA";
 
 
-if (
-  !estuvoAsignado &&
-  !esJefeActual &&
-  !esControlDisponible
-) {
-  return res
-    .status(403)
-    .json({
-      mensaje:
-        "Este reclamo no pertenece a tu guardia",
-    });
-}
+        if (
+          !estuvoAsignado &&
+          !esJefeActual &&
+          !esControlDisponible
+        ) {
+          return res
+            .status(403)
+            .json({
+              mensaje:
+                "Este reclamo no pertenece a tu guardia",
+            });
+        }
       }
 
 
@@ -315,6 +315,42 @@ if (
 
       /*
       |--------------------------------------------------------------------------
+      | FOTOS
+      |--------------------------------------------------------------------------
+      |
+      | Solamente las leemos.
+      | No modificamos ni relinkamos ninguna foto acá.
+      |
+      | Esto permite que el frontend pueda mostrar:
+      | - foto general / constatación
+      | - foto de cada vehículo
+      | - foto de cada emplazamiento
+      | - fotos del resto del circuito
+      |
+      */
+
+      const fotos =
+        await Foto.findAll({
+          where: {
+            reclamoId,
+            activo: true,
+          },
+
+          order: [
+            [
+              "createdAt",
+              "ASC",
+            ],
+            [
+              "id",
+              "ASC",
+            ],
+          ],
+        });
+
+
+      /*
+      |--------------------------------------------------------------------------
       | REMOCIONES
       |--------------------------------------------------------------------------
       */
@@ -338,35 +374,36 @@ if (
         });
 
 
+      /*
+      |--------------------------------------------------------------------------
+      | INVENTARIOS DE VEHÍCULOS
+      |--------------------------------------------------------------------------
+      |
+      | Inventario realizado al momento de retirar el vehículo.
+      | Acá queda guardado cómo estaba el auto:
+      | presente, faltante, dañado, etc.
+      |
+      */
 
-        /*
-|--------------------------------------------------------------------------
-| INVENTARIOS DE VEHÍCULOS
-|--------------------------------------------------------------------------
-|
-| Inventario realizado al momento de retirar el vehículo.
-| Acá queda guardado cómo estaba el auto:
-| presente, faltante, dañado, etc.
-|
-*/
+      const inventarios =
+        await InventarioVehiculo.findAll({
+          where: {
+            reclamoId,
+          },
 
-const inventarios =
-  await InventarioVehiculo.findAll({
-    where: {
-      reclamoId,
-    },
+          order: [
+            [
+              "fechaHora",
+              "ASC",
+            ],
+            [
+              "id",
+              "ASC",
+            ],
+          ],
+        });
 
-    order: [
-      [
-        "fechaHora",
-        "ASC",
-      ],
-      [
-        "id",
-        "ASC",
-      ],
-    ],
-  });
+
       /*
       |--------------------------------------------------------------------------
       | INGRESOS AL PREDIO
@@ -424,36 +461,36 @@ const inventarios =
       */
 
       const predioIds =
-  [
-    ...new Set([
-      ...ingresosPredio
-        .map(
-          (item) =>
-            Number(
-              item.predioId
-            )
-        )
-        .filter(Boolean),
+        [
+          ...new Set([
+            ...ingresosPredio
+              .map(
+                (item) =>
+                  Number(
+                    item.predioId
+                  )
+              )
+              .filter(Boolean),
 
-      ...remociones
-        .map(
-          (item) =>
-            Number(
-              item.predioDestinoId
-            )
-        )
-        .filter(Boolean),
+            ...remociones
+              .map(
+                (item) =>
+                  Number(
+                    item.predioDestinoId
+                  )
+              )
+              .filter(Boolean),
 
-      ...egresosPredio
-        .map(
-          (item) =>
-            Number(
-              item.predioDestinoId
-            )
-        )
-        .filter(Boolean),
-    ]),
-  ];
+            ...egresosPredio
+              .map(
+                (item) =>
+                  Number(
+                    item.predioDestinoId
+                  )
+              )
+              .filter(Boolean),
+          ]),
+        ];
 
 
       let predios = [];
@@ -568,35 +605,37 @@ const inventarios =
           );
         }
 
+
         /*
-|--------------------------------------------------------------------------
-| ORDEN JUDICIAL DE REMOCIÓN
-|--------------------------------------------------------------------------
-*/
+        |--------------------------------------------------------------------------
+        | ORDEN JUDICIAL DE REMOCIÓN
+        |--------------------------------------------------------------------------
+        */
 
-if (
-  item
-    .ordenRemocionSolicitadaPorId
-) {
-  usuarioIds.add(
-    Number(
-      item
-        .ordenRemocionSolicitadaPorId
-    )
-  );
-}
+        if (
+          item
+            .ordenRemocionSolicitadaPorId
+        ) {
+          usuarioIds.add(
+            Number(
+              item
+                .ordenRemocionSolicitadaPorId
+            )
+          );
+        }
 
-if (
-  item
-    .respuestaOrdenRemocionPorId
-) {
-  usuarioIds.add(
-    Number(
-      item
-        .respuestaOrdenRemocionPorId
-    )
-  );
-}
+
+        if (
+          item
+            .respuestaOrdenRemocionPorId
+        ) {
+          usuarioIds.add(
+            Number(
+              item
+                .respuestaOrdenRemocionPorId
+            )
+          );
+        }
       }
 
 
@@ -619,25 +658,28 @@ if (
         }
       }
 
-/*
-| Inspectores que realizaron
-| inventarios de vehículos
-*/
 
-for (
-  const item of
-  inventarios
-) {
-  if (
-    item.inspectorId
-  ) {
-    usuarioIds.add(
-      Number(
-        item.inspectorId
-      )
-    );
-  }
-}
+      /*
+      | Inspectores que realizaron
+      | inventarios de vehículos
+      */
+
+      for (
+        const item of
+        inventarios
+      ) {
+        if (
+          item.inspectorId
+        ) {
+          usuarioIds.add(
+            Number(
+              item.inspectorId
+            )
+          );
+        }
+      }
+
+
       /*
       | Secretaría / persona que
       | registró ingreso al predio
@@ -892,17 +934,18 @@ for (
                 item
                   .respuestaJuzgadoRegistradaPorId
               ),
-              ordenRemocionSolicitadaPor:
-  usuarioDe(
-    item
-      .ordenRemocionSolicitadaPorId
-  ),
 
-respuestaOrdenRemocionPor:
-  usuarioDe(
-    item
-      .respuestaOrdenRemocionPorId
-  ),
+            ordenRemocionSolicitadaPor:
+              usuarioDe(
+                item
+                  .ordenRemocionSolicitadaPorId
+              ),
+
+            respuestaOrdenRemocionPor:
+              usuarioDe(
+                item
+                  .respuestaOrdenRemocionPorId
+              ),
           })
         );
 
@@ -930,104 +973,114 @@ respuestaOrdenRemocionPor:
           })
         );
 
-/*
-|--------------------------------------------------------------------------
-| INVENTARIOS ENRIQUECIDOS
-|--------------------------------------------------------------------------
-*/
 
-const inventariosFinal =
-  inventarios.map(
-    (item) => {
-      const datos =
-        item.toJSON();
+      /*
+      |--------------------------------------------------------------------------
+      | INVENTARIOS ENRIQUECIDOS
+      |--------------------------------------------------------------------------
+      */
 
-      const vehiculo =
-        vehiculos.find(
-          (vehiculoItem) =>
-            Number(
-              vehiculoItem.id
-            ) ===
-            Number(
-              item.vehiculoId
-            )
+      const inventariosFinal =
+        inventarios.map(
+          (item) => {
+            const datos =
+              item.toJSON();
+
+
+            const vehiculo =
+              vehiculos.find(
+                (vehiculoItem) =>
+                  Number(
+                    vehiculoItem.id
+                  ) ===
+                  Number(
+                    item.vehiculoId
+                  )
+              );
+
+
+            return {
+              ...datos,
+
+              inspector:
+                usuarioDe(
+                  item.inspectorId
+                ),
+
+              vehiculo:
+                vehiculo
+                  ? vehiculo.toJSON()
+                  : null,
+            };
+          }
         );
 
-      return {
-        ...datos,
 
-        inspector:
-          usuarioDe(
-            item.inspectorId
-          ),
-
-        vehiculo:
-          vehiculo
-            ? vehiculo.toJSON()
-            : null,
-      };
-    }
-  );
       /*
       |--------------------------------------------------------------------------
       | REMOCIONES ENRIQUECIDAS
       |--------------------------------------------------------------------------
       */
 
-    const remocionesFinal =
-  remociones.map(
-    (item) => {
-      const datos =
-        item.toJSON();
+      const remocionesFinal =
+        remociones.map(
+          (item) => {
+            const datos =
+              item.toJSON();
 
-      const vehiculo =
-        vehiculos.find(
-          (vehiculoItem) =>
-            Number(
-              vehiculoItem.id
-            ) ===
-            Number(
-              item.vehiculoId
-            )
+
+            const vehiculo =
+              vehiculos.find(
+                (vehiculoItem) =>
+                  Number(
+                    vehiculoItem.id
+                  ) ===
+                  Number(
+                    item.vehiculoId
+                  )
+              );
+
+
+            const inventario =
+              inventariosFinal.find(
+                (inventarioItem) =>
+                  Number(
+                    inventarioItem.id
+                  ) ===
+                  Number(
+                    item.inventarioId
+                  )
+              );
+
+
+            return {
+              ...datos,
+
+              inspector:
+                usuarioDe(
+                  item.inspectorId
+                ),
+
+              vehiculo:
+                vehiculo
+                  ? vehiculo.toJSON()
+                  : null,
+
+              inventario:
+                inventario ||
+                null,
+
+              predioDestino:
+                mapaPredios[
+                  Number(
+                    item.predioDestinoId
+                  )
+                ] ||
+                null,
+            };
+          }
         );
 
-      const inventario =
-        inventariosFinal.find(
-          (inventarioItem) =>
-            Number(
-              inventarioItem.id
-            ) ===
-            Number(
-              item.inventarioId
-            )
-        );
-
-      return {
-        ...datos,
-
-        inspector:
-          usuarioDe(
-            item.inspectorId
-          ),
-
-        vehiculo:
-          vehiculo
-            ? vehiculo.toJSON()
-            : null,
-
-        inventario:
-          inventario ||
-          null,
-          predioDestino:
-  mapaPredios[
-    Number(
-      item.predioDestinoId
-    )
-  ] ||
-  null,
-      };
-    }
-  );
 
       /*
       |--------------------------------------------------------------------------
@@ -1075,39 +1128,40 @@ const inventariosFinal =
       | EGRESOS PREDIO ENRIQUECIDOS
       |--------------------------------------------------------------------------
       */
-const egresosPredioFinal =
-  egresosPredio.map(
-    (item) => ({
-      ...item.toJSON(),
 
-      predioDestino:
-        mapaPredios[
-          Number(
-            item.predioDestinoId
-          )
-        ] ||
-        null,
+      const egresosPredioFinal =
+        egresosPredio.map(
+          (item) => ({
+            ...item.toJSON(),
 
-      registradoPor:
-        usuarioDe(
-          item.registradoPorId
-        ),
+            predioDestino:
+              mapaPredios[
+                Number(
+                  item.predioDestinoId
+                )
+              ] ||
+              null,
 
-      vehiculo:
-        vehiculos
-          .find(
-            (vehiculo) =>
-              Number(
-                vehiculo.id
-              ) ===
-              Number(
-                item.vehiculoId
-              )
-          )
-          ?.toJSON() ||
-        null,
-    })
-  );
+            registradoPor:
+              usuarioDe(
+                item.registradoPorId
+              ),
+
+            vehiculo:
+              vehiculos
+                .find(
+                  (vehiculo) =>
+                    Number(
+                      vehiculo.id
+                    ) ===
+                    Number(
+                      item.vehiculoId
+                    )
+                )
+                ?.toJSON() ||
+              null,
+          })
+        );
 
 
       /*
@@ -1176,29 +1230,42 @@ const egresosPredioFinal =
         asignaciones:
           asignacionesFinal,
 
+
         /*
         |--------------------------------------------------------------------------
         | TODO EL CIRCUITO DEL VEHÍCULO
         |--------------------------------------------------------------------------
         */
 
-       vehiculos:
-  vehiculos.map(
-    (item) =>
-      item.toJSON()
-  ),
+        vehiculos:
+          vehiculos.map(
+            (item) =>
+              item.toJSON()
+          ),
 
-inventarios:
-  inventariosFinal,
+        /*
+        |--------------------------------------------------------------------------
+        | FOTOS
+        |--------------------------------------------------------------------------
+        */
 
-remociones:
-  remocionesFinal,
+        fotos:
+          fotos.map(
+            (item) =>
+              item.toJSON()
+          ),
 
-ingresosPredio:
-  ingresosPredioFinal,
+        inventarios:
+          inventariosFinal,
 
-egresosPredio:
-  egresosPredioFinal,
+        remociones:
+          remocionesFinal,
+
+        ingresosPredio:
+          ingresosPredioFinal,
+
+        egresosPredio:
+          egresosPredioFinal,
       });
     } catch (error) {
       console.error(
@@ -1216,7 +1283,7 @@ egresosPredio:
           error:
             process.env
               .NODE_ENV ===
-            "development"
+              "development"
               ? error.message
               : undefined,
         });

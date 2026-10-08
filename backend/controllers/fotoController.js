@@ -103,13 +103,14 @@ const subirFoto =
         });
       }
 
-      const {
-        tipoReferencia =
-          "RECLAMO",
+   const {
+  tipoReferencia =
+    "RECLAMO",
 
-        referenciaId,
-        descripcion,
-      } = req.body;
+  referenciaId,
+  referenciaTemporal,
+  descripcion,
+} = req.body;
 
       if (
         !tiposReferenciaValidos.includes(
@@ -142,6 +143,24 @@ const subirFoto =
             "Referencia inválida",
         });
       }
+      const referenciaTemporalNormalizada =
+  referenciaTemporal
+    ? String(
+        referenciaTemporal
+      ).trim()
+    : null;
+
+if (
+  referenciaTemporalNormalizada &&
+  referenciaTemporalNormalizada.length >
+    100
+) {
+  return res.status(400).json({
+    ok: false,
+    mensaje:
+      "La referencia temporal es demasiado larga",
+  });
+}
 
       const ruta =
         obtenerRutaPublicaFoto(
@@ -161,6 +180,10 @@ const subirFoto =
 
           referenciaId:
             referenciaNormalizada,
+
+            referenciaTemporal:
+  referenciaTemporalNormalizada,
+
 
           nombreArchivo:
             req.file.filename,
@@ -284,6 +307,15 @@ const listarFotosReclamo =
             req.query.referenciaId
           );
       }
+
+      if (
+  req.query.referenciaTemporal
+) {
+  where.referenciaTemporal =
+    String(
+      req.query.referenciaTemporal
+    ).trim();
+}
 
       const fotos =
         await Foto.findAll({

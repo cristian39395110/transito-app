@@ -674,6 +674,8 @@
 
           vehiculos: [],
 
+          fotos: [],
+
           remociones: [],
 
           ingresosPredio: [],
@@ -824,12 +826,17 @@
                       .asignaciones ||
                     [],
 
-                  vehiculos:
-                    datosSeguimiento
-                      .vehiculos ||
-                    [],
+               vehiculos:
+  datosSeguimiento
+    .vehiculos ||
+  [],
 
-                  remociones:
+fotos:
+  datosSeguimiento
+    .fotos ||
+  [],
+
+remociones:
                     datosSeguimiento
                       .remociones ||
                     [],
@@ -935,483 +942,523 @@
     reclamo?.etapaActual ===
       "PENDIENTE_ASIGNACION_GUARDIA";
 
-        /* =====================================================
-          RESUMEN RÁPIDO
-        ===================================================== */
 
-        const resumen =
-          useMemo(() => {
-            const vehiculo =
-              seguimiento
-                .vehiculos?.[0] ||
-              null;
+const vehiculosDelReclamo = useMemo(() => {
+  const vehiculos = Array.isArray(seguimiento.vehiculos)
+    ? seguimiento.vehiculos
+    : [];
 
-            const remocionesVehiculo =
-              vehiculo
-                ? seguimiento
-                    .remociones
-                    .filter(
-                      (item) =>
-                        Number(
-                          item.vehiculoId
-                        ) ===
-                        Number(
-                          vehiculo.id
-                        )
-                    )
-                : seguimiento
-                    .remociones;
+  const esExpedienteUnVehiculo =
+    vehiculos.length === 1;
 
-            const ingresosVehiculo =
-              vehiculo
-                ? seguimiento
-                    .ingresosPredio
-                    .filter(
-                      (item) =>
-                        Number(
-                          item.vehiculoId
-                        ) ===
-                        Number(
-                          vehiculo.id
-                        )
-                    )
-                : seguimiento
-                    .ingresosPredio;
+  const ordenarIdDesc = (items = []) =>
+    [...items].sort(
+      (a, b) =>
+        Number(b.id || 0) -
+        Number(a.id || 0)
+    );
 
-            const egresosVehiculo =
-              vehiculo
-                ? seguimiento
-                    .egresosPredio
-                    .filter(
-                      (item) =>
-                        Number(
-                          item.vehiculoId
-                        ) ===
-                        Number(
-                          vehiculo.id
-                        )
-                    )
-                : seguimiento
-                    .egresosPredio;
+  return vehiculos.map((vehiculo, index) => {
+    const mismoVehiculo = (valor) =>
+      valor != null &&
+      Number(valor) === Number(vehiculo.id);
 
-            const ultimaRemocion =
-              obtenerUltimo(
-                remocionesVehiculo
-              );
+    /*
+     * SISTEMA NUEVO:
+     * relacionamos directamente por vehiculoId.
+     *
+     * SISTEMA VIEJO:
+     * si el expediente tiene UN SOLO vehículo y la
+     * actuación histórica no tiene vehiculoId,
+     * pertenece a ese único vehículo.
+     */
 
-            const ultimoIngreso =
-              obtenerUltimo(
-                ingresosVehiculo
-              );
+    const perteneceDirectamente = (item) =>
+      mismoVehiculo(item?.vehiculoId) ||
+      (
+        esExpedienteUnVehiculo &&
+        item?.vehiculoId == null
+      );
 
-            const ultimoEgreso =
-              obtenerUltimo(
-                egresosVehiculo
-              );
+    const actas =
+      seguimiento.actas.filter(
+        perteneceDirectamente
+      );
 
-            const actaViaPublica =
-              [...seguimiento.actas]
-                .reverse()
-                .find(
-                  (item) =>
-                    !item.tipo ||
-                    item.tipo ===
-                      "VIA_PUBLICA"
-                ) ||
-              null;
+    const emplazamientos =
+      seguimiento.emplazamientos.filter(
+        (item) =>
+          perteneceDirectamente(item) ||
+          actas.some(
+            (acta) =>
+              Number(acta.id) ===
+              Number(item.actaId)
+          )
+      );
 
-            const infraccion =
-              obtenerUltimo(
-                seguimiento
-                  .infracciones
-              );
+    const verificaciones =
+      seguimiento.verificaciones.filter(
+        (item) =>
+          perteneceDirectamente(item) ||
+          emplazamientos.some(
+            (emplazamiento) =>
+              Number(emplazamiento.id) ===
+              Number(item.emplazamientoId)
+          )
+      );
 
-            let ubicacionTitulo =
-              reclamo
-                ?.direccion ||
-              "Sin ubicación";
+    const infracciones =
+      seguimiento.infracciones.filter(
+        (item) =>
+          perteneceDirectamente(item) ||
+          verificaciones.some(
+            (verificacion) =>
+              Number(verificacion.id) ===
+              Number(item.verificacionId)
+          )
+      );
 
-            let ubicacionDetalle =
-              "Lugar denunciado";
+    const remociones =
+      seguimiento.remociones.filter(
+        (item) =>
+          perteneceDirectamente(item) ||
+          infracciones.some(
+            (infraccion) =>
+              item.infraccionId != null &&
+              Number(infraccion.id) ===
+              Number(item.infraccionId)
+          )
+      );
 
-            let ubicacionClase =
-              "calle";
+    const ingresosPredio =
+      seguimiento.ingresosPredio.filter(
+        (item) =>
+          perteneceDirectamente(item) ||
+          remociones.some(
+            (remocion) =>
+              item.remocionId != null &&
+              Number(remocion.id) ===
+              Number(item.remocionId)
+          )
+      );
 
-            if (vehiculo) {
-          if (
+    const egresosPredio =
+      seguimiento.egresosPredio.filter(
+        (item) =>
+          perteneceDirectamente(item) ||
+          ingresosPredio.some(
+            (ingreso) =>
+              item.ingresoPredioId != null &&
+              Number(ingreso.id) ===
+              Number(item.ingresoPredioId)
+          )
+      );
+
+    const actaViaPublica =
+      ordenarIdDesc(actas).find(
+        (item) =>
+          !item.tipo ||
+          item.tipo === "VIA_PUBLICA"
+      ) || null;
+
+    const ultimoEmplazamiento =
+      ordenarIdDesc(
+        emplazamientos
+      )[0] || null;
+
+    const ultimaVerificacion =
+      ordenarIdDesc(
+        verificaciones
+      )[0] || null;
+
+    const ultimaInfraccion =
+      ordenarIdDesc(
+        infracciones
+      )[0] || null;
+
+    const ultimaRemocion =
+      ordenarIdDesc(
+        remociones
+      )[0] || null;
+
+    const ultimoIngreso =
+      ordenarIdDesc(
+        ingresosPredio
+      )[0] || null;
+
+    const ultimoEgreso =
+      ordenarIdDesc(
+        egresosPredio
+      )[0] || null;
+
+    const inventario =
+      ultimaRemocion
+        ? (
+            ultimaRemocion.inventario ||
+            ultimaRemocion.InventarioVehiculo ||
+            seguimiento.inventarios.find(
+              (item) =>
+                Number(item.id) ===
+                Number(
+                  ultimaRemocion.inventarioId
+                )
+            ) ||
+            null
+          )
+        : null;
+
+    let estadoTexto =
+      nombresEstadoVehiculo[
+        vehiculo.estadoActual
+      ] ||
+      vehiculo.estadoActual ||
+      "Sin estado";
+
+    let estadoDetalle = "";
+
+
+    const estadosPosteriores = [
+  "PENDIENTE_REMOCION",
+  "REMOVIDO",
+  "PENDIENTE_INGRESO_PREDIO",
+  "EN_PREDIO",
+  "EGRESADO",
+];
+
+if (
+  ultimaVerificacion?.resultado === "CUMPLIDO" &&
+  !estadosPosteriores.includes(vehiculo.estadoActual)
+) {
+  estadoTexto = "✅ Cumplido";
+  estadoDetalle =
+    "El inspector confirmó el cumplimiento en la segunda visita.";
+}
+
+    /*
+     * EMPLAZAMIENTO / PRÓRROGA
+     */
+
+    if (
       vehiculo.estadoActual ===
-      "EN_PREDIO" &&
-      ultimoIngreso
+      "EMPLAZADO"
     ) {
-      ubicacionTitulo =
-        `Recibido en ${
-          ultimoIngreso
-            .predio
-            ?.nombre ||
-          "predio municipal"
-        }`;
-
-      const partes = [];
-
       if (
-        ultimoIngreso
-          .sector
+        ultimoEmplazamiento?.estado ===
+          "VIGENTE" &&
+        ultimoEmplazamiento
+          ?.fechaVencimiento
       ) {
-        partes.push(
+        estadoTexto =
+          ultimoEmplazamiento.esProrroga
+            ? "Prórroga vigente"
+            : "Esperando vencimiento";
+
+        estadoDetalle =
+          `Vence ${formatearFecha(
+            ultimoEmplazamiento
+              .fechaVencimiento
+          )}`;
+      } else if (
+        ultimoEmplazamiento?.estado ===
+        "VENCIDO"
+      ) {
+        estadoTexto =
+          "Plazo vencido";
+
+        estadoDetalle =
+          "Pendiente de nuevo control";
+      }
+    }
+
+    /*
+     * PENDIENTE DE REMOCIÓN
+     */
+
+ if (
+  vehiculo.estadoActual === "PENDIENTE_REMOCION"
+) {
+  estadoTexto = "Pendiente de retiro";
+
+  estadoDetalle = ultimaInfraccion?.numeroActa
+    ? `Acta de infracción N.º ${ultimaInfraccion.numeroActa}`
+    : "Tiene una actuación pendiente de remoción";
+}
+
+
+/*
+ * ESTADO DE LA ORDEN JUDICIAL
+ * Individual para cada vehículo.
+ */
+
+const estadoOrden =
+  ultimaInfraccion?.estadoOrdenRemocion;
+
+const vehiculoYaRetirado = [
+  "REMOVIDO",
+  "PENDIENTE_INGRESO_PREDIO",
+  "EN_PREDIO",
+  "EGRESADO",
+].includes(vehiculo.estadoActual);
+
+if (
+  ultimaInfraccion?.requiereOrdenRemocion &&
+  !vehiculoYaRetirado
+) {
+  if (estadoOrden === "PENDIENTE_SOLICITUD") {
+    estadoTexto = "⚖️ Pendiente de solicitud judicial";
+    estadoDetalle =
+      "Secretaría debe solicitar al Juzgado la orden de remoción.";
+  }
+
+  if (estadoOrden === "ESPERANDO_RESPUESTA") {
+    estadoTexto = "⏳ Esperando respuesta del juez";
+    estadoDetalle =
+      "La orden de remoción fue solicitada. Se espera la respuesta del Juzgado.";
+  }
+
+  if (estadoOrden === "AUTORIZADA") {
+    estadoTexto = "✅ Orden judicial autorizada";
+    estadoDetalle =
+      "El Juzgado autorizó la remoción del vehículo.";
+  }
+
+  if (estadoOrden === "NO_AUTORIZADA") {
+    estadoTexto = "❌ Orden judicial no autorizada";
+    estadoDetalle =
+      "El Juzgado no autorizó la remoción del vehículo.";
+  }
+}
+
+    /*
+     * YA FUE RETIRADO
+     */
+
+
+    if (
+      vehiculo.estadoActual ===
+        "REMOVIDO" ||
+      vehiculo.estadoActual ===
+        "PENDIENTE_INGRESO_PREDIO"
+    ) {
+      estadoTexto =
+        "Retirado de la vía pública";
+
+      estadoDetalle =
+        ultimaRemocion?.destino ||
+        "Pendiente de ingreso al predio";
+    }
+
+    /*
+     * EN PREDIO
+     */
+
+    if (
+      vehiculo.estadoActual ===
+      "EN_PREDIO"
+    ) {
+      estadoTexto =
+        "En predio municipal";
+
+      const partesPredio = [];
+
+      const nombrePredio =
+        ultimoIngreso?.predio?.nombre ||
+        ultimoIngreso?.Predio?.nombre;
+
+      if (nombrePredio) {
+        partesPredio.push(
+          nombrePredio
+        );
+      }
+
+      if (ultimoIngreso?.sector) {
+        partesPredio.push(
           `Sector ${ultimoIngreso.sector}`
         );
       }
 
-      if (
-        ultimoIngreso
-          .posicion
-      ) {
-        partes.push(
+      if (ultimoIngreso?.posicion) {
+        partesPredio.push(
           `Posición ${ultimoIngreso.posicion}`
         );
       }
 
-      if (
-        ultimoIngreso
-          .registradoPor
-          ?.nombre
-      ) {
-        partes.push(
-          `Recibido por ${
-            ultimoIngreso
-              .registradoPor
-              .nombre
-          }`
+      const recibidoPor =
+        ultimoIngreso?.registradoPor
+          ?.nombre ||
+        ultimoIngreso?.registradoPor
+          ?.usuario;
+
+      if (recibidoPor) {
+        partesPredio.push(
+          `Recibido por ${recibidoPor}`
         );
       }
 
-      ubicacionDetalle =
-        partes.length
-          ? partes.join(
-              " · "
-            )
-          : "El predio confirmó la recepción del vehículo";
+      estadoDetalle =
+        partesPredio.length
+          ? partesPredio.join(" · ")
+          : "Ingreso al predio registrado";
+    }
 
-      ubicacionClase =
-        "predio";
-    } else if (
+    /*
+     * EGRESADO
+     */
+
+    if (
       vehiculo.estadoActual ===
       "EGRESADO"
     ) {
+      estadoTexto =
+        "Egresado del predio";
+
       if (
-        ultimoEgreso
-          ?.tipoEgreso ===
-          "TRASLADADO" &&
-        ultimoEgreso
-          ?.predioDestino
-          ?.nombre
+        ultimoEgreso?.tipoEgreso ===
+        "ENTREGADO"
       ) {
-        ubicacionTitulo =
-          `Trasladado a ${
-            ultimoEgreso
-              .predioDestino
-              .nombre
-          }`;
-
-        const origen =
-          ultimoIngreso
-            ?.predio
-            ?.nombre;
-
-        ubicacionDetalle =
-          origen
-            ? `Salió de ${origen} · ${formatearFecha(
-                ultimoEgreso.fechaHora
-              )}`
-            : `Traslado registrado · ${formatearFecha(
-                ultimoEgreso.fechaHora
-              )}`;
+        estadoDetalle =
+          ultimoEgreso.destinoPersona
+            ? `Entregado a ${ultimoEgreso.destinoPersona}`
+            : "Vehículo entregado";
       } else if (
-        ultimoEgreso
-          ?.tipoEgreso ===
-          "ENTREGADO" &&
-        ultimoEgreso
-          ?.destinoPersona
+        ultimoEgreso?.tipoEgreso ===
+        "TRASLADADO"
       ) {
-        ubicacionTitulo =
-          `Entregado a ${
-            ultimoEgreso
-              .destinoPersona
-          }`;
-
-        ubicacionDetalle =
-          `Entrega registrada · ${formatearFecha(
-            ultimoEgreso.fechaHora
-          )}`;
-      } else if (
-        ultimoEgreso
-          ?.tipoEgreso ===
-          "COMPACTADO"
-      ) {
-        ubicacionTitulo =
-          "Vehículo compactado";
-
-        ubicacionDetalle =
-          formatearFecha(
-            ultimoEgreso.fechaHora
-          );
-      } else {
-        ubicacionTitulo =
-          "El vehículo ya salió del predio";
-
-        ubicacionDetalle =
+        estadoDetalle =
           ultimoEgreso
-            ? formatearFecha(
-                ultimoEgreso.fechaHora
-              )
-            : "Salida registrada";
-      }
-
-      ubicacionClase =
-        "salio";
-              } else if (
-                ultimaRemocion
-                  ?.destino
-              ) {
-                ubicacionTitulo =
-                  ultimaRemocion
-                    .destino;
-
-                if (
-                  vehiculo.estadoActual ===
-                  "PENDIENTE_INGRESO_PREDIO" &&
-                  esDestinoGranja(
-                    ultimaRemocion
-                      .destino
-                  )
-                ) {
-                  ubicacionDetalle =
-                    "Falta registrar el ingreso al predio";
-                } else if (
-                  esDestinoGranja(
-                    ultimaRemocion
-                      .destino
-                  )
-                ) {
-                  ubicacionDetalle =
-                    "Último destino registrado";
-                } else {
-                  ubicacionDetalle =
-                    "Última ubicación conocida · sin seguimiento posterior desde este sistema";
-                }
-
-                ubicacionClase =
-                  "removido";
-              } else if (
-                vehiculo.estadoActual ===
-                  "EMPLAZADO" ||
-                vehiculo.estadoActual ===
-                  "EN_VIA_PUBLICA"
-              ) {
-                ubicacionTitulo =
-                  reclamo
-                    ?.direccion ||
-                  "Vía pública";
-
-                ubicacionDetalle =
-                  nombresEstadoVehiculo[
-                    vehiculo
-                      .estadoActual
-                  ];
-
-                ubicacionClase =
-                  "calle";
-              }
-            }
-
-            let juzgadoTitulo =
-              "Todavía no hay Acta de Infracción";
-
-            let juzgadoDetalle =
-              "No hay documentación para enviar al Juzgado.";
-
-            let juzgadoClase =
-              "neutral";
-
-        if (infraccion) {
-
-    /*
-    |--------------------------------------------------------------------------
-    | ORDEN JUDICIAL PARA RETIRAR VEHÍCULO
-    |--------------------------------------------------------------------------
-    */
-
-    if (
-      infraccion
-        .requiereOrdenRemocion
-    ) {
-
-      switch (
-        infraccion
-          .estadoOrdenRemocion
+            ?.predioDestino?.nombre ||
+          "Trasladado a otro destino";
+      } else if (
+        ultimoEgreso?.tipoEgreso ===
+        "COMPACTADO"
       ) {
-
-        case "PENDIENTE_SOLICITUD":
-          juzgadoTitulo =
-            "Falta solicitar la orden de remoción";
-
-          juzgadoDetalle =
-            "El vehículo no pudo ser retirado. Secretaría debe solicitar al Juzgado la orden necesaria para realizar la remoción.";
-
-          juzgadoClase =
-            "pendiente";
-
-          break;
-
-
-        case "ESPERANDO_RESPUESTA":
-          juzgadoTitulo =
-            "Esperando orden judicial para retirar el vehículo";
-
-          juzgadoDetalle =
-            "El vehículo todavía no fue retirado. La orden de remoción ya fue solicitada al Juzgado y se está esperando su respuesta.";
-
-          juzgadoClase =
-            "esperando";
-
-          break;
-
-
-        case "AUTORIZADA":
-          juzgadoTitulo =
-            "Remoción autorizada por el Juzgado";
-
-          juzgadoDetalle =
-            "La orden judicial fue autorizada. El vehículo ya puede ser retirado.";
-
-          juzgadoClase =
-            "esperando";
-
-          break;
-
-
-        case "NO_AUTORIZADA":
-          juzgadoTitulo =
-            "El Juzgado no autorizó la remoción";
-
-          juzgadoDetalle =
-            "La orden para retirar el vehículo no fue autorizada.";
-
-          juzgadoClase =
-            "alerta";
-
-          break;
-
-
-        default:
-          juzgadoTitulo =
-            "Orden judicial de remoción pendiente";
-
-          juzgadoDetalle =
-            "El vehículo continúa pendiente de retiro.";
-
-          juzgadoClase =
-            "pendiente";
-
-          break;
-      }
-
-    } else {
-
-      /*
-      |--------------------------------------------------------------------------
-      | TRÁMITE NORMAL DEL ACTA DE INFRACCIÓN / MULTA
-      |--------------------------------------------------------------------------
-      */
-
-      switch (
-        infraccion
-          .estadoJuzgado
-      ) {
-
-        case "PENDIENTE_ENVIO":
-          juzgadoTitulo =
-            "Todavía no fue enviado al Juzgado";
-
-          juzgadoDetalle =
-            "La Secretaría debe registrar el envío del Acta de Infracción.";
-
-          juzgadoClase =
-            "pendiente";
-
-          break;
-
-
-        case "ENVIADO":
-          juzgadoTitulo =
-            "Acta de Infracción enviada al Juzgado";
-
-          juzgadoDetalle =
-            "El Acta fue enviada para el trámite de la multa.";
-
-          juzgadoClase =
-            "esperando";
-
-          break;
-
-
-        case "NO_AUTORIZADO":
-          juzgadoTitulo =
-            "El Juzgado no autorizó";
-
-          juzgadoDetalle =
-            "La respuesta quedó registrada.";
-
-          juzgadoClase =
-            "alerta";
-
-          break;
-
-
-        default:
-          juzgadoTitulo =
-            nombresJuzgado[
-              infraccion
-                .estadoJuzgado
-            ] ||
-            "Trámite judicial registrado";
-
-          juzgadoDetalle =
-            "El trámite del Acta de Infracción quedó registrado.";
-
-          juzgadoClase =
-            "neutral";
-
-          break;
+        estadoDetalle =
+          "Vehículo compactado";
+      } else {
+        estadoDetalle =
+          "Salida del predio registrada";
       }
     }
-  }
 
-            const inventario =
-              ultimaRemocion
-                ? (
-                    ultimaRemocion
-                      .inventario ||
-                    ultimaRemocion
-                      .InventarioVehiculo ||
-                    seguimiento
-                      .inventarios
-                      .find(
-                        (item) =>
-                          Number(
-                            item.id
-                          ) ===
-                          Number(
-                            ultimaRemocion
-                              .inventarioId
-                          )
-                      ) ||
-                    null
-                  )
-                : null;
+    /*
+     * COMPATIBILIDAD HISTÓRICA
+     *
+     * Algunos expedientes viejos pueden tener
+     * movimientos finales pero un estadoActual
+     * antiguo o incompleto.
+     */
 
-          return {
+    if (
+      ultimoIngreso &&
+      !ultimoEgreso &&
+      ![
+        "EN_PREDIO",
+        "EGRESADO",
+      ].includes(vehiculo.estadoActual)
+    ) {
+      estadoTexto =
+        "En predio municipal";
+
+      const partes = [
+        ultimoIngreso?.predio?.nombre ||
+          ultimoIngreso?.Predio?.nombre,
+
+        ultimoIngreso?.sector
+          ? `Sector ${ultimoIngreso.sector}`
+          : null,
+
+        ultimoIngreso?.posicion
+          ? `Posición ${ultimoIngreso.posicion}`
+          : null,
+      ].filter(Boolean);
+
+      estadoDetalle =
+        partes.length
+          ? partes.join(" · ")
+          : "Ingreso al predio registrado";
+    }
+
+    if (
+      ultimoEgreso &&
+      vehiculo.estadoActual !==
+        "EGRESADO"
+    ) {
+      estadoTexto =
+        "Egresado del predio";
+
+      estadoDetalle =
+        nombresEgreso[
+          ultimoEgreso.tipoEgreso
+        ] ||
+        ultimoEgreso.tipoEgreso ||
+        "Salida del predio registrada";
+    }
+
+    if (
+      ultimaRemocion &&
+      !ultimoIngreso &&
+      !ultimoEgreso &&
+      ![
+        "PENDIENTE_REMOCION",
+        "REMOVIDO",
+        "PENDIENTE_INGRESO_PREDIO",
+      ].includes(vehiculo.estadoActual)
+    ) {
+      estadoTexto =
+        "Retirado de la vía pública";
+
+      estadoDetalle =
+        ultimaRemocion.destino ||
+        "Pendiente de ingreso al predio";
+    }
+
+    const dominio =
+      vehiculo.dominio ||
+      vehiculo.patente ||
+      "Sin dominio";
+
+    const descripcion = [
+      vehiculo.marca,
+      vehiculo.modelo,
+      vehiculo.color,
+    ]
+      .filter(Boolean)
+      .join(" · ");
+
+    return {
+      indice: index + 1,
+
       vehiculo,
+
+      dominio,
+
+      descripcion,
+
+      estadoTexto,
+
+      estadoDetalle,
+
+      actas,
+
+      emplazamientos,
+
+      verificaciones,
+
+      infracciones,
+
+      remociones,
+
+      ingresosPredio,
+
+      egresosPredio,
+
+      actaViaPublica,
+
+      ultimoEmplazamiento,
+
+      ultimaVerificacion,
+
+      ultimaInfraccion,
 
       ultimaRemocion,
 
@@ -1419,43 +1466,22 @@
 
       ultimoEgreso,
 
-      actaViaPublica,
-
-      infraccion,
-
-      ubicacionTitulo,
-
-      ubicacionDetalle,
-
-      ubicacionClase,
-
-      juzgadoTitulo,
-
-      juzgadoDetalle,
-
-      juzgadoClase,
-
-      juzgadoRespuesta:
-        infraccion
-          ?.observacionJuzgado ||
-        "",
-
-      juzgadoExpediente:
-        infraccion
-          ?.numeroExpedienteJuzgado ||
-        "",
-
-      juzgadoFechaRespuesta:
-        infraccion
-          ?.fechaRespuestaJuzgado ||
-        null,
-
       inventario,
     };
-          }, [
-            reclamo,
-            seguimiento,
-          ]);
+  });
+}, [
+  seguimiento.vehiculos,
+  seguimiento.actas,
+  seguimiento.emplazamientos,
+  seguimiento.verificaciones,
+  seguimiento.infracciones,
+  seguimiento.remociones,
+  seguimiento.ingresosPredio,
+  seguimiento.egresosPredio,
+  seguimiento.inventarios,
+]);
+
+     
 
 
         /* =====================================================
@@ -1587,9 +1613,228 @@
 
 
 
-    {/* =================================================
-        CRONOLOGÍA
-    ================================================= */}
+
+
+
+const obtenerVehiculoActuacion = (datos = {}) => {
+  if (!datos) {
+    return null;
+  }
+
+  /*
+   * =====================================================
+   * RELACIÓN DIRECTA
+   * =====================================================
+   *
+   * Sistema nuevo:
+   * vehiculoId
+   *
+   * También contemplamos relaciones Sequelize:
+   * vehiculo / Vehiculo
+   */
+
+  const vehiculoId =
+    datos.vehiculoId ||
+    datos.vehiculo?.id ||
+    datos.Vehiculo?.id ||
+    null;
+
+  if (vehiculoId) {
+    const encontrado =
+      seguimiento.vehiculos.find(
+        (vehiculo) =>
+          Number(vehiculo.id) ===
+          Number(vehiculoId)
+      );
+
+    if (encontrado) {
+      return encontrado;
+    }
+  }
+
+  /*
+   * =====================================================
+   * EMPLAZAMIENTO
+   * =====================================================
+   */
+
+  if (datos.emplazamientoId) {
+    const emplazamiento =
+      seguimiento.emplazamientos.find(
+        (item) =>
+          Number(item.id) ===
+          Number(datos.emplazamientoId)
+      );
+
+    if (emplazamiento) {
+      const encontrado =
+        obtenerVehiculoActuacion(
+          emplazamiento
+        );
+
+      if (encontrado) {
+        return encontrado;
+      }
+    }
+  }
+
+  /*
+   * =====================================================
+   * VERIFICACIÓN
+   * =====================================================
+   */
+
+  if (datos.verificacionId) {
+    const verificacion =
+      seguimiento.verificaciones.find(
+        (item) =>
+          Number(item.id) ===
+          Number(datos.verificacionId)
+      );
+
+    if (verificacion) {
+      const encontrado =
+        obtenerVehiculoActuacion(
+          verificacion
+        );
+
+      if (encontrado) {
+        return encontrado;
+      }
+    }
+  }
+
+  /*
+   * =====================================================
+   * ACTA
+   * =====================================================
+   */
+
+  if (datos.actaId) {
+    const acta =
+      seguimiento.actas.find(
+        (item) =>
+          Number(item.id) ===
+          Number(datos.actaId)
+      );
+
+    if (acta) {
+      const encontrado =
+        obtenerVehiculoActuacion(
+          acta
+        );
+
+      if (encontrado) {
+        return encontrado;
+      }
+    }
+  }
+
+  /*
+   * =====================================================
+   * OBJETOS ANIDADOS
+   * =====================================================
+   *
+   * Los eventos de la cronología pueden venir como:
+   *
+   * { visita, acta, emplazamiento }
+   *
+   * o:
+   *
+   * { verificacion, infraccion, prorroga }
+   */
+
+  const relacionados = [
+    datos.verificacion,
+    datos.infraccion,
+    datos.prorroga,
+    datos.acta,
+    datos.emplazamiento,
+    datos.visita,
+    datos.remocion,
+    datos.ingreso,
+    datos.egreso,
+  ].filter(Boolean);
+
+  for (const relacionado of relacionados) {
+    const encontrado =
+      obtenerVehiculoActuacion(
+        relacionado
+      );
+
+    if (encontrado) {
+      return encontrado;
+    }
+  }
+
+  /*
+   * =====================================================
+   * SISTEMA VIEJO
+   * =====================================================
+   *
+   * Los expedientes históricos podían no guardar
+   * vehiculoId en todas las actuaciones.
+   *
+   * Si solamente existe UN vehículo, podemos asociar
+   * de forma segura la actuación a ese vehículo.
+   *
+   * Si existen varios vehículos NO adivinamos.
+   */
+
+  if (
+    seguimiento.vehiculos.length === 1
+  ) {
+    return seguimiento.vehiculos[0];
+  }
+
+  return null;
+};
+
+const obtenerNumeroVehiculo = (vehiculo) => {
+  if (!vehiculo) {
+    return null;
+  }
+
+  const indice =
+    seguimiento.vehiculos.findIndex(
+      (item) =>
+        Number(item.id) ===
+        Number(vehiculo.id)
+    );
+
+  return indice >= 0
+    ? indice + 1
+    : null;
+};
+
+const obtenerIdentificacionVehiculo = (
+  datos = {}
+) => {
+  const vehiculo =
+    obtenerVehiculoActuacion(datos);
+
+  if (!vehiculo) {
+    return null;
+  }
+
+  const numero =
+    obtenerNumeroVehiculo(vehiculo);
+
+  const dominio =
+    vehiculo.dominio ||
+    vehiculo.patente ||
+    "Sin dominio";
+
+  return {
+    vehiculo,
+    numero,
+    dominio,
+    texto:
+      numero
+        ? `Vehículo ${numero} · ${dominio}`
+        : dominio,
+  };
+};
 
         const eventos =
           useMemo(() => {
@@ -1632,60 +1877,145 @@
                 }
               );
 
-            seguimiento
-              .visitas
-              .forEach(
-                (visita) => {
-                  const acta =
-                    seguimiento
-                      .actas
-                      .find(
-                        (item) =>
-                          Number(
-                            item.constatacionId
-                          ) ===
-                          Number(
-                            visita.id
-                          )
-                      ) ||
-                    null;
+seguimiento
+  .visitas
+  .forEach(
+    (visita) => {
+      /*
+       * Todas las actas pertenecientes
+       * a esta visita / constatación.
+       *
+       * IMPORTANTE:
+       * usamos filter(), NO find(),
+       * porque una misma visita puede
+       * tener varios vehículos.
+       */
+      const actasDeLaVisita =
+        seguimiento.actas.filter(
+          (acta) =>
+            Number(
+              acta.constatacionId
+            ) ===
+            Number(
+              visita.id
+            )
+        );
 
-                  const emplazamiento =
-                    acta
-                      ? seguimiento
-                          .emplazamientos
-                          .find(
-                            (item) =>
-                              Number(
-                                item.actaId
-                              ) ===
-                              Number(
-                                acta.id
-                              )
-                          ) ||
-                        null
-                      : null;
+      /*
+       * Si existen actas, generamos
+       * UN EVENTO POR CADA ACTA.
+       *
+       * De esa manera cada vehículo
+       * conserva su propia relación:
+       *
+       * vehículo -> acta -> emplazamiento
+       */
+      if (
+        actasDeLaVisita.length > 0
+      ) {
+        actasDeLaVisita.forEach(
+          (acta) => {
+            const emplazamiento =
+              seguimiento
+                .emplazamientos
+                .find(
+                  (item) =>
+                    Number(
+                      item.actaId
+                    ) ===
+                    Number(
+                      acta.id
+                    )
+                ) ||
+              null;
 
-                  lista.push({
-                    id:
-                      `visita-${visita.id}`,
+            /*
+             * Determinamos el vehículo
+             * de ESTA actuación.
+             *
+             * Primero usamos el vehiculoId
+             * del acta.
+             *
+             * Si por compatibilidad el acta
+             * no lo tiene, intentamos con
+             * el emplazamiento.
+             */
+            const vehiculoId =
+              acta.vehiculoId ??
+              emplazamiento?.vehiculoId ??
+              visita.vehiculoId ??
+              null;
 
-                    tipo:
-                      "VISITA",
+            /*
+             * Creamos una copia de la visita
+             * con el vehículo correcto.
+             *
+             * Así el render de VISITA que
+             * ya corregimos encuentra
+             * exactamente ese vehículo.
+             */
+            const visitaDelVehiculo = {
+              ...visita,
 
-                    fecha:
-                      visita.fechaHora ||
-                      visita.createdAt,
+              vehiculoId,
+            };
 
-                    datos: {
-                      visita,
-                      acta,
-                      emplazamiento,
-                    },
-                  });
-                }
-              );
+            lista.push({
+              id:
+                `visita-${visita.id}-acta-${acta.id}`,
 
+              tipo:
+                "VISITA",
+
+              fecha:
+                visita.fechaHora ||
+                visita.createdAt,
+
+              datos: {
+                visita:
+                  visitaDelVehiculo,
+
+                acta,
+
+                emplazamiento,
+              },
+            });
+          }
+        );
+
+        return;
+      }
+
+      /*
+       * Si NO hubo acta, igualmente
+       * conservamos la visita.
+       *
+       * Esto sirve para:
+       * - constataciones
+       * - reclamos sin emplazamiento
+       * - sistema anterior
+       */
+      lista.push({
+        id:
+          `visita-${visita.id}`,
+
+        tipo:
+          "VISITA",
+
+        fecha:
+          visita.fechaHora ||
+          visita.createdAt,
+
+        datos: {
+          visita,
+
+          acta: null,
+
+          emplazamiento: null,
+        },
+      });
+    }
+  );
             seguimiento
               .verificaciones
               .forEach(
@@ -2208,6 +2538,152 @@ return lista.sort((a, b) => {
         }
 
 
+
+
+        /*
+ * =====================================================
+ * HISTORIAL AGRUPADO POR VEHÍCULO
+ * =====================================================
+ *
+ * Con varios vehículos:
+ * - los eventos generales quedan arriba
+ * - cada vehículo tiene su propia cronología
+ *
+ * Con un solo vehículo:
+ * - mantenemos el historial tradicional
+ * - conserva compatibilidad con expedientes viejos
+ */
+const historialPorVehiculo = (() => {
+  if (
+    seguimiento.vehiculos.length <= 1
+  ) {
+    return null;
+  }
+
+  const generales = [];
+
+  const grupos =
+    seguimiento.vehiculos.map(
+      (vehiculo, index) => ({
+        vehiculo,
+        numero: index + 1,
+        eventos: [],
+      })
+    );
+
+  eventos.forEach((evento) => {
+    /*
+     * Eventos generales del expediente.
+     * No pertenecen a un vehículo particular.
+     */
+    if (
+      evento.tipo === "RECLAMO" ||
+      evento.tipo === "ASIGNACION"
+    ) {
+      generales.push(evento);
+      return;
+    }
+
+    let datosParaVehiculo;
+
+    if (evento.tipo === "VISITA") {
+      datosParaVehiculo = {
+        ...evento.datos?.visita,
+
+        vehiculoId:
+          evento.datos?.visita
+            ?.vehiculoId ||
+          evento.datos?.acta
+            ?.vehiculoId ||
+          evento.datos?.emplazamiento
+            ?.vehiculoId,
+      };
+    } else if (
+      evento.tipo === "CONTROL"
+    ) {
+      datosParaVehiculo = {
+        ...evento.datos?.verificacion,
+
+        vehiculoId:
+          evento.datos?.verificacion
+            ?.vehiculoId ||
+          evento.datos?.infraccion
+            ?.vehiculoId ||
+          evento.datos?.prorroga
+            ?.vehiculoId,
+      };
+    } else {
+      datosParaVehiculo =
+        evento.datos;
+    }
+
+    const vehiculo =
+      obtenerVehiculoActuacion(
+        datosParaVehiculo
+      );
+
+    if (!vehiculo) {
+      /*
+       * Si no sabemos de qué vehículo es,
+       * no inventamos la asociación.
+       */
+      generales.push(evento);
+      return;
+    }
+
+    const grupo =
+      grupos.find(
+        (item) =>
+          Number(
+            item.vehiculo.id
+          ) ===
+          Number(
+            vehiculo.id
+          )
+      );
+
+    if (grupo) {
+      grupo.eventos.push(
+        evento
+      );
+    } else {
+      generales.push(
+        evento
+      );
+    }
+  });
+
+  const ordenarEventos =
+    (lista = []) =>
+      [...lista].sort(
+        (a, b) =>
+          new Date(
+            a.fecha || 0
+          ).getTime() -
+          new Date(
+            b.fecha || 0
+          ).getTime()
+      );
+
+  return {
+    generales:
+      ordenarEventos(
+        generales
+      ),
+
+    grupos:
+      grupos.map(
+        (grupo) => ({
+          ...grupo,
+
+          eventos:
+            ordenarEventos(
+              grupo.eventos
+            ),
+        })
+      ),
+  };
+})();
         /* =====================================================
           RENDER EVENTOS
         ===================================================== */
@@ -2216,6 +2692,49 @@ return lista.sort((a, b) => {
           (evento) => {
             const datos =
               evento.datos;
+
+              const datosParaVehiculo =
+  evento.tipo === "VISITA"
+    ? {
+        ...datos.visita,
+        vehiculoId:
+          datos.visita?.vehiculoId ||
+          datos.acta?.vehiculoId ||
+          datos.emplazamiento?.vehiculoId,
+      }
+    : evento.tipo === "CONTROL"
+    ? {
+        ...datos.verificacion,
+        vehiculoId:
+          datos.verificacion?.vehiculoId ||
+          datos.infraccion?.vehiculoId ||
+          datos.prorroga?.vehiculoId,
+      }
+    : datos;
+
+const identificacionVehiculo =
+  obtenerIdentificacionVehiculo(
+    datosParaVehiculo
+  );
+
+const etiquetaVehiculo =
+  identificacionVehiculo &&
+  !["RECLAMO", "ASIGNACION"].includes(
+    evento.tipo
+  ) ? (
+    <div className="cronologia-vehiculo">
+      <span>
+        🚗{" "}
+        {identificacionVehiculo.numero
+          ? `Vehículo ${identificacionVehiculo.numero}`
+          : "Vehículo"}
+      </span>
+
+      <strong>
+        {identificacionVehiculo.dominio}
+      </strong>
+    </div>
+  ) : null;
 
 
             if (
@@ -2476,200 +2995,320 @@ return lista.sort((a, b) => {
   }
 
 
-            if (
-              evento.tipo ===
-              "VISITA"
-            ) {
-              const {
-                visita,
-                acta,
-                emplazamiento,
-              } = datos;
+if (
+  evento.tipo ===
+  "VISITA"
+) {
+  const {
+    visita,
+    acta,
+    emplazamiento,
+  } = datos;
 
-              return (
-                <>
-                  <span className="evento-etiqueta">
-                    VISITA AL LUGAR
-                  </span>
+  /*
+   * =====================================================
+   * VEHÍCULO DE ESTA VISITA
+   * =====================================================
+   */
 
-                  <h3>
-                    {nombreUsuario(
-                      visita.inspector
-                    )}
-                  </h3>
+  const vehiculo =
+    seguimiento.vehiculos.find(
+      (item) =>
+        Number(item.id) ===
+        Number(visita?.vehiculoId)
+    ) ||
+    (
+      seguimiento.vehiculos.length === 1
+        ? seguimiento.vehiculos[0]
+        : null
+    );
 
-                  <strong className="evento-resultado">
-                    {nombresResultadoPrimera[
-                      visita.resultado
-                    ] ||
-                      visita.resultado ||
-                      "Sin resultado"}
-                  </strong>
+  /*
+   * Número visual dentro DEL RECLAMO.
+   *
+   * NO usamos:
+   * - vehiculo.id
+   * - vehiculo.numeroInterno
+   *
+   * Queremos:
+   * Vehículo 1
+   * Vehículo 2
+   * etc.
+   */
 
-                  {visita
-                    .situacion && (
-                    <div className="evento-texto">
-                      <span>
-                        Qué encontró
-                      </span>
+  const numeroVehiculo =
+    vehiculo
+      ? obtenerNumeroVehiculo(
+          vehiculo
+        )
+      : null;
 
-                      <p>
-                        {
-                          visita
-                            .situacion
-                        }
-                      </p>
-                    </div>
-                  )}
+  const dominioVehiculo =
+    vehiculo?.dominio ||
+    vehiculo?.patente ||
+    "Sin dominio";
 
-                  {visita
-                    .observaciones && (
-                    <div className="evento-texto">
-                      <span>
-                        Observaciones
-                      </span>
+  /*
+   * =====================================================
+   * FOTOS DEL SISTEMA NUEVO
+   * =====================================================
+   *
+   * VEHICULO:
+   * referenciaId = vehiculo.id
+   *
+   * EMPLAZAMIENTO:
+   * referenciaId = emplazamiento.id
+   */
 
-                      <p>
-                        {
-                          visita
-                            .observaciones
-                        }
-                      </p>
-                    </div>
-                  )}
+  const hayAlgunaFotoVehiculoNueva =
+    seguimiento.fotos.some(
+      (foto) =>
+        foto.tipoReferencia ===
+          "VEHICULO" &&
+        foto.referenciaId != null
+    );
 
-                  
-                
-            
+  const hayFotoVehiculoActual =
+    Boolean(
+      vehiculo &&
+      seguimiento.fotos.some(
+        (foto) =>
+          foto.tipoReferencia ===
+            "VEHICULO" &&
+          Number(
+            foto.referenciaId
+          ) ===
+            Number(
+              vehiculo.id
+            )
+      )
+    );
 
-                  {acta && (
-                    
-                    <div className="evento-subseccion">
-                      <span>
-                        ACTA DE VÍA PÚBLICA
-                      </span>
+  /*
+   * =====================================================
+   * COMPATIBILIDAD CON SISTEMA VIEJO
+   * =====================================================
+   *
+   * En los expedientes viejos la foto del auto
+   * estaba guardada como CONSTATACION.
+   *
+   * Solamente usamos ese comportamiento cuando:
+   *
+   * - no existen fotos VEHICULO nuevas
+   * - el expediente tiene un único vehículo
+   *
+   * Con varios vehículos NO adivinamos asociaciones.
+   */
 
-                      <strong>
-                        N.º{" "}
-                        {
-                          acta
-                            .numeroActa
-                        }
-                      </strong>
-                      {acta.personaEncontrada ? (
-      <div
-        style={{
-          marginTop: "12px",
-        }}
-      >
-        <div>
+  const esVehiculoHistorico =
+    Boolean(vehiculo) &&
+    !hayAlgunaFotoVehiculoNueva &&
+    seguimiento.vehiculos.length === 1;
+
+  const esSistemaNuevoVehiculos =
+    Boolean(vehiculo) &&
+    hayAlgunaFotoVehiculoNueva;
+
+  return (
+    <>
+      <span className="evento-etiqueta">
+        VISITA AL LUGAR
+      </span>
+
+      {vehiculo && (
+        <div
+          className="cronologia-vehiculo"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+            flexWrap: "wrap",
+          }}
+        >
           <span>
-            Persona encontrada:{" "}
+            🚗{" "}
+            {numeroVehiculo
+              ? `Vehículo ${numeroVehiculo}`
+              : "Vehículo"}
           </span>
 
           <strong>
-            Sí
+            {dominioVehiculo}
           </strong>
         </div>
+      )}
 
-        {acta.atendidoPor && (
-          <div>
-            <span>
-              Atendido por:{" "}
-            </span>
-
-            <strong>
-              {acta.atendidoPor}
-            </strong>
-          </div>
+      <h3>
+        {nombreUsuario(
+          visita.inspector
         )}
+      </h3>
 
-        {acta.caracterAtendido && (
-          <div>
-            <span>
-              Carácter:{" "}
-            </span>
+      <strong className="evento-resultado">
+        {nombresResultadoPrimera[
+          visita.resultado
+        ] ||
+          visita.resultado ||
+          "Sin resultado"}
+      </strong>
 
-            <strong>
-              {acta.caracterAtendido}
-            </strong>
-          </div>
-        )}
-      </div>
-    ) : (
-      <div
-        style={{
-          marginTop: "12px",
-        }}
-      >
-        <span>
-          Persona encontrada:{" "}
-        </span>
+      {visita.situacion && (
+        <div className="evento-texto">
+          <span>
+            Qué encontró
+          </span>
 
-        <strong>
-          No
-        </strong>
-      </div>
-    )}
-
-                  {emplazamiento && (
-      <>
-        <div className="evento-datos-linea">
-          <div>
-            <span>
-              Plazo
-            </span>
-
-            <strong>
-              {emplazamiento
-                .plazoCantidad ||
-                acta
-                  .plazoHoras ||
-                "—"}{" "}
-              {emplazamiento
-                .plazoUnidad ===
-              "DIAS"
-                ? "días"
-                : "horas"}
-            </strong>
-          </div>
-
-          <div>
-            <span>
-              Vence
-            </span>
-
-            <strong>
-              {formatearFecha(
-                emplazamiento
-                  .fechaVencimiento
-              )}
-            </strong>
-          </div>
+          <p>
+            {visita.situacion}
+          </p>
         </div>
+      )}
 
-    <div className="evidencia-visita">
-      <div className="evidencia-visita-item">
-        <strong className="evidencia-visita-titulo">
-          📷 Constatación
-        </strong>
+      {visita.observaciones && (
+        <div className="evento-texto">
+          <span>
+            Observaciones
+          </span>
 
-        <span className="evidencia-visita-descripcion">
-          Cómo estaba al llegar
-        </span>
+          <p>
+            {visita.observaciones}
+          </p>
+        </div>
+      )}
 
-        <FotosReclamo
-          reclamoId={
-            reclamo.id
-          }
-          tipoReferencia="CONSTATACION"
-          permitirSubir={
-            false
-          }
-        />
-      </div>
+      {acta && (
+        <div className="evento-subseccion">
+          <span>
+            ACTA DE VÍA PÚBLICA
+          </span>
 
-      <div className="evidencia-visita-item">
+          <strong>
+            N.º{" "}
+            {acta.numeroActa}
+          </strong>
+
+          {acta.personaEncontrada ? (
+            <div
+              style={{
+                marginTop: "12px",
+              }}
+            >
+              <div>
+                <span>
+                  Persona encontrada:{" "}
+                </span>
+
+                <strong>
+                  Sí
+                </strong>
+              </div>
+
+              {acta.atendidoPor && (
+                <div>
+                  <span>
+                    Atendido por:{" "}
+                  </span>
+
+                  <strong>
+                    {acta.atendidoPor}
+                  </strong>
+                </div>
+              )}
+
+              {acta.caracterAtendido && (
+                <div>
+                  <span>
+                    Carácter:{" "}
+                  </span>
+
+                  <strong>
+                    {acta.caracterAtendido}
+                  </strong>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div
+              style={{
+                marginTop: "12px",
+              }}
+            >
+              <span>
+                Persona encontrada:{" "}
+              </span>
+
+              <strong>
+                No
+              </strong>
+            </div>
+          )}
+
+          {emplazamiento && (
+            <>
+              <div className="evento-datos-linea">
+                <div>
+                  <span>
+                    Plazo
+                  </span>
+
+                  <strong>
+                    {emplazamiento.plazoCantidad ||
+                      acta.plazoHoras ||
+                      "—"}{" "}
+                    {emplazamiento.plazoUnidad ===
+                    "DIAS"
+                      ? "días"
+                      : "horas"}
+                  </strong>
+                </div>
+
+                <div>
+                  <span>
+                    Vence
+                  </span>
+
+                  <strong>
+                    {formatearFecha(
+                      emplazamiento
+                        .fechaVencimiento
+                    )}
+                  </strong>
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* ==========================================
+              EVIDENCIA DE LA PRIMERA VISITA
+          ========================================== */}
+
+          <div className="evidencia-primera-visita">
+
+            {/* ========================================
+                SISTEMA VIEJO
+            ======================================== */}
+
+ {esVehiculoHistorico && (
+  <div className="evidencias-historicas-grid">
+
+    <div className="evidencia-historica-item">
+      <strong className="evidencia-visita-titulo">
+        📷 Constatación
+      </strong>
+
+      <span className="evidencia-visita-descripcion">
+        Cómo estaba el lugar al llegar
+      </span>
+
+      <FotosReclamo
+        reclamoId={reclamo.id}
+        tipoReferencia="CONSTATACION"
+        permitirSubir={false}
+      />
+    </div>
+
+    {acta && emplazamiento && (
+      <div className="evidencia-historica-item">
         <strong className="evidencia-visita-titulo">
           📝 Emplazamiento
         </strong>
@@ -2679,24 +3318,206 @@ return lista.sort((a, b) => {
         </span>
 
         <FotosReclamo
-          reclamoId={
-            reclamo.id
-          }
+          reclamoId={reclamo.id}
           tipoReferencia="EMPLAZAMIENTO"
-          permitirSubir={
-            false
-          }
+          permitirSubir={false}
         />
       </div>
-    </div>
-      </>
     )}
-                    </div>
-                  )}
-                </>
-              );
-            }
 
+  </div>
+)}
+
+            {/* ========================================
+                RECLAMO SIN VEHÍCULO
+            ======================================== */}
+
+            {!vehiculo && (
+              <div className="evidencia-general">
+                <strong className="evidencia-visita-titulo">
+                  📷 Constatación
+                </strong>
+
+                <span className="evidencia-visita-descripcion">
+                  Cómo estaba el lugar al llegar
+                </span>
+
+                <FotosReclamo
+                  reclamoId={
+                    reclamo.id
+                  }
+                  tipoReferencia="CONSTATACION"
+                  permitirSubir={
+                    false
+                  }
+                />
+              </div>
+            )}
+
+            {/* ========================================
+                VEHÍCULO
+            ======================================== */}
+
+            {vehiculo && (
+              <div className="evidencia-vehiculo-bloque">
+
+                {/* CABECERA */}
+
+                <div className="evidencia-vehiculo-cabecera">
+
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "8px",
+                      flexWrap: "wrap",
+                      marginBottom: "12px",
+                    }}
+                  >
+                    <strong
+                      style={{
+                        fontSize: "16px",
+                      }}
+                    >
+                      🚗{" "}
+                      {numeroVehiculo
+                        ? `Vehículo ${numeroVehiculo}`
+                        : "Vehículo"}
+                    </strong>
+
+                    <strong
+                      style={{
+                        fontSize: "16px",
+                      }}
+                    >
+                      · {dominioVehiculo}
+                    </strong>
+                  </div>
+
+                  <div className="evento-datos-linea">
+
+                    <div>
+                      <span>
+                        Marca
+                      </span>
+
+                      <strong>
+                        {vehiculo.marca ||
+                          "—"}
+                      </strong>
+                    </div>
+
+                    <div>
+                      <span>
+                        Modelo
+                      </span>
+
+                      <strong>
+                        {vehiculo.modelo ||
+                          "—"}
+                      </strong>
+                    </div>
+
+                    <div>
+                      <span>
+                        Color
+                      </span>
+
+                      <strong>
+                        {vehiculo.color ||
+                          "—"}
+                      </strong>
+                    </div>
+
+                  </div>
+                </div>
+
+                {/* ====================================
+                    FOTOS DEL MISMO VEHÍCULO
+                ==================================== */}
+
+                {esSistemaNuevoVehiculos && (
+                  <div className="evidencia-vehiculo-fotos">
+
+                    {/* FOTO DEL AUTO */}
+
+                    <div className="evidencia-vehiculo-foto">
+                      <strong className="evidencia-visita-titulo">
+                        📷 Foto del vehículo
+                      </strong>
+
+                      <span className="evidencia-visita-descripcion">
+                        {numeroVehiculo
+                          ? `Vehículo ${numeroVehiculo} · ${dominioVehiculo}`
+                          : dominioVehiculo}
+                      </span>
+
+                      {hayFotoVehiculoActual ? (
+                        <FotosReclamo
+                          reclamoId={
+                            reclamo.id
+                          }
+                          tipoReferencia="VEHICULO"
+                          referenciaId={
+                            vehiculo.id
+                          }
+                          permitirSubir={
+                            false
+                          }
+                        />
+                      ) : (
+                        <span className="evidencia-visita-descripcion">
+                          Sin fotografía registrada
+                        </span>
+                      )}
+                    </div>
+
+                    {/* FOTO DEL EMPLAZAMIENTO */}
+
+                    {acta &&
+                      emplazamiento && (
+                        <div className="evidencia-vehiculo-foto">
+                          <strong className="evidencia-visita-titulo">
+                            📝 Emplazamiento
+                          </strong>
+
+                          <span className="evidencia-visita-descripcion">
+                            {numeroVehiculo
+                              ? `Vehículo ${numeroVehiculo} · ${dominioVehiculo}`
+                              : dominioVehiculo}
+                            {" · "}
+                            Acta N.º{" "}
+                            {acta.numeroActa ||
+                              "—"}
+                          </span>
+
+                          <FotosReclamo
+                            reclamoId={
+                              reclamo.id
+                            }
+                            tipoReferencia="EMPLAZAMIENTO"
+                            referenciaId={
+                              emplazamiento.id
+                            }
+                            permitirSubir={
+                              false
+                            }
+                          />
+                        </div>
+                      )}
+
+                  </div>
+                )}
+
+              </div>
+            )}
+
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
 
             if (
               evento.tipo ===
@@ -2710,11 +3531,13 @@ return lista.sort((a, b) => {
 
               return (
                 <>
-                  <span className="evento-etiqueta">
-                    CONTROL DEL EMPLAZAMIENTO
-                  </span>
+                <span className="evento-etiqueta">
+  CONTROL DEL EMPLAZAMIENTO
+</span>
 
-                  <h3>
+{etiquetaVehiculo}
+
+<h3>
                     {nombreUsuario(
                       verificacion
                         .inspector
@@ -2934,11 +3757,13 @@ return lista.sort((a, b) => {
             ) {
               return (
                 <>
-                  <span className="evento-etiqueta">
-                    ACTA DE INFRACCIÓN
-                  </span>
+              <span className="evento-etiqueta">
+  ACTA DE INFRACCIÓN
+</span>
 
-                  <h3>
+{etiquetaVehiculo}
+
+<h3>
                     N.º{" "}
                     {
                       datos
@@ -3043,6 +3868,7 @@ return lista.sort((a, b) => {
                   <span className="evento-etiqueta juzgado">
                     ⚖ DOCUMENTACIÓN ENVIADA AL JUZGADO
                   </span>
+                  {etiquetaVehiculo}
 
                   <h3>
                     Acta de Infracción N.º{" "}
@@ -3053,18 +3879,19 @@ return lista.sort((a, b) => {
                   </h3>
 
                   <div className="evento-datos-linea">
-                    <div>
-                      <span>
-                        Registrado por
-                      </span>
+                   <div>
+  <span>
+    Secretaría de Reclamos
+  </span>
 
-                      <strong>
-                        {nombreUsuario(
-                          datos
-                            .enviadoJuzgadoPor
-                        )}
-                      </strong>
-                    </div>
+  <strong>
+    {nombreUsuario(
+      datos
+        .enviadoJuzgadoPor
+    )}{" "}
+    envió la infracción al Juzgado
+  </strong>
+</div>
 
                     <div>
                       <span>
@@ -3092,6 +3919,7 @@ return lista.sort((a, b) => {
                   <span className="evento-etiqueta juzgado">
                     ⚖ RESPUESTA DEL JUZGADO
                   </span>
+                    {etiquetaVehiculo}
 
                   <h3>
                     {nombresJuzgado[
@@ -3156,6 +3984,8 @@ return lista.sort((a, b) => {
         <span className="evento-etiqueta juzgado">
           ⚖ ORDEN JUDICIAL DE REMOCIÓN SOLICITADA
         </span>
+
+        {etiquetaVehiculo}
 
         <h3>
           Se solicitó autorización para
@@ -3250,7 +4080,7 @@ return lista.sort((a, b) => {
             ? "⚖ ORDEN JUDICIAL DE REMOCIÓN AUTORIZADA"
             : "⚖ ORDEN JUDICIAL DE REMOCIÓN NO AUTORIZADA"}
         </span>
-
+{etiquetaVehiculo}
         <h3>
           {autorizada
             ? "El Juzgado autorizó retirar el vehículo"
@@ -3330,164 +4160,223 @@ return lista.sort((a, b) => {
   }
 
   
-            if (
-              evento.tipo ===
-              "REMOCION"
-            ) {
-              const vehiculo =
-                datos.vehiculo ||
-                seguimiento
-                  .vehiculos
-                  .find(
-                    (item) =>
-                      Number(
-                        item.id
-                      ) ===
-                      Number(
-                        datos.vehiculoId
-                      )
-                  );
+if (
+  evento.tipo ===
+  "REMOCION"
+) {
+const vehiculo =
+  datos.vehiculo ||
+  datos.Vehiculo ||
+  seguimiento.vehiculos.find(
+    (item) =>
+      Number(item.id) ===
+      Number(datos.vehiculoId)
+  ) ||
+  (
+    seguimiento.vehiculos.length === 1
+      ? seguimiento.vehiculos[0]
+      : null
+  );
 
-                  
+  const identificacion =
+    obtenerIdentificacionVehiculo({
+      ...datos,
+      vehiculoId:
+        datos.vehiculoId ||
+        vehiculo?.id,
+    });
 
-              return (
-                <>
-                  <span className="evento-etiqueta remocion">
-                    🚛 VEHÍCULO RETIRADO
-                  </span>
+  const inventario =
+    datos.inventario ||
+    datos.InventarioVehiculo ||
+    seguimiento.inventarios.find(
+      (item) =>
+        Number(item.id) ===
+        Number(datos.inventarioId)
+    ) ||
+    null;
 
-                  <h3>
-                    {vehiculo
-                      ? `${vehiculo.marca || ""} ${vehiculo.modelo || ""}`.trim() ||
-                        "Vehículo"
-                      : "Vehículo"}
-                  </h3>
+  return (
+    <>
+      <span className="evento-etiqueta remocion">
+        🚛 VEHÍCULO RETIRADO
+      </span>
 
-                  <div className="evento-datos-linea">
-                    <div>
-                      <span>
-                        Dominio
-                      </span>
+      {identificacion && (
+        <div className="cronologia-vehiculo">
+          <span>
+            🚗{" "}
+            {identificacion.numero
+              ? `Vehículo ${identificacion.numero}`
+              : "Vehículo"}
+          </span>
 
-                      <strong>
-                        {vehiculo
-                          ?.dominio ||
-                          "Sin dominio"}
-                      </strong>
-                    </div>
+          <strong>
+            {identificacion.dominio}
+          </strong>
+        </div>
+      )}
 
-                    <div>
-                      <span>
-                        Destino
-                      </span>
+      <h3>
+        {vehiculo
+          ? `${vehiculo.marca || ""} ${vehiculo.modelo || ""}`.trim() ||
+            "Vehículo"
+          : "Vehículo"}
+      </h3>
 
-                      <strong>
-                        {datos
-                          .destino ||
-                          "—"}
-                      </strong>
-                    </div>
+      <div className="evento-datos-linea">
+        <div>
+          <span>Dominio</span>
+          <strong>
+            {vehiculo?.dominio ||
+              vehiculo?.patente ||
+              "Sin dominio"}
+          </strong>
+        </div>
 
-                    <div>
-                      <span>
-                        Grúa
-                      </span>
+        <div>
+          <span>Destino</span>
+          <strong>
+            {datos.destino || "—"}
+          </strong>
+        </div>
 
-                      <strong>
-                        {datos
-                          .grua ||
-                          "—"}
-                      </strong>
-                    </div>
+        <div>
+          <span>Grúa</span>
+          <strong>
+            {datos.grua || "—"}
+          </strong>
+        </div>
 
-                    <div>
-                      <span>
-                        Chofer
-                      </span>
+        <div>
+          <span>Chofer</span>
+          <strong>
+            {datos.chofer || "—"}
+          </strong>
+        </div>
 
-                      <strong>
-                        {datos
-                          .chofer ||
-                          "—"}
-                      </strong>
-                    </div>
+        <div>
+          <span>Inspector</span>
+          <strong>
+            {nombreUsuario(
+              datos.inspector
+            )}
+          </strong>
+        </div>
 
-                    <div>
-                      <span>
-                        Inspector
-                      </span>
+        <div>
+          <span>Fecha del retiro</span>
+          <strong>
+            {formatearFecha(
+              datos.fechaHora ||
+              datos.createdAt
+            )}
+          </strong>
+        </div>
+      </div>
 
-                      <strong>
-                        {nombreUsuario(
-                          datos.inspector
-                        )}
-                      </strong>
-                    </div>
-                  </div>
+      {datos.observaciones && (
+        <div className="evento-texto">
+          <span>Observaciones</span>
+          <p>
+            {datos.observaciones}
+          </p>
+        </div>
+      )}
 
-                  {datos
-  .observaciones && (
-  <div className="evento-texto">
-    <span>
-      Observaciones
-    </span>
-
-    <p>
-      {
-        datos
-          .observaciones
-      }
-    </p>
-  </div>
-)}
-
-<div className="evento-fotos">
+    <div className="evento-fotos">
   <strong>
     📷 Vehículo cargado en la grúa
   </strong>
 
   <FotosReclamo
-    reclamoId={
-      reclamo.id
-    }
+    reclamoId={reclamo.id}
     tipoReferencia="REMOCION"
-    permitirSubir={
-      false
+    referenciaId={
+      datos.vehiculoId ||
+      vehiculo?.id
     }
+    permitirSubir={false}
   />
 </div>
 
-{(datos
-  .inventarioId ||
-  datos
-    .inventario ||
-  datos
-    .InventarioVehiculo) && (
-                    <button
-                      type="button"
-                      className="boton-inventario"
-                      onClick={() =>
-                        abrirInventario(
-                          datos
-                        )
-                      }
-                    >
-                      🚗 Ver cómo estaba el vehículo
-                    </button>
-                  )}
+      {inventario && (
+        <div className="evento-subseccion">
+          <span>
+            INVENTARIO DEL VEHÍCULO
+          </span>
 
-                 
-                </>
-              );
+          <strong>
+            Inventario registrado
+          </strong>
+
+          <button
+            type="button"
+            className="boton-inventario"
+            onClick={() =>
+              abrirInventario(datos)
             }
-
-
-         if (
+          >
+            🚗 Ver inventario completo
+          </button>
+        </div>
+      )}
+    </>
+  );
+}
+       if (
   evento.tipo ===
   "INGRESO_PREDIO"
 ) {
-  const vehiculo =
-    datos.vehiculo;
+ const vehiculo =
+  datos.vehiculo ||
+  datos.Vehiculo ||
+  seguimiento.vehiculos.find(
+    (item) =>
+      Number(item.id) ===
+      Number(datos.vehiculoId)
+  ) ||
+  (
+    seguimiento.vehiculos.length === 1
+      ? seguimiento.vehiculos[0]
+      : null
+  );
+
+  const identificacion =
+    obtenerIdentificacionVehiculo({
+      ...datos,
+      vehiculoId:
+        datos.vehiculoId ||
+        vehiculo?.id,
+    });
+
+  const remocionVehiculo =
+    [...seguimiento.remociones]
+      .filter(
+        (item) =>
+          Number(item.vehiculoId) ===
+          Number(
+            datos.vehiculoId ||
+            vehiculo?.id
+          )
+      )
+      .sort(
+        (a, b) =>
+          Number(b.id) -
+          Number(a.id)
+      )[0] || null;
+
+  const inventario =
+    remocionVehiculo?.inventario ||
+    remocionVehiculo?.InventarioVehiculo ||
+    seguimiento.inventarios.find(
+      (item) =>
+        Number(item.id) ===
+        Number(
+          remocionVehiculo?.inventarioId
+        )
+    ) ||
+    null;
 
   return (
     <>
@@ -3495,86 +4384,140 @@ return lista.sort((a, b) => {
         ✅ VEHÍCULO RECIBIDO EN EL PREDIO
       </span>
 
+      {identificacion && (
+        <div className="cronologia-vehiculo">
+          <span>
+            🚗{" "}
+            {identificacion.numero
+              ? `Vehículo ${identificacion.numero}`
+              : "Vehículo"}
+          </span>
+
+          <strong>
+            {identificacion.dominio}
+          </strong>
+        </div>
+      )}
+
       <h3>
-        {datos
-          .predio
-          ?.nombre ||
+        {datos.predio?.nombre ||
+          datos.Predio?.nombre ||
           "Predio municipal"}
       </h3>
 
       <div className="evento-datos-linea">
         <div>
-          <span>
-            Vehículo
-          </span>
+          <span>Vehículo</span>
 
           <strong>
-            {vehiculo
-              ?.numeroInterno
+            {vehiculo?.numeroInterno
               ? `Interno N.º ${vehiculo.numeroInterno}`
-              : vehiculo
-                  ?.dominio ||
+              : vehiculo?.dominio ||
+                vehiculo?.patente ||
                 "—"}
           </strong>
         </div>
 
-        <div>
-          <span>
-            Sector
-          </span>
+        {(vehiculo?.marca ||
+          vehiculo?.modelo) && (
+          <div>
+            <span>Descripción</span>
 
+            <strong>
+              {[
+                vehiculo.marca,
+                vehiculo.modelo,
+                vehiculo.color,
+              ]
+                .filter(Boolean)
+                .join(" · ")}
+            </strong>
+          </div>
+        )}
+
+        <div>
+          <span>Sector</span>
           <strong>
-            {datos
-              .sector ||
-              "—"}
+            {datos.sector || "—"}
           </strong>
         </div>
 
         <div>
-          <span>
-            Precinto
-          </span>
-
+          <span>Posición / Precinto</span>
           <strong>
-            {datos
-              .posicion ||
-              "—"}
+            {datos.posicion || "—"}
           </strong>
         </div>
 
         <div>
-          <span>
-            Registrado por
-          </span>
+          <span>Fecha de ingreso</span>
+          <strong>
+            {formatearFecha(
+              datos.fechaHora ||
+              datos.createdAt
+            )}
+          </strong>
+        </div>
 
+        <div>
+          <span>Recibido por</span>
           <strong>
             {nombreUsuario(
-              datos
-                .registradoPor
+              datos.registradoPor
             )}
           </strong>
         </div>
       </div>
 
-      {datos
-        .observaciones && (
+      {remocionVehiculo && (
+        <div className="evento-subseccion">
+          <span>
+            DATOS DEL RETIRO
+          </span>
+
+          <div className="evento-datos-linea">
+            <div>
+              <span>Destino informado</span>
+              <strong>
+                {remocionVehiculo.destino ||
+                  "—"}
+              </strong>
+            </div>
+
+            <div>
+              <span>Grúa</span>
+              <strong>
+                {remocionVehiculo.grua ||
+                  "—"}
+              </strong>
+            </div>
+
+            <div>
+              <span>Chofer</span>
+              <strong>
+                {remocionVehiculo.chofer ||
+                  "—"}
+              </strong>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {datos.observaciones && (
         <div className="evento-texto">
           <span>
-            Observaciones
+            Observaciones del ingreso
           </span>
 
           <p>
-            {
-              datos
-                .observaciones
-            }
+            {datos.observaciones}
           </p>
         </div>
       )}
 
       <div className="evento-fotos">
         <strong>
-          📷 Evidencia del predio
+          📷 Evidencia del ingreso al predio
         </strong>
 
         <FotosReclamo
@@ -3584,6 +4527,21 @@ return lista.sort((a, b) => {
           permitirSubir={false}
         />
       </div>
+
+      {inventario &&
+        remocionVehiculo && (
+          <button
+            type="button"
+            className="boton-inventario"
+            onClick={() =>
+              abrirInventario(
+                remocionVehiculo
+              )
+            }
+          >
+            🚗 Ver inventario completo del vehículo
+          </button>
+        )}
     </>
   );
 }
@@ -3591,35 +4549,130 @@ if (
   evento.tipo ===
   "EGRESO_PREDIO"
 ) {
+const vehiculo =
+  datos.vehiculo ||
+  datos.Vehiculo ||
+  seguimiento.vehiculos.find(
+    (item) =>
+      Number(item.id) ===
+      Number(datos.vehiculoId)
+  ) ||
+  (
+    seguimiento.vehiculos.length === 1
+      ? seguimiento.vehiculos[0]
+      : null
+  );
+  const identificacion =
+    obtenerIdentificacionVehiculo({
+      ...datos,
+      vehiculoId:
+        datos.vehiculoId ||
+        vehiculo?.id,
+    });
+
+  const ingresoAnterior =
+    [...seguimiento.ingresosPredio]
+      .filter(
+        (item) =>
+          Number(item.vehiculoId) ===
+          Number(
+            datos.vehiculoId ||
+            vehiculo?.id
+          )
+      )
+      .sort(
+        (a, b) =>
+          Number(b.id) -
+          Number(a.id)
+      )[0] || null;
+
   return (
     <>
       <span className="evento-etiqueta salida">
-        ✅ SALIDA / ENTREGA DEL VEHÍCULO
+        🚪 SALIDA DEL PREDIO
       </span>
+
+      {identificacion && (
+        <div className="cronologia-vehiculo">
+          <span>
+            🚗{" "}
+            {identificacion.numero
+              ? `Vehículo ${identificacion.numero}`
+              : "Vehículo"}
+          </span>
+
+          <strong>
+            {identificacion.dominio}
+          </strong>
+        </div>
+      )}
 
       <h3>
         {nombresEgreso[
           datos.tipoEgreso
         ] ||
+          datos.tipoEgreso ||
           "Salida registrada"}
       </h3>
 
       <div className="evento-datos-linea">
+        <div>
+          <span>Vehículo</span>
+
+          <strong>
+            {vehiculo?.dominio ||
+              vehiculo?.patente ||
+              "—"}
+          </strong>
+        </div>
+
+        <div>
+          <span>Tipo de salida</span>
+
+          <strong>
+            {nombresEgreso[
+              datos.tipoEgreso
+            ] ||
+              datos.tipoEgreso ||
+              "—"}
+          </strong>
+        </div>
+
+        <div>
+          <span>Fecha de salida</span>
+
+          <strong>
+            {formatearFecha(
+              datos.fechaHora ||
+              datos.createdAt
+            )}
+          </strong>
+        </div>
+
+        {ingresoAnterior && (
+          <div>
+            <span>
+              Salió de
+            </span>
+
+            <strong>
+              {ingresoAnterior.predio?.nombre ||
+                ingresoAnterior.Predio?.nombre ||
+                "Predio municipal"}
+            </strong>
+          </div>
+        )}
+
         {datos.tipoEgreso ===
           "TRASLADADO" &&
-          datos.predioDestino
-            ?.nombre && (
+          datos.predioDestino?.nombre && (
             <div>
               <span>
                 Destino del traslado
               </span>
 
               <strong>
-                {
-                  datos
-                    .predioDestino
-                    .nombre
-                }
+                {datos.predioDestino.nombre}
               </strong>
             </div>
           )}
@@ -3638,9 +4691,7 @@ if (
 
         {datos.dniPersona && (
           <div>
-            <span>
-              DNI
-            </span>
+            <span>DNI</span>
 
             <strong>
               {datos.dniPersona}
@@ -3649,52 +4700,44 @@ if (
         )}
 
         {datos.numeroOficio && (
-  <div>
-    <span>
-      N.º de oficio
-    </span>
+          <div>
+            <span>N.º de oficio</span>
 
-    <strong>
-      {datos.numeroOficio}
-    </strong>
-  </div>
-)}
+            <strong>
+              {datos.numeroOficio}
+            </strong>
+          </div>
+        )}
 
-{datos.numeroLibro && (
-  <div>
-    <span>
-      N.º de libro
-    </span>
+        {datos.numeroLibro && (
+          <div>
+            <span>N.º de libro</span>
 
-    <strong>
-      {datos.numeroLibro}
-    </strong>
-  </div>
-)}
+            <strong>
+              {datos.numeroLibro}
+            </strong>
+          </div>
+        )}
 
-{datos.numeroPagina && (
-  <div>
-    <span>
-      N.º de página
-    </span>
+        {datos.numeroPagina && (
+          <div>
+            <span>N.º de página</span>
 
-    <strong>
-      {datos.numeroPagina}
-    </strong>
-  </div>
-)}
+            <strong>
+              {datos.numeroPagina}
+            </strong>
+          </div>
+        )}
 
-<div>
-  <span>
-    Registrado por
-  </span>
+        <div>
+          <span>Registrado por</span>
 
-  <strong>
-    {nombreUsuario(
-      datos.registradoPor
-    )}
-  </strong>
-</div>
+          <strong>
+            {nombreUsuario(
+              datos.registradoPor
+            )}
+          </strong>
+        </div>
       </div>
 
       {datos.observaciones && (
@@ -3711,7 +4754,6 @@ if (
     </>
   );
 }
-
             return null;
           };
 
@@ -3781,262 +4823,591 @@ if (
             {/* =================================================
                 RESUMEN DE 5 SEGUNDOS
             ================================================= */}
+<section className="resumen-rapido">
+  <div className="resumen-rapido-cabecera">
+    <div>
+      <span>ESTADO RÁPIDO</span>
 
-            <section className="resumen-rapido">
+      <h2>
+        ¿Dónde está parado este reclamo?
+      </h2>
 
-              <div className="resumen-rapido-cabecera">
-                <div>
-                  <span>
-                    ESTADO RÁPIDO
-                  </span>
+      {vehiculosDelReclamo.length > 1 && (
+        <p>
+          Este reclamo tiene{" "}
+          <strong>
+            {vehiculosDelReclamo.length} vehículos
+          </strong>
+          . Cada uno puede estar en una etapa diferente.
+        </p>
+      )}
+    </div>
+  </div>
 
-                  <h2>
-                    ¿Dónde está parado este reclamo?
-                  </h2>
-                </div>
+  {vehiculosDelReclamo.length > 0 ? (
+    <div className="vehiculos-reclamo-lista">
+      {vehiculosDelReclamo.map((item) => {
+       const {
+  vehiculo,
+  indice,
+  dominio,
+  descripcion,
+  estadoTexto,
+  estadoDetalle,
+  actaViaPublica,
+  ultimoEmplazamiento,
+  ultimaVerificacion,
+  ultimaInfraccion,
+  ultimaRemocion,
+  ultimoIngreso,
+  ultimoEgreso,
+  inventario,
+} = item;
 
-                {resumen
-                  .vehiculo && (
-                  <div className="resumen-vehiculo-titulo">
-                    🚗{" "}
-                    <strong>
-                      {`${resumen.vehiculo.marca || ""} ${resumen.vehiculo.modelo || ""}`.trim() ||
-                        "Vehículo"}
+      
 
-                      {resumen
-                        .vehiculo
-                        .dominio
-                        ? ` · ${resumen.vehiculo.dominio}`
-                        : ""}
-                    </strong>
-                  </div>
+        return (
+          <article
+            key={vehiculo.id}
+            className="vehiculo-reclamo-card"
+          >
+            <div className="vehiculo-reclamo-titulo">
+              <div>
+                <span className="vehiculo-reclamo-numero">
+                  {vehiculosDelReclamo.length > 1
+                    ? `VEHÍCULO ${indice}`
+                    : "VEHÍCULO"}
+                </span>
+
+                <h3>
+                  {dominio}
+                </h3>
+
+                {descripcion && (
+                  <p>{descripcion}</p>
                 )}
               </div>
 
+              <div className="vehiculo-reclamo-estado">
+                <strong>
+                  {estadoTexto}
+                </strong>
 
-              {resumen
-                .vehiculo && (
-                <div className="resumen-ubicacion-principal">
-                  <div className="resumen-icono">
-                    📍
-                  </div>
+                {estadoDetalle && (
+                  <span>
+                    {estadoDetalle}
+                  </span>
+                )}
+              </div>
+            </div>
 
-                  <div>
-                    <span>
-                      DÓNDE ESTÁ EL VEHÍCULO
-                    </span>
+            <div className="vehiculo-reclamo-datos">
+              <div className="vehiculo-reclamo-dato">
+                <span>
+                  📄 ACTA DE VÍA PÚBLICA
+                </span>
 
+                {actaViaPublica ? (
+                  <>
                     <strong>
-                      {
-                        resumen
-                          .ubicacionTitulo
-                      }
+                      N.º{" "}
+                      {actaViaPublica.numeroActa || "—"}
                     </strong>
 
-                    <p>
-                      {
-                        resumen
-                          .ubicacionDetalle
-                      }
-                    </p>
-                  </div>
+                    {actaViaPublica.fechaHora && (
+                      <small>
+                        {formatearFecha(
+                          actaViaPublica.fechaHora
+                        )}
+                      </small>
+                    )}
+                  </>
+                ) : (
+                  <strong>
+                    No registrada
+                  </strong>
+                )}
+              </div>
+
+              {ultimoEmplazamiento && (
+                <div className="vehiculo-reclamo-dato">
+                  <span>
+                    ⏱{" "}
+                    {ultimoEmplazamiento.esProrroga
+                      ? "PRÓRROGA"
+                      : "EMPLAZAMIENTO"}
+                  </span>
+
+                  <strong>
+                    {ultimoEmplazamiento.estado === "VIGENTE"
+                      ? "Plazo vigente"
+                      : ultimoEmplazamiento.estado === "VENCIDO"
+                      ? "Plazo vencido"
+                      : ultimoEmplazamiento.estado || "Registrado"}
+                  </strong>
+
+                  {ultimoEmplazamiento.fechaVencimiento && (
+                    <small>
+                      Vence:{" "}
+                      {formatearFecha(
+                        ultimoEmplazamiento.fechaVencimiento
+                      )}
+                    </small>
+                  )}
                 </div>
               )}
 
-
-              <div className="resumen-tramites">
-
-                <div className="resumen-tramite">
+              {ultimaVerificacion && (
+                <div className="vehiculo-reclamo-dato">
                   <span>
-                    📄 ACTA VÍA PÚBLICA
+                    🔎 ÚLTIMO CONTROL
                   </span>
 
-                  {resumen
-                    .actaViaPublica ? (
-                    <>
-                      <strong>
-                        ✓ Hecha · N.º{" "}
-                        {
-                          resumen
-                            .actaViaPublica
-                            .numeroActa
-                        }
-                      </strong>
+                  <strong>
+                    {nombresResultadoControl[
+                      ultimaVerificacion.resultado
+                    ] ||
+                      ultimaVerificacion.resultado ||
+                      "Registrado"}
+                  </strong>
 
-                      <small>
-                        {formatearFecha(
-                          resumen
-                            .actaViaPublica
-                            .fechaHora
-                        )}
-                      </small>
-                    </>
-                  ) : (
-                    <strong>
-                      Todavía no realizada
-                    </strong>
+                  {(ultimaVerificacion.fechaHora ||
+                    ultimaVerificacion.createdAt) && (
+                    <small>
+                      {formatearFecha(
+                        ultimaVerificacion.fechaHora ||
+                          ultimaVerificacion.createdAt
+                      )}
+                    </small>
                   )}
                 </div>
+              )}
+{ultimaInfraccion && (
+  <div className="vehiculo-reclamo-dato">
+    <span>
+      ⚖️ JUZGADO
+    </span>
 
+    <strong>
+      Acta N.º{" "}
+      {ultimaInfraccion.numeroActa || "—"}
+    </strong>
 
-                <div className="resumen-tramite">
-                  <span>
-                    📝 ACTA DE INFRACCIÓN
-                  </span>
-
-                  {resumen
-                    .infraccion ? (
-                    <>
-                      <strong>
-                        ✓ Hecha · N.º{" "}
-                        {
-                          resumen
-                            .infraccion
-                            .numeroActa
-                        }
-                      </strong>
-
-                      <small>
-                        {formatearFecha(
-                          resumen
-                            .infraccion
-                            .fechaHora
-                        )}
-                      </small>
-                    </>
-                  ) : (
-                    <strong>
-                      Todavía no realizada
-                    </strong>
-                  )}
-                </div>
-
-
-              <div
-      className={`resumen-tramite resumen-juzgado juzgado-${resumen.juzgadoClase}`}
-    >
-      <span>
-        ⚖ JUZGADO
-      </span>
-
-      <strong>
-        {
-          resumen
-            .juzgadoTitulo
-        }
-      </strong>
-
+    {!ultimaInfraccion.fechaEnvioJuzgado && (
       <small>
-        {
-          resumen
-            .juzgadoDetalle
-        }
+        Acta de infracción registrada
       </small>
+    )}
 
-      {resumen
-        .juzgadoRespuesta && (
-        <div className="resumen-juzgado-respuesta">
-          <span>
-            RESPUESTA DEL JUZGADO
-          </span>
+    {ultimaInfraccion.fechaEnvioJuzgado && (
+      <>
+        <small>
+          📤 Infracción enviada al Juzgado
+        </small>
 
-          <p>
-            {
-              resumen
-                .juzgadoRespuesta
-            }
-          </p>
-        </div>
-      )}
+        {ultimaInfraccion.enviadoJuzgadoPor && (
+          <small>
+            Secretaría:{" "}
+            {nombreUsuario(
+              ultimaInfraccion.enviadoJuzgadoPor
+            )}
+          </small>
+        )}
+      </>
+    )}
 
-      {(resumen
-        .juzgadoExpediente ||
-        resumen
-          .juzgadoFechaRespuesta) && (
-        <div className="resumen-juzgado-datos">
+    {ultimaInfraccion.fechaRespuestaJuzgado && (
+      <small>
+        ⚖ Respuesta:{" "}
+        {nombresJuzgado[
+          ultimaInfraccion.estadoJuzgado
+        ] ||
+          ultimaInfraccion.estadoJuzgado ||
+          "Registrada"}
+      </small>
+    )}
 
-          {resumen
-            .juzgadoExpediente && (
-            <div>
-              <span>
-                Expediente
-              </span>
+    {ultimaInfraccion.requiereOrdenRemocion &&
+  ultimaInfraccion.estadoOrdenRemocion ===
+    "PENDIENTE_SOLICITUD" && (
+    <small>
+      ⚖️ Pendiente de solicitar orden judicial
+    </small>
+  )}
 
-              <strong>
-                {
-                  resumen
-                    .juzgadoExpediente
-                }
-              </strong>
+{ultimaInfraccion.requiereOrdenRemocion &&
+  ultimaInfraccion.estadoOrdenRemocion ===
+    "ESPERANDO_RESPUESTA" && (
+    <small>
+      ⏳ Secretaría solicitó la orden judicial.
+      Esperando respuesta del juez para remover
+      este vehículo.
+    </small>
+  )}
+
+    {ultimaInfraccion.fechaSolicitudOrdenRemocion && (
+      <small>
+        🚛 Orden de remoción solicitada
+      </small>
+    )}
+
+    {ultimaInfraccion.estadoOrdenRemocion ===
+      "AUTORIZADA" && (
+      <small>
+        ✅ Remoción autorizada por el Juzgado
+      </small>
+    )}
+
+    {ultimaInfraccion.estadoOrdenRemocion ===
+      "NO_AUTORIZADA" && (
+      <small>
+        ❌ Remoción no autorizada por el Juzgado
+      </small>
+    )}
+
+    {ultimaInfraccion.numeroExpedienteJuzgado && (
+      <small>
+        Expediente:{" "}
+        {ultimaInfraccion.numeroExpedienteJuzgado}
+      </small>
+    )}
+  </div>
+)}
+
+
+{ultimaInfraccion && (
+  <div className="vehiculo-reclamo-evidencia">
+    <strong>
+      📷 Evidencia del Acta de Infracción
+    </strong>
+
+    <FotosReclamo
+      reclamoId={reclamo.id}
+      tipoReferencia="INFRACCION"
+      referenciaId={ultimaInfraccion.id}
+      permitirSubir={false}
+    />
+  </div>
+)}
+
+              {ultimaRemocion && (
+                <div className="vehiculo-reclamo-dato">
+                  <span>
+                    🚛 REMOCIÓN
+                  </span>
+
+                  <strong>
+                    Retirado de la vía pública
+                  </strong>
+
+                  {ultimaRemocion.destino && (
+                    <small>
+                      Destino:{" "}
+                      {ultimaRemocion.destino}
+                    </small>
+                  )}
+                </div>
+              )}
+
+              {ultimoIngreso && (
+                <div className="vehiculo-reclamo-dato">
+                  <span>
+                    🏢 INGRESO AL PREDIO
+                  </span>
+
+                  <strong>
+                    {ultimoIngreso.predio?.nombre ||
+                      ultimoIngreso.Predio?.nombre ||
+                      "Ingreso registrado"}
+                  </strong>
+
+                  {(ultimoIngreso.sector ||
+                    ultimoIngreso.posicion) && (
+                    <small>
+                      {[
+                        ultimoIngreso.sector
+                          ? `Sector ${ultimoIngreso.sector}`
+                          : null,
+                        ultimoIngreso.posicion
+                          ? `Posición ${ultimoIngreso.posicion}`
+                          : null,
+                      ]
+                        .filter(Boolean)
+                        .join(" · ")}
+                    </small>
+                  )}
+                </div>
+              )}
+
+              {ultimoEgreso && (
+                <div className="vehiculo-reclamo-dato">
+                  <span>
+                    🚪 SALIDA DEL PREDIO
+                  </span>
+
+                  <strong>
+                    {nombresEgreso[
+                      ultimoEgreso.tipoEgreso
+                    ] ||
+                      ultimoEgreso.tipoEgreso ||
+                      "Salida registrada"}
+                  </strong>
+
+                  {ultimoEgreso.destinoPersona && (
+                    <small>
+                      Entregado a:{" "}
+                      {ultimoEgreso.destinoPersona}
+                    </small>
+                  )}
+
+                  {ultimoEgreso.predioDestino?.nombre && (
+                    <small>
+                      Destino:{" "}
+                      {ultimoEgreso.predioDestino.nombre}
+                    </small>
+                  )}
+                </div>
+              )}
             </div>
-          )}
 
-          {resumen
-            .juzgadoFechaRespuesta && (
-            <div>
-              <span>
-                Respuesta registrada
-              </span>
-
-              <strong>
-                {formatearFecha(
-                  resumen
-                    .juzgadoFechaRespuesta
-                )}
-              </strong>
-            </div>
-          )}
-
-        </div>
-      )}
-    </div>
-
-              </div>
-
-
-              {resumen
-                .ultimaRemocion &&
-                (
-                  resumen
-                    .ultimaRemocion
-                    .inventarioId ||
-                  resumen
-                    .inventario
-                ) && (
-                <div className="resumen-acciones">
+            {ultimaRemocion &&
+              (ultimaRemocion.inventarioId ||
+                inventario) && (
+                <div className="vehiculo-reclamo-acciones">
                   <button
                     type="button"
                     className="boton-inventario"
                     onClick={() =>
                       abrirInventario(
-                        resumen
-                          .ultimaRemocion
+                        ultimaRemocion
                       )
                     }
                   >
-                  🚗 Ver inventario del vehículo
-                  </button>
-
-                  <button
-                    type="button"
-                    className="boton-secundario"
-                    onClick={() =>
-                      document
-                        .getElementById(
-                          "historial-completo"
-                        )
-                        ?.scrollIntoView({
-                          behavior:
-                            "smooth",
-                        })
-                    }
-                  >
-                    Ver historial completo ↓
+                    🚗 Ver inventario de este vehículo
                   </button>
                 </div>
               )}
 
-            </section>
+
+              {ultimoIngreso && (
+  <div className="vehiculo-reclamo-final">
+    <div className="vehiculo-reclamo-final-titulo">
+      <span>🏢 PREDIO MUNICIPAL</span>
+
+      <strong>
+        {ultimoEgreso
+          ? "Finalizó su permanencia en el predio"
+          : "Actualmente en el predio"}
+      </strong>
+    </div>
+
+    <div className="vehiculo-reclamo-datos">
+      <div className="vehiculo-reclamo-dato">
+        <span>Predio</span>
+
+        <strong>
+          {ultimoIngreso.predio?.nombre ||
+            ultimoIngreso.Predio?.nombre ||
+            "Predio municipal"}
+        </strong>
+      </div>
+
+      {ultimoIngreso.sector && (
+        <div className="vehiculo-reclamo-dato">
+          <span>Sector</span>
+          <strong>
+            {ultimoIngreso.sector}
+          </strong>
+        </div>
+      )}
+
+      {ultimoIngreso.posicion && (
+        <div className="vehiculo-reclamo-dato">
+          <span>Posición</span>
+          <strong>
+            {ultimoIngreso.posicion}
+          </strong>
+        </div>
+      )}
+
+      <div className="vehiculo-reclamo-dato">
+        <span>Fecha de ingreso</span>
+
+        <strong>
+          {formatearFecha(
+            ultimoIngreso.fechaHora ||
+              ultimoIngreso.createdAt
+          )}
+        </strong>
+      </div>
+      {(ultimoIngreso.registradoPor?.nombre ||
+        ultimoIngreso.registradoPor?.usuario) && (
+        <div className="vehiculo-reclamo-dato">
+          <span>Recibido por</span>
+
+          <strong>
+            {ultimoIngreso.registradoPor?.nombre ||
+              ultimoIngreso.registradoPor?.usuario}
+          </strong>
+        </div>
+      )}
+    </div>
+
+    <div className="vehiculo-reclamo-evidencia">
+      <strong>
+        📷 Foto al recibir el vehículo en el predio
+      </strong>
+
+      <FotosReclamo
+        reclamoId={reclamo.id}
+        tipoReferencia="INGRESO_PREDIO"
+        referenciaId={ultimoIngreso.id}
+        permitirSubir={false}
+      />
+    </div>
+
+    {inventario && ultimaRemocion && (
+      <div className="vehiculo-reclamo-acciones">
+        <button
+          type="button"
+          className="boton-inventario"
+          onClick={() =>
+            abrirInventario(ultimaRemocion)
+          }
+        >
+          🚗 Ver inventario completo
+        </button>
+      </div>
+    )}
+
+    {ultimoEgreso && (
+      <div className="vehiculo-reclamo-egreso">
+        <div className="vehiculo-reclamo-final-titulo">
+          <span>🚪 EGRESO DEL PREDIO</span>
+
+          <strong>
+            {nombresEgreso[
+              ultimoEgreso.tipoEgreso
+            ] ||
+              ultimoEgreso.tipoEgreso ||
+              "Salida registrada"}
+          </strong>
+        </div>
+
+        <div className="vehiculo-reclamo-datos">
+          <div className="vehiculo-reclamo-dato">
+            <span>Fecha de salida</span>
+
+            <strong>
+              {formatearFecha(
+                ultimoEgreso.fechaHora ||
+                  ultimoEgreso.createdAt
+              )}
+            </strong>
+          </div>
+
+          {ultimoEgreso.destinoPersona && (
+            <div className="vehiculo-reclamo-dato">
+              <span>
+                Entregado / destino
+              </span>
+
+              <strong>
+                {ultimoEgreso.destinoPersona}
+              </strong>
+            </div>
+          )}
+
+          {ultimoEgreso.tipoEgreso ===
+            "TRASLADADO" && (
+            <div className="vehiculo-reclamo-dato">
+              <span>
+                Predio de destino
+              </span>
+
+              <strong>
+                {ultimoEgreso.predioDestino
+                  ?.nombre ||
+                  ultimoEgreso.PredioDestino
+                    ?.nombre ||
+                  "Otro predio"}
+              </strong>
+            </div>
+          )}
+
+          {ultimoEgreso.dniPersona && (
+            <div className="vehiculo-reclamo-dato">
+              <span>DNI</span>
+
+              <strong>
+                {ultimoEgreso.dniPersona}
+              </strong>
+            </div>
+          )}
+
+          {ultimoEgreso.numeroOficio && (
+            <div className="vehiculo-reclamo-dato">
+              <span>N.º de oficio</span>
+
+              <strong>
+                {ultimoEgreso.numeroOficio}
+              </strong>
+            </div>
+          )}
+        </div>
+      </div>
+    )}
+  </div>
+)}
+          </article>
+
+
+        );
+      })}
+    </div>
+  ) : (
+    <div className="resumen-tramites">
+      <div className="resumen-tramite">
+        <span>
+          ESTADO DEL RECLAMO
+        </span>
+
+        <strong>
+          {nombresEtapaActual[
+            reclamo.etapaActual
+          ] ||
+            nombresEstado[
+              reclamo.estado
+            ] ||
+            reclamo.etapaActual ||
+            reclamo.estado}
+        </strong>
+
+        <small>
+          Este reclamo no tiene vehículos registrados.
+        </small>
+      </div>
+    </div>
+  )}
+
+  <div className="resumen-acciones">
+    <button
+      type="button"
+      className="boton-secundario"
+      onClick={() =>
+        document
+          .getElementById(
+            "historial-completo"
+          )
+          ?.scrollIntoView({
+            behavior: "smooth",
+          })
+      }
+    >
+      Ver historial completo ↓
+    </button>
+  </div>
+</section>
 
               {puedeResolverProblema && (
               <section className="resolucion-director">
@@ -4602,26 +5973,187 @@ if (
                 </div>
               </div>
 
-              {eventos.length ===
+           {eventos.length === 0 ? (
+  <div className="seguimiento-sin-datos">
+    Todavía no hay actuaciones registradas.
+  </div>
+) : !historialPorVehiculo ? (
+
+  /*
+   * ==========================================
+   * SISTEMA VIEJO / UN SOLO VEHÍCULO
+   * ==========================================
+   */
+
+  <div className="linea-tiempo">
+    {eventos.map(
+      (evento) => (
+        <article
+          key={evento.id}
+          className={`evento-contenido evento-${evento.tipo.toLowerCase()}`}
+        >
+          <div className="evento-eje">
+            <span className="evento-punto" />
+          </div>
+
+          <div className="evento-cuerpo">
+            <div className="evento-fecha">
+              {formatearFecha(
+                evento.fecha
+              )}
+            </div>
+
+            {renderEvento(
+              evento
+            )}
+          </div>
+        </article>
+      )
+    )}
+  </div>
+
+) : (
+
+  /*
+   * ==========================================
+   * SISTEMA NUEVO / VARIOS VEHÍCULOS
+   * ==========================================
+   */
+
+  <div className="historial-por-vehiculo">
+
+    {/* EVENTOS GENERALES */}
+
+    {historialPorVehiculo
+      .generales.length > 0 && (
+      <div className="historial-general">
+
+        <div className="historial-grupo-titulo">
+          <span>
+            📋
+          </span>
+
+          <div>
+            <strong>
+              Datos generales del reclamo
+            </strong>
+
+            <small>
+              Reclamo y asignaciones
+            </small>
+          </div>
+        </div>
+
+        <div className="linea-tiempo">
+          {historialPorVehiculo
+            .generales.map(
+              (evento) => (
+                <article
+                  key={evento.id}
+                  className={`evento-contenido evento-${evento.tipo.toLowerCase()}`}
+                >
+                  <div className="evento-eje">
+                    <span className="evento-punto" />
+                  </div>
+
+                  <div className="evento-cuerpo">
+                    <div className="evento-fecha">
+                      {formatearFecha(
+                        evento.fecha
+                      )}
+                    </div>
+
+                    {renderEvento(
+                      evento
+                    )}
+                  </div>
+                </article>
+              )
+            )}
+        </div>
+
+      </div>
+    )}
+
+
+    {/* UN BLOQUE POR VEHÍCULO */}
+
+    {historialPorVehiculo
+      .grupos.map(
+        ({
+          vehiculo,
+          numero,
+          eventos:
+            eventosVehiculo,
+        }) => {
+
+          const dominio =
+            vehiculo.dominio ||
+            vehiculo.patente ||
+            "Sin dominio";
+
+          const descripcion = [
+            vehiculo.marca,
+            vehiculo.modelo,
+            vehiculo.color,
+          ]
+            .filter(Boolean)
+            .join(" · ");
+
+          return (
+            <section
+              key={vehiculo.id}
+              className="historial-vehiculo"
+            >
+
+              <div className="historial-vehiculo-cabecera">
+
+                <div className="historial-vehiculo-icono">
+                  🚗
+                </div>
+
+                <div className="historial-vehiculo-info">
+
+                  <span>
+                    VEHÍCULO {numero}
+                  </span>
+
+                  <strong>
+                    {dominio}
+                  </strong>
+
+                  {descripcion && (
+                    <small>
+                      {descripcion}
+                    </small>
+                  )}
+
+                </div>
+
+              </div>
+
+
+              {eventosVehiculo.length ===
               0 ? (
                 <div className="seguimiento-sin-datos">
-                  Todavía no hay actuaciones registradas.
+                  Este vehículo todavía no tiene actuaciones.
                 </div>
               ) : (
                 <div className="linea-tiempo">
-                  {eventos.map(
+
+                  {eventosVehiculo.map(
                     (evento) => (
                       <article
-                        key={
-                          evento.id
-                        }
+                        key={evento.id}
                         className={`evento-contenido evento-${evento.tipo.toLowerCase()}`}
                       >
+
                         <div className="evento-eje">
                           <span className="evento-punto" />
                         </div>
 
                         <div className="evento-cuerpo">
+
                           <div className="evento-fecha">
                             {formatearFecha(
                               evento.fecha
@@ -4631,12 +6163,23 @@ if (
                           {renderEvento(
                             evento
                           )}
+
                         </div>
+
                       </article>
                     )
                   )}
+
                 </div>
               )}
+
+            </section>
+          );
+        }
+      )}
+
+  </div>
+)}
             </section>
 
 

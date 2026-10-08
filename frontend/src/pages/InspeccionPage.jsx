@@ -251,7 +251,136 @@ const InspeccionPage = () => {
     setDescripcionVehiculo,
   ] = useState("");
 
-  /*
+
+ /*
+|--------------------------------------------------------------------------
+| MÚLTIPLES VEHÍCULOS
+|--------------------------------------------------------------------------
+*/
+
+const [
+  cantidadVehiculos,
+  setCantidadVehiculos,
+] = useState(1);
+
+const [
+  vehiculos,
+  setVehiculos,
+] = useState([]);
+
+const [
+  preparandoVehiculos,
+  setPreparandoVehiculos,
+] = useState(false);
+
+const actualizarVehiculo = (
+  indice,
+  campo,
+  valor
+) => {
+  setVehiculos((actuales) =>
+    actuales.map((vehiculo, i) =>
+      i === indice
+        ? {
+            ...vehiculo,
+            [campo]: valor,
+          }
+        : vehiculo
+    )
+  );
+};
+
+const prepararVehiculos = async () => {
+  try {
+    setError("");
+    setPreparandoVehiculos(true);
+
+    const cantidad =
+      Number(cantidadVehiculos);
+
+    if (
+      !Number.isInteger(cantidad) ||
+      cantidad < 1 ||
+      cantidad > 20
+    ) {
+      setError(
+        "Ingresá una cantidad de vehículos entre 1 y 20."
+      );
+
+      return;
+    }
+
+    const respuesta =
+      await api.post(
+        `/visitas/preparar-vehiculos/${reclamo.id}`,
+        {
+          cantidad,
+        }
+      );
+
+    const preparados =
+      respuesta.data?.vehiculos || [];
+
+    setVehiculos(
+      preparados.map((vehiculo) => ({
+        id: vehiculo.id,
+
+        numeroInterno:
+          vehiculo.numeroInterno,
+
+        dominio:
+          vehiculo.dominio || "",
+
+        marca:
+          vehiculo.marca || "",
+
+        modelo:
+          vehiculo.modelo || "",
+
+        color:
+          vehiculo.color || "",
+
+        tipoVehiculo:
+          vehiculo.tipoVehiculo ||
+          "AUTOMOVIL",
+
+        descripcion:
+          vehiculo.descripcion || "",
+
+        cantidadFotosVehiculo: 0,
+
+        hizoActa: null,
+
+        numeroActa: "",
+
+        personaEncontrada: false,
+
+        atendidoPor: "",
+
+        caracterAtendido: "",
+
+        plazoCantidad: "24",
+
+        plazoUnidad: "HORAS",
+
+        cantidadFotosEmplazamiento: 0,
+      }))
+    );
+  } catch (err) {
+    console.error(
+      "Error preparando vehículos:",
+      err
+    );
+
+    setError(
+      err.response?.data?.mensaje ||
+        "No se pudieron preparar los vehículos."
+    );
+  } finally {
+    setPreparandoVehiculos(false);
+  }
+};
+ /*
   |--------------------------------------------------------------------------
   | CARGAR RECLAMO
   |--------------------------------------------------------------------------
@@ -555,6 +684,13 @@ setMensaje(
       setPlazoCantidad("24");
       setPlazoUnidad("HORAS");
     }
+
+    if (
+  opcion !== "SIGUE"
+) {
+  setCantidadVehiculos(1);
+  setVehiculos([]);
+}
   };
 
   /*
@@ -688,119 +824,241 @@ setMensaje(
   |--------------------------------------------------------------------------
   */
 
-  const validar = () => {
-    if (!opcionVisita) {
-      return (
-        "Elegí qué pasó cuando llegaste."
-      );
+const validar = () => {
+  if (!opcionVisita) {
+    return "Elegí qué pasó cuando llegaste.";
+  }
+
+  if (!situacion.trim()) {
+    return "Escribí brevemente qué encontraste.";
+  }
+
+  if (
+    opcionVisita ===
+      "NO_ENCONTRO" &&
+    !motivoNoEncontrado
+  ) {
+    return "Elegí por qué no encontraste el problema.";
+  }
+
+  if (
+    opcionVisita ===
+      "NO_PUDO_VERIFICAR" &&
+    !motivoNoVerificacion
+  ) {
+    return "Elegí por qué no pudiste verificar.";
+  }
+
+  if (
+    !latitud ||
+    !longitud
+  ) {
+    return "Antes de finalizar tenés que tomar la ubicación.";
+  }
+
+  /*
+  La foto general sigue siendo
+  obligatoria exactamente como antes.
+  */
+
+ /*
+|--------------------------------------------------------------------------
+| FOTO GENERAL
+|--------------------------------------------------------------------------
+|
+| En reclamos de vehículos que siguen,
+| la evidencia se toma vehículo por vehículo.
+|
+| En los demás reclamos conservamos
+| la foto general obligatoria.
+|
+*/
+
+if (
+  !(
+    opcionVisita === "SIGUE" &&
+    esVehiculo
+  ) &&
+  cantidadFotosReclamo < 1
+) {
+  return "Tenés que sacar al menos una foto del reclamo.";
+}
+
+  /*
+  |--------------------------------------------------------------------------
+  | VEHÍCULOS
+  |--------------------------------------------------------------------------
+  */
+
+  if (
+    opcionVisita ===
+      "SIGUE" &&
+    esVehiculo
+  ) {
+    if (
+      vehiculos.length !==
+        Number(
+          cantidadVehiculos
+        ) ||
+      vehiculos.length < 1
+    ) {
+      return "Primero prepará los vehículos que encontraste.";
     }
 
-    if (!situacion.trim()) {
-      return (
-        "Escribí brevemente qué encontraste."
-      );
-    }
+    const actasUsadas =
+      new Set();
 
-    if (
-      opcionVisita ===
-        "NO_ENCONTRO" &&
-      !motivoNoEncontrado
+    for (
+      let indice = 0;
+      indice <
+      vehiculos.length;
+      indice += 1
     ) {
-      return (
-        "Elegí por qué no encontraste el problema."
-      );
-    }
+      const vehiculo =
+        vehiculos[indice];
 
-    if (
-      opcionVisita ===
-        "NO_PUDO_VERIFICAR" &&
-      !motivoNoVerificacion
-    ) {
-      return (
-        "Elegí por qué no pudiste verificar."
-      );
-    }
+      const numero =
+        indice + 1;
 
-    if (
-      !latitud ||
-      !longitud
-    ) {
-      return (
-        "Antes de finalizar tenés que tomar la ubicación."
-      );
-    }
-    if (
-      cantidadFotosReclamo < 1
-    ) {
-      return (
-        "Tenés que sacar al menos una foto del reclamo."
-      );
-    }
-    if (
-      opcionVisita === "SIGUE" &&
-      esVehiculo
-    ) {
-      const tieneDatosVehiculo =
-        dominioVehiculo.trim() ||
-        marcaVehiculo.trim() ||
-        modeloVehiculo.trim() ||
-        colorVehiculo.trim() ||
-        descripcionVehiculo.trim();
+      const tieneDatos =
+        vehiculo.dominio.trim() ||
+        vehiculo.marca.trim() ||
+        vehiculo.modelo.trim() ||
+        vehiculo.color.trim() ||
+        vehiculo.descripcion.trim();
 
-      if (!tieneDatosVehiculo) {
-        return (
-          "Este reclamo es de vehículo. Cargá al menos un dato para identificarlo."
-        );
+      if (!tieneDatos) {
+        return `Cargá al menos un dato para identificar el vehículo ${numero}.`;
       }
-    }
 
-    if (
-      opcionVisita ===
-        "SIGUE" &&
-      hizoActa === null
-    ) {
-      return (
-        "Indicá si hiciste Acta de Vía Pública."
-      );
-    }
-
-    if (
-      opcionVisita ===
-        "SIGUE" &&
-      hizoActa === true
-    ) {
       if (
-        !numeroActa.trim()
-      ) {
-        return (
-          "Ingresá el número del Acta de Vía Pública."
-        );
-      }
-
-            if (
-        cantidadFotosEmplazamiento <
+        vehiculo
+          .cantidadFotosVehiculo <
         1
       ) {
-        return (
-          "Si hiciste el emplazamiento, tenés que sacar una foto del emplazamiento."
-        );
+        return `Falta la foto del vehículo ${numero}.`;
       }
 
-      const plazo =
-        Number(plazoCantidad);
+      /*
+      El usuario pidió un
+      emplazamiento por cada auto.
+      */
+/*
+|--------------------------------------------------------------------------
+| ¿SE HIZO EMPLAZAMIENTO?
+|--------------------------------------------------------------------------
+*/
 
-      if (
-        !plazo ||
-        plazo <= 0
-      ) {
-        return (
-          "Ingresá un plazo válido."
-        );
-      }
-    }
+if (
+  vehiculo.hizoActa ===
+  null
+) {
+  return `Indicá si se hizo emplazamiento al vehículo ${numero}.`;
+}
+
+/*
+Si NO se hizo emplazamiento,
+no pedimos acta, plazo ni foto del acta.
+*/
+
+if (
+  vehiculo.hizoActa ===
+  true
+) {
+  const numeroActaVehiculo =
+    vehiculo.numeroActa.trim();
+
+  if (
+    !numeroActaVehiculo
+  ) {
+    return `Ingresá el número del Acta de Vía Pública del vehículo ${numero}.`;
+  }
+
+  if (
+    actasUsadas.has(
+      numeroActaVehiculo
+    )
+  ) {
+    return `El Acta ${numeroActaVehiculo} está repetida.`;
+  }
+
+  actasUsadas.add(
+    numeroActaVehiculo
+  );
+
+  if (
+    vehiculo
+      .cantidadFotosEmplazamiento <
+    1
+  ) {
+    return `Falta la foto del emplazamiento del vehículo ${numero}.`;
+  }
+
+  const plazo =
+    Number(
+      vehiculo.plazoCantidad
+    );
+
+  if (
+    !plazo ||
+    plazo <= 0
+  ) {
+    return `Ingresá un plazo válido para el vehículo ${numero}.`;
+  }
+}    }
 
     return "";
-  };
+  }
+
+  /*
+  |--------------------------------------------------------------------------
+  | RESTO DE RECLAMOS
+  |--------------------------------------------------------------------------
+  |
+  | ESTO QUEDA COMO ESTABA.
+  */
+
+  if (
+    opcionVisita ===
+      "SIGUE" &&
+    hizoActa === null
+  ) {
+    return "Indicá si hiciste Acta de Vía Pública.";
+  }
+
+  if (
+    opcionVisita ===
+      "SIGUE" &&
+    hizoActa === true
+  ) {
+    if (
+      !numeroActa.trim()
+    ) {
+      return "Ingresá el número del Acta de Vía Pública.";
+    }
+
+    if (
+      cantidadFotosEmplazamiento <
+      1
+    ) {
+      return "Si hiciste el emplazamiento, tenés que sacar una foto del emplazamiento.";
+    }
+
+    const plazo =
+      Number(
+        plazoCantidad
+      );
+
+    if (
+      !plazo ||
+      plazo <= 0
+    ) {
+      return "Ingresá un plazo válido.";
+    }
+  }
+
+  return "";
+};
 
   /*
   |--------------------------------------------------------------------------
@@ -881,96 +1139,161 @@ const guardarVisita =
                   )
                 : null,
 
-            vehiculo:
-              opcionVisita ===
-                  "SIGUE" &&
-                esVehiculo
-                ? {
-                    dominio:
-                      dominioVehiculo.trim() ||
-                      null,
+            /*
+|--------------------------------------------------------------------------
+| VARIOS VEHÍCULOS
+|--------------------------------------------------------------------------
+*/
 
-                    marca:
-                      marcaVehiculo.trim() ||
-                      null,
+vehiculos:
+  opcionVisita ===
+      "SIGUE" &&
+    esVehiculo
+    ? vehiculos.map(
+        (vehiculo) => ({
+          id:
+            vehiculo.id,
 
-                    modelo:
-                      modeloVehiculo.trim() ||
-                      null,
+          dominio:
+            vehiculo.dominio
+              .trim()
+              .toUpperCase() ||
+            null,
 
-                    color:
-                      colorVehiculo.trim() ||
-                      null,
+          marca:
+            vehiculo.marca
+              .trim() ||
+            null,
 
-                    tipoVehiculo:
-                      tipoVehiculo ||
-                      "AUTOMOVIL",
+          modelo:
+            vehiculo.modelo
+              .trim() ||
+            null,
 
-                    descripcion:
-                      descripcionVehiculo.trim() ||
-                      null,
-                  }
-                : null,
+          color:
+            vehiculo.color
+              .trim() ||
+            null,
 
-            hizoActa:
-              opcionVisita ===
-                "SIGUE" &&
-              hizoActa ===
-                true,
+          tipoVehiculo:
+            vehiculo.tipoVehiculo ||
+            "AUTOMOVIL",
 
-            numeroActa:
-              opcionVisita ===
-                  "SIGUE" &&
-                hizoActa ===
-                  true
-                ? numeroActa.trim()
-                : null,
+          descripcion:
+            vehiculo.descripcion
+              .trim() ||
+            null,
 
-            personaEncontrada:
-              opcionVisita ===
-                  "SIGUE" &&
-                hizoActa ===
-                  true
-                ? personaEncontrada
-                : false,
+     hizoActa:
+  vehiculo.hizoActa === true,
 
-            atendidoPor:
-              opcionVisita ===
-                  "SIGUE" &&
-                hizoActa ===
-                  true &&
-                personaEncontrada
-                ? atendidoPor.trim() ||
-                  null
-                : null,
+numeroActa:
+  vehiculo.hizoActa === true
+    ? vehiculo.numeroActa.trim()
+    : null,
 
-            caracterAtendido:
-              opcionVisita ===
-                  "SIGUE" &&
-                hizoActa ===
-                  true &&
-                personaEncontrada
-                ? caracterAtendido ||
-                  null
-                : null,
+          personaEncontrada:
+            vehiculo.personaEncontrada,
 
-            plazoCantidad:
-              opcionVisita ===
-                  "SIGUE" &&
-                hizoActa ===
-                  true
-                ? Number(
-                    plazoCantidad
-                  )
-                : null,
+          atendidoPor:
+            vehiculo.personaEncontrada
+              ? vehiculo.atendidoPor
+                  .trim() ||
+                null
+              : null,
 
-            plazoUnidad:
-              opcionVisita ===
-                  "SIGUE" &&
-                hizoActa ===
-                  true
-                ? plazoUnidad
-                : null,
+          caracterAtendido:
+            vehiculo.personaEncontrada
+              ? vehiculo
+                  .caracterAtendido ||
+                null
+              : null,
+
+        plazoCantidad:
+  vehiculo.hizoActa === true
+    ? Number(
+        vehiculo.plazoCantidad
+      )
+    : null,
+
+plazoUnidad:
+  vehiculo.hizoActa === true
+    ? vehiculo.plazoUnidad
+    : null,
+        })
+      )
+    : [],
+
+/*
+|--------------------------------------------------------------------------
+| CAMPOS ANTERIORES
+|--------------------------------------------------------------------------
+|
+| Se conservan para reclamos que NO
+| son de vehículos.
+*/
+
+vehiculo: null,
+
+hizoActa:
+  opcionVisita ===
+      "SIGUE" &&
+    !esVehiculo &&
+    hizoActa === true,
+
+numeroActa:
+  opcionVisita ===
+      "SIGUE" &&
+    !esVehiculo &&
+    hizoActa === true
+    ? numeroActa.trim()
+    : null,
+
+personaEncontrada:
+  opcionVisita ===
+      "SIGUE" &&
+    !esVehiculo &&
+    hizoActa === true
+    ? personaEncontrada
+    : false,
+
+atendidoPor:
+  opcionVisita ===
+      "SIGUE" &&
+    !esVehiculo &&
+    hizoActa === true &&
+    personaEncontrada
+    ? atendidoPor.trim() ||
+      null
+    : null,
+
+caracterAtendido:
+  opcionVisita ===
+      "SIGUE" &&
+    !esVehiculo &&
+    hizoActa === true &&
+    personaEncontrada
+    ? caracterAtendido ||
+      null
+    : null,
+
+plazoCantidad:
+  opcionVisita ===
+      "SIGUE" &&
+    !esVehiculo &&
+    hizoActa === true
+    ? Number(
+        plazoCantidad
+      )
+    : null,
+
+plazoUnidad:
+  opcionVisita ===
+      "SIGUE" &&
+    !esVehiculo &&
+    hizoActa === true
+    ? plazoUnidad
+    : null,
           }
         );
 
@@ -2081,105 +2404,535 @@ const guardarVisita =
 
           {/* FOTO */}
 
-          <section className="inspeccion-card">
+      {/* FOTO GENERAL */}
 
+{!(
+  opcionVisita === "SIGUE" &&
+  esVehiculo
+) && (
+  <section className="inspeccion-card">
+
+    <div className="inspeccion-paso">
+      <span>
+        📷
+      </span>
+
+      <div>
+        <h2>
+          Sacá una foto
+        </h2>
+
+        <p>
+          Que se vea claramente cómo estaba el lugar.
+        </p>
+      </div>
+    </div>
+
+    <FotosReclamo
+      reclamoId={
+        reclamo.id
+      }
+      tipoReferencia="CONSTATACION"
+      onCantidadFotosChange={
+        setCantidadFotosReclamo
+      }
+      maxFotos={1}
+    />
+
+  </section>
+)}
+
+          {/* VEHÍCULO */}
+
+      {/* VEHÍCULOS */}
+
+{opcionVisita ===
+    "SIGUE" &&
+  esVehiculo && (
+    <>
+      <section className="inspeccion-card">
+        <div className="inspeccion-paso">
+          <span>🚗</span>
+
+          <div>
+            <h2>
+              ¿Cuántos vehículos encontraste?
+            </h2>
+
+            <p>
+              Vamos a registrar cada vehículo por separado.
+            </p>
+          </div>
+        </div>
+
+        <label className="inspeccion-label">
+          Cantidad de vehículos
+
+          <input
+            className="inspeccion-control"
+            type="number"
+            min="1"
+            max="20"
+            step="1"
+            value={
+              cantidadVehiculos
+            }
+            onChange={(event) => {
+              setCantidadVehiculos(
+                event.target.value
+              );
+
+              /*
+              Si cambia la cantidad,
+              obligamos a preparar
+              nuevamente.
+              */
+              setVehiculos([]);
+            }}
+          />
+        </label>
+
+        <button
+          type="button"
+          className="inspeccion-boton-secundario"
+          disabled={
+            preparandoVehiculos
+          }
+          onClick={
+            prepararVehiculos
+          }
+        >
+          {preparandoVehiculos
+            ? "Preparando..."
+            : "Preparar vehículos"}
+        </button>
+      </section>
+
+      {vehiculos.map(
+        (vehiculo, indice) => (
+          <section
+            className="inspeccion-card"
+            key={vehiculo.id}
+          >
             <div className="inspeccion-paso">
-              <span>
-                📷
-              </span>
+              <span>🚗</span>
 
               <div>
                 <h2>
-                  Sacá una foto
+                  Vehículo{" "}
+                  {indice + 1}
                 </h2>
 
                 <p>
-                  Que se vea claramente cómo estaba el lugar.
+                  Registrá este vehículo y su emplazamiento.
                 </p>
               </div>
             </div>
 
-      <FotosReclamo
-  reclamoId={
-    reclamo.id
-  }
-  tipoReferencia="CONSTATACION"
-  onCantidadFotosChange={
-    setCantidadFotosReclamo
-  }
-  maxFotos={1}
+            <div className="inspeccion-persona">
+              <label className="inspeccion-label">
+                Dominio / patente
+
+                <input
+                  className="inspeccion-control"
+                  type="text"
+                  value={
+                    vehiculo.dominio
+                  }
+                  onChange={(event) =>
+                    actualizarVehiculo(
+                      indice,
+                      "dominio",
+                      event.target.value.toUpperCase()
+                    )
+                  }
+                  placeholder="Ej: ABC123 o sin dominio"
+                />
+              </label>
+
+              <label className="inspeccion-label">
+                Tipo
+
+                <select
+                  className="inspeccion-control"
+                  value={
+                    vehiculo.tipoVehiculo
+                  }
+                  onChange={(event) =>
+                    actualizarVehiculo(
+                      indice,
+                      "tipoVehiculo",
+                      event.target.value
+                    )
+                  }
+                >
+                  <option value="AUTOMOVIL">
+                    Automóvil
+                  </option>
+
+                  <option value="CAMIONETA">
+                    Camioneta
+                  </option>
+
+                  <option value="MOTO">
+                    Moto
+                  </option>
+
+                  <option value="CAMION">
+                    Camión
+                  </option>
+
+                  <option value="OTRO">
+                    Otro
+                  </option>
+                </select>
+              </label>
+
+              <label className="inspeccion-label">
+                Marca
+
+                <input
+                  className="inspeccion-control"
+                  type="text"
+                  value={
+                    vehiculo.marca
+                  }
+                  onChange={(event) =>
+                    actualizarVehiculo(
+                      indice,
+                      "marca",
+                      event.target.value
+                    )
+                  }
+                  placeholder="Ej: Peugeot"
+                />
+              </label>
+
+              <label className="inspeccion-label">
+                Modelo
+
+                <input
+                  className="inspeccion-control"
+                  type="text"
+                  value={
+                    vehiculo.modelo
+                  }
+                  onChange={(event) =>
+                    actualizarVehiculo(
+                      indice,
+                      "modelo",
+                      event.target.value
+                    )
+                  }
+                  placeholder="Ej: 504"
+                />
+              </label>
+
+              <label className="inspeccion-label">
+                Color
+
+                <input
+                  className="inspeccion-control"
+                  type="text"
+                  value={
+                    vehiculo.color
+                  }
+                  onChange={(event) =>
+                    actualizarVehiculo(
+                      indice,
+                      "color",
+                      event.target.value
+                    )
+                  }
+                  placeholder="Ej: Beige"
+                />
+              </label>
+            </div>
+
+            <label className="inspeccion-label">
+              Descripción del vehículo
+
+              <textarea
+                className="inspeccion-control"
+                rows="3"
+                value={
+                  vehiculo.descripcion
+                }
+                onChange={(event) =>
+                  actualizarVehiculo(
+                    indice,
+                    "descripcion",
+                    event.target.value
+                  )
+                }
+                placeholder="Ej: sin rueda delantera, vidrios rotos..."
+              />
+            </label>
+
+            <div
+              style={{
+                marginTop:
+                  "20px",
+              }}
+            >
+              <strong>
+                📷 Foto del vehículo *
+              </strong>
+
+              <p>
+                Sacá una foto donde se identifique claramente este vehículo.
+              </p>
+
+              <FotosReclamo
+                reclamoId={
+                  reclamo.id
+                }
+                tipoReferencia="VEHICULO"
+                referenciaId={
+                  vehiculo.id
+                }
+                maxFotos={1}
+                onCantidadFotosChange={(
+                  cantidad
+                ) =>
+                  actualizarVehiculo(
+                    indice,
+                    "cantidadFotosVehiculo",
+                    cantidad
+                  )
+                }
+              />
+            </div>
+
+          <hr
+  style={{
+    margin:
+      "28px 0",
+  }}
 />
 
-          </section>
+<div className="inspeccion-paso">
+  <span>📝</span>
 
-          {/* VEHÍCULO */}
+  <div>
+    <h2>
+      ¿Se hizo emplazamiento?
+    </h2>
 
-          {opcionVisita ===
-              "SIGUE" &&
-            esVehiculo && (
-            <section className="inspeccion-card">
+    <p>
+      Indicá si hiciste Acta de Vía Pública a este vehículo.
+    </p>
+  </div>
+</div>
 
-              <div className="inspeccion-paso">
-                <span>
-                  🚗
-                </span>
+<div className="inspeccion-si-no">
 
-                <div>
-                  <h2>
-                    Identificá el vehículo
-                  </h2>
+  <button
+    type="button"
+    className={
+      vehiculo.hizoActa ===
+      true
+        ? "seleccionado"
+        : ""
+    }
+    onClick={() =>
+      actualizarVehiculo(
+        indice,
+        "hizoActa",
+        true
+      )
+    }
+  >
+    ✓ Sí
+  </button>
 
-                  <p>
-                    Estos datos quedarán unidos al reclamo para las próximas visitas, infracción, inventario y remoción.
-                  </p>
-                </div>
-              </div>
+  <button
+    type="button"
+    className={
+      vehiculo.hizoActa ===
+      false
+        ? "seleccionado"
+        : ""
+    }
+    onClick={() => {
+      actualizarVehiculo(
+        indice,
+        "hizoActa",
+        false
+      );
 
+      actualizarVehiculo(
+        indice,
+        "numeroActa",
+        ""
+      );
+
+      actualizarVehiculo(
+        indice,
+        "personaEncontrada",
+        false
+      );
+
+      actualizarVehiculo(
+        indice,
+        "atendidoPor",
+        ""
+      );
+
+      actualizarVehiculo(
+        indice,
+        "caracterAtendido",
+        ""
+      );
+    }}
+  >
+    No
+  </button>
+
+</div>
+
+{vehiculo.hizoActa === true && (
+  <div className="inspeccion-acta-contenido">
+
+    <div className="inspeccion-paso">
+      <span>📄</span>
+
+      <div>
+        <h2>
+          Acta de Vía Pública
+        </h2>
+
+        <p>
+          Completá los datos del emplazamiento de este vehículo.
+        </p>
+      </div>
+    </div>
+            <label className="inspeccion-label">
+              Número del acta *
+
+              <input
+                className="inspeccion-control inspeccion-numero-acta"
+                type="text"
+                value={
+                  vehiculo.numeroActa
+                }
+                onChange={(event) =>
+                  actualizarVehiculo(
+                    indice,
+                    "numeroActa",
+                    event.target.value
+                  )
+                }
+                placeholder="Ej: C 0011859"
+              />
+            </label>
+
+            <div className="inspeccion-subpregunta">
+              ¿Había alguien en el lugar?
+            </div>
+
+            <div className="inspeccion-si-no">
+              <button
+                type="button"
+                className={
+                  vehiculo.personaEncontrada
+                    ? "seleccionado"
+                    : ""
+                }
+                onClick={() =>
+                  actualizarVehiculo(
+                    indice,
+                    "personaEncontrada",
+                    true
+                  )
+                }
+              >
+                Sí
+              </button>
+
+              <button
+                type="button"
+                className={
+                  !vehiculo.personaEncontrada
+                    ? "seleccionado"
+                    : ""
+                }
+                onClick={() => {
+                  actualizarVehiculo(
+                    indice,
+                    "personaEncontrada",
+                    false
+                  );
+
+                  actualizarVehiculo(
+                    indice,
+                    "atendidoPor",
+                    ""
+                  );
+
+                  actualizarVehiculo(
+                    indice,
+                    "caracterAtendido",
+                    ""
+                  );
+                }}
+              >
+                No
+              </button>
+            </div>
+
+            {vehiculo.personaEncontrada && (
               <div className="inspeccion-persona">
-
                 <label className="inspeccion-label">
-                  Dominio / patente
+                  Nombre, si lo sabés
 
                   <input
                     className="inspeccion-control"
                     type="text"
-                    value={dominioVehiculo}
+                    value={
+                      vehiculo.atendidoPor
+                    }
                     onChange={(event) =>
-                      setDominioVehiculo(
+                      actualizarVehiculo(
+                        indice,
+                        "atendidoPor",
                         event.target.value
-                          .toUpperCase()
                       )
                     }
-                    placeholder="Ej: ABC123 o sin dominio"
+                    placeholder="No es obligatorio"
                   />
                 </label>
 
                 <label className="inspeccion-label">
-                  Tipo
+                  ¿Quién era?
 
                   <select
                     className="inspeccion-control"
-                    value={tipoVehiculo}
+                    value={
+                      vehiculo.caracterAtendido
+                    }
                     onChange={(event) =>
-                      setTipoVehiculo(
+                      actualizarVehiculo(
+                        indice,
+                        "caracterAtendido",
                         event.target.value
                       )
                     }
                   >
-                    <option value="AUTOMOVIL">
-                      Automóvil
+                    <option value="">
+                      No sé
                     </option>
 
-                    <option value="CAMIONETA">
-                      Camioneta
+                    <option value="PROPIETARIO">
+                      Propietario
                     </option>
 
-                    <option value="MOTO">
-                      Moto
+                    <option value="ENCARGADO">
+                      Encargado
                     </option>
 
-                    <option value="CAMION">
-                      Camión
+                    <option value="VECINO">
+                      Vecino
                     </option>
 
                     <option value="OTRO">
@@ -2187,80 +2940,150 @@ const guardarVisita =
                     </option>
                   </select>
                 </label>
-
-                <label className="inspeccion-label">
-                  Marca
-
-                  <input
-                    className="inspeccion-control"
-                    type="text"
-                    value={marcaVehiculo}
-                    onChange={(event) =>
-                      setMarcaVehiculo(
-                        event.target.value
-                      )
-                    }
-                    placeholder="Ej: Peugeot"
-                  />
-                </label>
-
-                <label className="inspeccion-label">
-                  Modelo
-
-                  <input
-                    className="inspeccion-control"
-                    type="text"
-                    value={modeloVehiculo}
-                    onChange={(event) =>
-                      setModeloVehiculo(
-                        event.target.value
-                      )
-                    }
-                    placeholder="Ej: 504"
-                  />
-                </label>
-
-                <label className="inspeccion-label">
-                  Color
-
-                  <input
-                    className="inspeccion-control"
-                    type="text"
-                    value={colorVehiculo}
-                    onChange={(event) =>
-                      setColorVehiculo(
-                        event.target.value
-                      )
-                    }
-                    placeholder="Ej: Beige"
-                  />
-                </label>
-
               </div>
+            )}
 
+            <div className="inspeccion-subpregunta">
+              ¿Cuánto plazo le diste?
+            </div>
+
+            <div className="inspeccion-plazos">
+              {[12, 24, 48, 72].map(
+                (horas) => (
+                  <button
+                    key={
+                      horas
+                    }
+                    type="button"
+                    className={
+                      vehiculo.plazoUnidad ===
+                        "HORAS" &&
+                      Number(
+                        vehiculo.plazoCantidad
+                      ) === horas
+                        ? "seleccionado"
+                        : ""
+                    }
+                    onClick={() => {
+                      actualizarVehiculo(
+                        indice,
+                        "plazoCantidad",
+                        String(
+                          horas
+                        )
+                      );
+
+                      actualizarVehiculo(
+                        indice,
+                        "plazoUnidad",
+                        "HORAS"
+                      );
+                    }}
+                  >
+                    {horas} hs
+                  </button>
+                )
+              )}
+            </div>
+
+            <div className="inspeccion-otro-plazo">
               <label className="inspeccion-label">
-                Descripción del vehículo
+                Otro plazo
 
-                <textarea
+                <input
                   className="inspeccion-control"
-                  rows="3"
-                  value={descripcionVehiculo}
+                  type="number"
+                  min="1"
+                  step="1"
+                  value={
+                    vehiculo.plazoCantidad
+                  }
                   onChange={(event) =>
-                    setDescripcionVehiculo(
+                    actualizarVehiculo(
+                      indice,
+                      "plazoCantidad",
                       event.target.value
                     )
                   }
-                  placeholder="Ej: vehículo sin rueda delantera, vidrios rotos, estacionado sobre la vereda..."
                 />
               </label>
 
-            </section>
-          )}
+              <label className="inspeccion-label">
+                En
 
+                <select
+                  className="inspeccion-control"
+                  value={
+                    vehiculo.plazoUnidad
+                  }
+                  onChange={(event) =>
+                    actualizarVehiculo(
+                      indice,
+                      "plazoUnidad",
+                      event.target.value
+                    )
+                  }
+                >
+                  <option value="HORAS">
+                    Horas
+                  </option>
+
+                  <option value="DIAS">
+                    Días
+                  </option>
+                </select>
+              </label>
+            </div>
+
+            <div
+              style={{
+                marginTop:
+                  "20px",
+              }}
+            >
+              <strong>
+                📷 Foto del emplazamiento *
+              </strong>
+
+              <p>
+                Sacá una foto donde se vea el Acta de Vía Pública realizada para este vehículo.
+              </p>
+
+                           <FotosReclamo
+                reclamoId={
+                  reclamo.id
+                }
+                tipoReferencia="EMPLAZAMIENTO"
+                referenciaId={
+                  vehiculo.id
+                }
+                maxFotos={1}
+                onCantidadFotosChange={(
+                  cantidad
+                ) =>
+                  actualizarVehiculo(
+                    indice,
+                    "cantidadFotosEmplazamiento",
+                    cantidad
+                  )
+                }
+              />
+            </div>
+
+          </div>
+        )}
+          </section>
+        )
+      )}
+    </>
+  )}
           {/* ACTA */}
 
-          {opcionVisita ===
-            "SIGUE" && (
+       {/* ACTA */}
+
+{opcionVisita ===
+    "SIGUE" &&
+  !esVehiculo && (
             <section className="inspeccion-card acta-card">
 
               <div className="inspeccion-paso">

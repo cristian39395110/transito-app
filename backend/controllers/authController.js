@@ -90,7 +90,7 @@ const login = async (req, res) => {
 
       token,
 
-    usuario: {
+ usuario: {
   id: usuarioEncontrado.id,
 
   nombre:
@@ -98,6 +98,9 @@ const login = async (req, res) => {
 
   usuario:
     usuarioEncontrado.usuario,
+
+  email:
+    usuarioEncontrado.email || null,
 
   rol:
     usuarioEncontrado.rol.nombre,
@@ -119,6 +122,9 @@ const login = async (req, res) => {
     });
   }
 };
+
+
+
 
 module.exports = {
   login,

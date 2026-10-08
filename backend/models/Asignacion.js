@@ -15,6 +15,30 @@ const Asignacion = sequelize.define(
       allowNull: false,
     },
 
+    /*
+    |----------------------------------------------------------
+    | REFERENCIAS EXACTAS DE LA ACTUACIÓN
+    |----------------------------------------------------------
+    |
+    | Se utilizan principalmente en trabajos posteriores
+    | al Juzgado para saber exactamente sobre qué vehículo
+    | e infracción debe trabajar el inspector.
+    |
+    | Son nullable para mantener compatibilidad con todas
+    | las asignaciones históricas del sistema viejo.
+    |
+    */
+
+    vehiculoId: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+    },
+
+    infraccionId: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+    },
+
     tipo: {
       type: DataTypes.ENUM(
         "JEFE_GUARDIA",
@@ -72,9 +96,16 @@ const Asignacion = sequelize.define(
   {
     tableName: "asignaciones",
     timestamps: true,
+
     indexes: [
       {
         fields: ["reclamoId"],
+      },
+      {
+        fields: ["vehiculoId"],
+      },
+      {
+        fields: ["infraccionId"],
       },
       {
         fields: ["asignadoAId"],

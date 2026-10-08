@@ -10,6 +10,7 @@ import {
 const ProtectedRoute = ({
   children,
   roles = null,
+  permitirSinEmail = false,
 }) => {
   const location =
     useLocation();
@@ -18,6 +19,7 @@ const ProtectedRoute = ({
     autenticado,
     cargandoAuth,
     rol,
+    usuario,
   } = useAuth();
 
   if (cargandoAuth) {
@@ -38,6 +40,12 @@ const ProtectedRoute = ({
     );
   }
 
+  /*
+  |--------------------------------------------------------------------------
+  | SIN SESIÓN
+  |--------------------------------------------------------------------------
+  */
+
   if (!autenticado) {
     return (
       <Navigate
@@ -51,28 +59,67 @@ const ProtectedRoute = ({
     );
   }
 
-if (
-  Array.isArray(roles) &&
-  roles.length > 0
-) {
-  const tienePermiso =
-    roles.includes(rol) ||
-    (
-      rol === "superadmin" &&
-      roles.includes(
-        "administrador"
-      )
+  /*
+  |--------------------------------------------------------------------------
+  | EMAIL OBLIGATORIO
+  |--------------------------------------------------------------------------
+  |
+  | Si el usuario todavía no tiene email,
+  | no puede continuar utilizando el sistema.
+  |
+  | La pantalla /completar-email utiliza
+  | permitirSinEmail para evitar un bucle.
+  |
+  */
+
+  const tieneEmail =
+    Boolean(
+      String(
+        usuario?.email || ""
+      ).trim()
     );
 
-  if (!tienePermiso) {
+  if (
+    !tieneEmail &&
+    !permitirSinEmail
+  ) {
     return (
       <Navigate
-        to="/no-autorizado"
+        to="/completar-email"
         replace
       />
     );
   }
-}
+
+  /*
+  |--------------------------------------------------------------------------
+  | PERMISOS POR ROL
+  |--------------------------------------------------------------------------
+  */
+
+  if (
+    Array.isArray(roles) &&
+    roles.length > 0
+  ) {
+    const tienePermiso =
+      roles.includes(rol) ||
+      (
+        rol === "superadmin" &&
+        roles.includes(
+          "administrador"
+        )
+      );
+
+    if (!tienePermiso) {
+      return (
+        <Navigate
+          to="/no-autorizado"
+          replace
+        />
+      );
+    }
+  }
+
   return children;
 };
 

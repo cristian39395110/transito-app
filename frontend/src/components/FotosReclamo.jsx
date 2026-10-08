@@ -13,6 +13,7 @@ const FotosReclamo = ({
   reclamoId,
   tipoReferencia = null,
   referenciaId = null,
+  referenciaTemporal = null,
   permitirSubir = true,
   descripcion = "",
   onCantidadFotosChange = null,
@@ -57,6 +58,10 @@ const FotosReclamo = ({
             params.referenciaId =
               referenciaId;
           }
+          if (referenciaTemporal) {
+  params.referenciaTemporal =
+    referenciaTemporal;
+}
 
           const respuesta =
             await api.get(
@@ -100,6 +105,7 @@ if (
         reclamoId,
         tipoReferencia,
         referenciaId,
+        referenciaTemporal,
       ]
     );
 
@@ -167,6 +173,9 @@ if (
   }
   referenciaId={
     referenciaId
+  }
+    referenciaTemporal={
+    referenciaTemporal
   }
   descripcion={
     descripcion

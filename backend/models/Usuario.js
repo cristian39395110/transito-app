@@ -27,14 +27,25 @@ const Usuario = sequelize.define(
       allowNull: false,
     },
 
+    email: {
+      type: DataTypes.STRING(160),
+      allowNull: true,
+      unique: true,
+      validate: {
+        isEmail: true,
+      },
+    },
+
     rolId: {
       type: DataTypes.INTEGER,
       allowNull: false,
     },
-predioId: {
-  type: DataTypes.INTEGER,
-  allowNull: true,
-},
+
+    predioId: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+    },
+
     activo: {
       type: DataTypes.BOOLEAN,
       allowNull: false,
@@ -52,4 +63,4 @@ predioId: {
   }
 );
 
-module.exports = Usuario;
+module.exports = Usuario; 

@@ -16,6 +16,7 @@ const FotoUploader = ({
   reclamoId,
   tipoReferencia = "RECLAMO",
   referenciaId = null,
+  referenciaTemporal = null,
   descripcion = "",
   onFotoSubida,
 }) => {
@@ -65,6 +66,15 @@ const FotoUploader = ({
           )
         );
       }
+
+      if (referenciaTemporal) {
+  formData.append(
+    "referenciaTemporal",
+    String(
+      referenciaTemporal
+    )
+  );
+}
 
       if (descripcion) {
         formData.append(
