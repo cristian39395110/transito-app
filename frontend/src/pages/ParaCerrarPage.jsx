@@ -246,10 +246,14 @@ const ParaCerrarPage =
       async (
         reclamo
       ) => {
-        const confirmar =
-          window.confirm(
-            `¿Ya diste de baja el reclamo #${reclamo.numeroReclamo || reclamo.id} en el sistema externo?\n\nPresioná Aceptar solamente si ya lo cerraste afuera.`
-          );
+const esFueraCompetencia =
+  Boolean(reclamo.informeJefeGuardia?.trim());
+
+const confirmar = window.confirm(
+  esFueraCompetencia
+    ? `¿Ya cerraste el reclamo #${reclamo.numeroReclamo || reclamo.id} en el sistema externo?\n\nMotivo: fuera de competencia de Tránsito.\n\nEste cierre es administrativo y NO significa que el problema esté solucionado.`
+    : `¿Ya diste de baja el reclamo #${reclamo.numeroReclamo || reclamo.id} en el sistema externo?\n\nPresioná Aceptar solamente si ya lo cerraste afuera.`
+);
 
 
         if (
@@ -269,9 +273,11 @@ const ParaCerrarPage =
           setMensaje("");
 
 
-          await api.patch(
-            `/reclamos/${reclamo.id}/cierre-externo`
-          );
+ const endpoint = esFueraCompetencia
+  ? `/reclamos/${reclamo.id}/cerrar-fuera-competencia`
+  : `/reclamos/${reclamo.id}/cierre-externo`;
+
+await api.patch(endpoint);
 
 
           setReclamos(
@@ -337,12 +343,12 @@ const ParaCerrarPage =
               Para cerrar
             </h1>
 
-            <p>
-              Estos reclamos ya se
-              solucionaron en la calle.
-              Falta darlos de baja
-              en el sistema externo.
-            </p>
+         <p>
+  Estos reclamos están pendientes de cierre
+  en el sistema externo. Algunos fueron
+  solucionados y otros fueron informados
+  como fuera de competencia de Tránsito.
+</p>
           </div>
 
         </header>
@@ -476,12 +482,11 @@ const ParaCerrarPage =
               pendientes de cierre
             </strong>
 
-            <p>
-              Cuando un inspector
-              informe que un reclamo
-              fue solucionado,
-              aparecerá acá.
-            </p>
+          <p>
+  Cuando un reclamo quede listo para
+  cerrar en el sistema externo,
+  aparecerá acá.
+</p>
 
           </div>
         ) : (
@@ -587,8 +592,11 @@ const ParaCerrarPage =
   Resultado
 </span>
 
-{reclamo.resultadoCierre ===
-"NO_CONSTATADO" ? (
+{reclamo.informeJefeGuardia?.trim() ? (
+  <strong className="para-cerrar-solucionado">
+    Fuera de competencia de Tránsito
+  </strong>
+) : reclamo.resultadoCierre === "NO_CONSTATADO" ? (
   <strong className="para-cerrar-solucionado">
     ⚠ No se constató el reclamo
   </strong>
@@ -596,6 +604,29 @@ const ParaCerrarPage =
   <strong className="para-cerrar-solucionado">
     ✓ Resuelto
   </strong>
+)}
+
+{reclamo.informeJefeGuardia?.trim() && (
+  <div
+    style={{
+      marginTop: "10px",
+      padding: "12px",
+      border: "1px solid #d1d5db",
+      borderRadius: "8px",
+    }}
+  >
+    <strong>Informe del jefe de guardia:</strong>
+
+    <p
+      style={{
+        marginTop: "6px",
+        whiteSpace: "pre-wrap",
+        overflowWrap: "anywhere",
+      }}
+    >
+      {reclamo.informeJefeGuardia}
+    </p>
+  </div>
 )}
 
                     <small>

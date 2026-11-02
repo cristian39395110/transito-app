@@ -11,6 +11,8 @@ const {
   cerrarReclamoExterno,
   actualizarReclamo,
   resolverProblemaFisico,
+  derivarFueraCompetencia,
+  cerrarFueraCompetencia,
 } = require(
   "../controllers/reclamoController"
 );
@@ -158,6 +160,41 @@ router.patch(
   cerrarReclamoExterno
 );
 
+
+/*
+|--------------------------------------------------------------------------
+| DERIVACIÓN POR FUERA DE COMPETENCIA DE TRÁNSITO
+|--------------------------------------------------------------------------
+*/
+
+router.post(
+  "/:id/derivar-fuera-competencia",
+
+  permitirRoles(
+    "administrador",
+    "jefe_guardia"
+  ),
+
+  derivarFueraCompetencia
+);
+
+
+/*
+|--------------------------------------------------------------------------
+| SECRETARÍA - CONFIRMAR CIERRE POR FUERA DE COMPETENCIA
+|--------------------------------------------------------------------------
+*/
+
+router.patch(
+  "/:id/cerrar-fuera-competencia",
+
+  permitirRoles(
+    "administrador",
+    "secretaria_reclamos"
+  ),
+
+  cerrarFueraCompetencia
+);
 
 /*
 |--------------------------------------------------------------------------

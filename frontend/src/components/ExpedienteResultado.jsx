@@ -125,16 +125,38 @@ const ESTADOS_VEHICULO = {
 
 const obtenerEstado = (
   reclamo
-) =>
-  ETAPAS[
-    reclamo?.etapaActual
-  ] ||
-  ESTADOS[
-    reclamo?.estado
-  ] ||
-  reclamo?.etapaActual ||
-  reclamo?.estado ||
-  "Sin estado";
+) => {
+  // Reclamos declarados fuera de competencia
+  // por el Jefe de Guardia.
+  if (
+    typeof reclamo?.informeJefeGuardia === "string" &&
+    reclamo.informeJefeGuardia.trim()
+  ) {
+    if (
+      reclamo.estadoExterno === "CERRADO"
+    ) {
+      return "Fuera de competencia de Tránsito · Cerrado administrativamente";
+    }
+
+    if (
+      reclamo.estadoExterno === "LISTO_PARA_CERRAR"
+    ) {
+      return "Fuera de competencia de Tránsito · Pendiente de cierre administrativo";
+    }
+
+    return "Fuera de competencia de Tránsito";
+  }
+
+  // Comportamiento original para todos
+  // los demás reclamos.
+  return (
+    ETAPAS[reclamo?.etapaActual] ||
+    ESTADOS[reclamo?.estado] ||
+    reclamo?.etapaActual ||
+    reclamo?.estado ||
+    "Sin estado"
+  );
+};
 
 const obtenerEstadoVehiculo = (
   vehiculo

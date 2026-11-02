@@ -747,6 +747,26 @@
       setErrorResolucion,
     ] = useState("");
 
+     const [
+  mostrarInformeJefe,
+  setMostrarInformeJefe,
+] = useState(false);
+
+const [
+  informeJefeGuardia,
+  setInformeJefeGuardia,
+] = useState("");
+
+const [
+  enviandoInformeJefe,
+  setEnviandoInformeJefe,
+] = useState(false);
+
+const [
+  errorInformeJefe,
+  setErrorInformeJefe,
+] = useState("");
+
 
         /* =====================================================
           CARGAR
@@ -933,6 +953,20 @@ remociones:
       "ESPERANDO_RESOLUCION" &&
       reclamo?.estado !==
         "RESUELTO";
+
+
+        const puedeInformarFueraCompetencia =
+  (rol === "jefe_guardia" ||
+    rol === "administrador") &&
+  [
+    "PENDIENTE_PRIMERA_VISITA",
+    "PENDIENTE_DECISION_JEFE",
+  ].includes(reclamo?.etapaActual) &&
+  reclamo?.estadoExterno === "PENDIENTE" &&
+  !["RESUELTO", "ANULADO"].includes(
+    reclamo?.estado
+  ) &&
+  !reclamo?.informeJefeGuardia;
 
         const puedeEditarReclamo =
     (
@@ -2497,7 +2531,63 @@ return lista.sort((a, b) => {
         }
       };
 
+const confirmarInformeFueraCompetencia = async () => {
+  const informe = informeJefeGuardia.trim();
 
+  if (!informe) {
+    setErrorInformeJefe(
+      "Tenés que escribir por qué el reclamo no corresponde a Tránsito."
+    );
+    return;
+  }
+
+  if (enviandoInformeJefe) {
+    return;
+  }
+
+  const confirmar = window.confirm(
+    "¿Confirmás que este reclamo no corresponde a Tránsito?\n\n" +
+    "El informe será enviado a Secretaría para su cierre externo. " +
+    "Esto no significa que el problema haya sido solucionado."
+  );
+
+  if (!confirmar) {
+    return;
+  }
+
+  try {
+    setEnviandoInformeJefe(true);
+    setErrorInformeJefe("");
+
+    await api.post(
+      `/reclamos/${reclamo.id}/derivar-fuera-competencia`,
+      {
+        informeJefeGuardia: informe,
+      }
+    );
+
+    setMostrarInformeJefe(false);
+    setInformeJefeGuardia("");
+
+    await cargarReclamo();
+
+    window.alert(
+      "Informe registrado. El reclamo quedó pendiente de cierre por Secretaría."
+    );
+  } catch (err) {
+    console.error(
+      "Error informando fuera de competencia:",
+      err
+    );
+
+    setErrorInformeJefe(
+      err.response?.data?.mensaje ||
+      "No se pudo registrar el informe."
+    );
+  } finally {
+    setEnviandoInformeJefe(false);
+  }
+};
         /* =====================================================
           ESTADOS DE PANTALLA
         ===================================================== */
@@ -5685,9 +5775,149 @@ const vehiculo =
 
 
 
-            {/* RESPONSABLES */}
+      {/* INFORME DEL JEFE DE GUARDIA */}
 
-            <section className="expediente-seccion">
+{puedeInformarFueraCompetencia && (
+  <section className="expediente-seccion">
+    <div className="seccion-cabecera">
+      <div>
+        <h2>
+          Competencia del reclamo
+        </h2>
+
+        <p>
+          Si el reclamo no corresponde a Tránsito,
+          podés informar el motivo para que Secretaría
+          realice el cierre administrativo.
+        </p>
+      </div>
+    </div>
+
+    {!mostrarInformeJefe ? (
+      <button
+        type="button"
+      className="boton-secundario boton-fuera-competencia"
+onClick={() => {
+  setErrorInformeJefe("");
+  setMostrarInformeJefe(true);
+}}
+      >
+        Informar que no corresponde a Tránsito
+      </button>
+     ) : (
+      <div className="resolucion-formulario informe-jefe-guardia">
+        <h3>
+          Informe del jefe de guardia
+        </h3>
+
+        <p>
+          Explicá por qué el reclamo no es competencia
+          de Tránsito. Este informe será visible para
+          Secretaría y quedará registrado.
+        </p>
+
+        <textarea
+          value={informeJefeGuardia}
+          onChange={(e) => {
+            setInformeJefeGuardia(e.target.value);
+            setErrorInformeJefe("");
+          }}
+          placeholder="Ejemplo: No se realizó acta porque la situación denunciada no corresponde a las competencias de Tránsito."
+          rows={5}
+          maxLength={5000}
+                   disabled={enviandoInformeJefe}
+        />
+
+        {errorInformeJefe && (
+          <p role="alert" style={{ color: "#b91c1c" }}>
+            {errorInformeJefe}
+          </p>
+        )}
+
+                <div className="informe-jefe-acciones">
+          <button
+            type="button"
+            className="informe-jefe-enviar"
+            onClick={confirmarInformeFueraCompetencia}
+            disabled={
+              enviandoInformeJefe ||
+              !informeJefeGuardia.trim()
+            }
+          >
+            {enviandoInformeJefe
+              ? "Enviando informe..."
+              : "Enviar informe a Secretaría"}
+          </button>
+
+                   <button
+            type="button"
+            className="boton-secundario informe-jefe-cancelar"
+            disabled={enviandoInformeJefe}
+            onClick={() => {
+              setMostrarInformeJefe(false);
+              setErrorInformeJefe("");
+            }}
+          >
+            Cancelar
+          </button>
+        </div>
+      </div>
+    )}
+  </section>
+)}
+
+{reclamo.informeJefeGuardia && (
+  <section className="expediente-seccion informe-competencia-registrado">
+    <div className="informe-competencia-encabezado">
+      <span className="informe-competencia-icono">
+        ⚠
+      </span>
+
+      <div>
+        <h2>Informe de fuera de competencia</h2>
+        <p>
+          El jefe de guardia informó que este reclamo
+          no corresponde a Tránsito.
+        </p>
+      </div>
+    </div>
+
+    <div className="informe-competencia-contenido">
+      <span>Motivo informado por el jefe de guardia</span>
+      <p>{reclamo.informeJefeGuardia}</p>
+    </div>
+
+    <div
+      className={
+        reclamo.estadoExterno === "CERRADO"
+          ? "informe-competencia-estado cerrado"
+          : "informe-competencia-estado pendiente"
+      }
+    >
+      <span className="informe-competencia-estado-icono">
+        {reclamo.estadoExterno === "CERRADO" ? "✓" : "◷"}
+      </span>
+
+      <div>
+        <strong>
+          {reclamo.estadoExterno === "CERRADO"
+            ? "Cerrado administrativamente"
+            : "Pendiente de cierre administrativo"}
+        </strong>
+
+        <p>
+          {reclamo.estadoExterno === "CERRADO"
+            ? "Secretaría registró el cierre administrativo del reclamo."
+            : "El informe fue enviado a Secretaría y está pendiente de cierre."}
+        </p>
+      </div>
+    </div>
+  </section>
+)}
+
+{/* RESPONSABLES */}
+
+<section className="expediente-seccion">
               <div className="seccion-cabecera">
                 <div>
                   <h2>

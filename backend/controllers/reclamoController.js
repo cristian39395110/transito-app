@@ -2633,11 +2633,19 @@ const cerrarReclamoExterno =
       }
 
 
-      reclamo.estadoExterno =
-        "CERRADO";
+   if (reclamo.informeJefeGuardia?.trim()) {
+  return res.status(400).json({
+    ok: false,
+    mensaje:
+      "Este reclamo está fuera de competencia de Tránsito. Debe utilizarse el cierre específico de Secretaría.",
+  });
+}
 
-      reclamo.fechaCierreExterno =
-        new Date();
+reclamo.estadoExterno =
+  "CERRADO";
+
+reclamo.fechaCierreExterno =
+  new Date();
 
       reclamo.cerradoExternoPorId =
         req.usuario.id;
@@ -2673,6 +2681,205 @@ const cerrarReclamoExterno =
   };
 
 
+/*
+|--------------------------------------------------------------------------
+| INFORME POR FUERA DE COMPETENCIA DE TRÁNSITO
+|--------------------------------------------------------------------------
+*/
+
+const derivarFueraCompetencia = async (req, res) => {
+  try {
+    const informe =
+      typeof req.body.informeJefeGuardia === "string"
+        ? req.body.informeJefeGuardia.trim()
+        : "";
+
+    if (!informe) {
+      return res.status(400).json({
+        ok: false,
+        mensaje: "El informe del jefe de guardia es obligatorio",
+      });
+    }
+
+    const reclamo = await Reclamo.findByPk(req.params.id);
+
+    if (!reclamo) {
+      return res.status(404).json({
+        ok: false,
+        mensaje: "Reclamo no encontrado",
+      });
+    }
+
+    if (
+      req.usuario.rol !== "administrador" &&
+      Number(reclamo.jefeGuardiaId) !== Number(req.usuario.id)
+    ) {
+      return res.status(403).json({
+        ok: false,
+        mensaje: "Este reclamo no pertenece a tu guardia",
+      });
+    }
+
+    if (
+      ["RESUELTO", "ANULADO"].includes(reclamo.estado) ||
+      reclamo.estadoExterno !== "PENDIENTE" ||
+      ["FINALIZADO", "ANULADO"].includes(reclamo.etapaActual)
+    ) {
+      return res.status(400).json({
+        ok: false,
+        mensaje: "Este reclamo ya no admite derivaciones",
+      });
+    }
+
+    const etapasPermitidas = [
+      "PENDIENTE_PRIMERA_VISITA",
+      "PENDIENTE_DECISION_JEFE",
+    ];
+
+    if (!etapasPermitidas.includes(reclamo.etapaActual)) {
+      return res.status(400).json({
+        ok: false,
+        mensaje: "El reclamo tiene una actuación en curso o pendiente",
+      });
+    }
+
+    const infraccionVigente = await Infraccion.findOne({
+      where: {
+        reclamoId: reclamo.id,
+        anulada: false,
+      },
+    });
+
+    if (infraccionVigente) {
+      return res.status(400).json({
+        ok: false,
+        mensaje:
+          "El reclamo tiene una infracción vigente. No puede cerrarse por esta vía.",
+      });
+    }
+
+    const tareaAbierta = await Asignacion.findOne({
+      where: {
+        reclamoId: reclamo.id,
+        tipo: "INSPECTOR",
+     [Op.or]: [
+  {
+    estadoTarea: {
+      [Op.in]: ["PENDIENTE", "EN_CURSO"],
+    },
+  },
+  {
+    estadoTarea: null,
+  },
+],
+      },
+    });
+
+    if (tareaAbierta) {
+      return res.status(400).json({
+        ok: false,
+        mensaje:
+          "Hay una tarea de inspector pendiente. Debe finalizarse primero.",
+      });
+    }
+
+    const estadoAnterior = reclamo.estado;
+
+    reclamo.informeJefeGuardia = informe;
+    reclamo.estadoExterno = "LISTO_PARA_CERRAR";
+
+    await reclamo.save();
+
+    await registrarHistorial({
+      reclamoId: reclamo.id,
+      usuarioId: req.usuario.id,
+      accion: "INFORME_FUERA_COMPETENCIA",
+      descripcion:
+        `El jefe de guardia informó que el reclamo ` +
+        `no corresponde a Tránsito. Motivo: ${informe}`,
+      estadoAnterior,
+      estadoNuevo: reclamo.estado,
+    });
+
+    return res.json({
+      ok: true,
+      mensaje: "Informe enviado a Secretaría correctamente",
+      reclamo,
+    });
+  } catch (error) {
+    console.error("Error derivando fuera de competencia:", error);
+
+    return res.status(500).json({
+      ok: false,
+      mensaje: "No se pudo enviar el informe a Secretaría",
+    });
+  }
+};
+
+
+/*
+|--------------------------------------------------------------------------
+| SECRETARÍA - CIERRE POR FUERA DE COMPETENCIA
+|--------------------------------------------------------------------------
+*/
+
+const cerrarFueraCompetencia = async (req, res) => {
+  try {
+    const reclamo = await Reclamo.findByPk(req.params.id);
+
+    if (!reclamo) {
+      return res.status(404).json({
+        ok: false,
+        mensaje: "Reclamo no encontrado",
+      });
+    }
+
+    if (
+      !reclamo.informeJefeGuardia?.trim() ||
+      reclamo.estadoExterno !== "LISTO_PARA_CERRAR"
+    ) {
+      return res.status(400).json({
+        ok: false,
+        mensaje:
+          "Este reclamo no tiene un informe pendiente de cierre",
+      });
+    }
+
+    const estadoAnterior = reclamo.estado;
+
+    reclamo.estadoExterno = "CERRADO";
+    reclamo.fechaCierreExterno = new Date();
+    reclamo.cerradoExternoPorId = req.usuario.id;
+
+    await reclamo.save();
+
+    await registrarHistorial({
+      reclamoId: reclamo.id,
+      usuarioId: req.usuario.id,
+      accion: "CIERRE_FUERA_COMPETENCIA",
+      descripcion:
+        "Secretaría confirmó el cierre externo del reclamo " +
+        "por no corresponder a Tránsito. " +
+        "No implica que el problema físico haya sido solucionado.",
+      estadoAnterior,
+      estadoNuevo: reclamo.estado,
+    });
+
+    return res.json({
+      ok: true,
+      mensaje: "Cierre externo confirmado correctamente",
+      reclamo,
+    });
+  } catch (error) {
+    console.error("Error cerrando fuera de competencia:", error);
+
+    return res.status(500).json({
+      ok: false,
+      mensaje: "No se pudo confirmar el cierre externo",
+    });
+  }
+};
+
 
 module.exports = {
   crearReclamo,
@@ -2684,4 +2891,6 @@ module.exports = {
   obtenerReclamo,
   resolverProblemaFisico,
   cerrarReclamoExterno,
+  derivarFueraCompetencia,
+  cerrarFueraCompetencia,
 };

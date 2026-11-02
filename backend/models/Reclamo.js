@@ -71,6 +71,12 @@ const Reclamo =
         allowNull: true,
       },
 
+
+      informeJefeGuardia: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+      },  
+
       /*
       |--------------------------------------------------------------------------
       | ESTADO GENERAL

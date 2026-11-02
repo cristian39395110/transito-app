@@ -2732,3 +2732,279 @@
     object-fit: cover;
   }
 }
+
+/* =========================================================
+   INFORME FUERA DE COMPETENCIA - JEFE DE GUARDIA
+========================================================= */
+
+.reclamo-expediente-page .informe-jefe-guardia {
+  margin-top: 20px;
+  padding: 24px;
+  background: #fffaf3;
+  border: 1px solid #fed7aa;
+  border-left: 5px solid #ea580c;
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(154, 52, 18, 0.06);
+}
+
+/* Título */
+.reclamo-expediente-page .informe-jefe-guardia h3 {
+  margin: 0 0 10px;
+  color: #9a3412;
+  font-size: 21px;
+  font-weight: 800;
+  line-height: 1.3;
+}
+
+/* Explicación */
+.reclamo-expediente-page .informe-jefe-guardia p {
+  margin: 0 0 18px;
+  color: #7c4a28;
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+/* Campo del informe */
+.reclamo-expediente-page .informe-jefe-guardia textarea {
+  display: block;
+  width: 100%;
+  min-height: 150px;
+  padding: 16px;
+  box-sizing: border-box;
+  background: #ffffff;
+  color: #111827;
+  border: 1.5px solid #fdba74;
+  border-radius: 9px;
+  font-family: inherit;
+  font-size: 15px;
+  line-height: 1.6;
+  resize: vertical;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.reclamo-expediente-page .informe-jefe-guardia textarea:focus {
+  border-color: #ea580c;
+  box-shadow: 0 0 0 3px rgba(234, 88, 12, 0.12);
+}
+
+/* Acciones */
+.reclamo-expediente-page .informe-jefe-guardia .informe-jefe-acciones {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 18px;
+}
+
+/* Botón principal */
+.reclamo-expediente-page .informe-jefe-guardia .informe-jefe-enviar {
+  min-height: 48px;
+  padding: 12px 20px;
+  border: 1px solid #c2410c;
+  border-radius: 9px;
+  background: #c2410c;
+  color: #ffffff;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.2s;
+}
+
+.reclamo-expediente-page .informe-jefe-guardia .informe-jefe-enviar:hover:not(:disabled) {
+  background: #9a3412;
+  transform: translateY(-1px);
+}
+
+.reclamo-expediente-page .informe-jefe-guardia .informe-jefe-enviar:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* Botón cancelar */
+.reclamo-expediente-page .informe-jefe-guardia .informe-jefe-cancelar {
+  min-height: 48px;
+  padding: 12px 20px;
+  border: 1px solid #d1d5db;
+  border-radius: 9px;
+  background: #ffffff;
+  color: #374151;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.reclamo-expediente-page .informe-jefe-guardia .informe-jefe-cancelar:hover {
+  background: #f3f4f6;
+}
+
+/* Celulares */
+@media (max-width: 600px) {
+  .reclamo-expediente-page .informe-jefe-guardia {
+    padding: 17px;
+    margin-top: 16px;
+  }
+
+  .reclamo-expediente-page .informe-jefe-guardia h3 {
+    font-size: 18px;
+  }
+
+  .reclamo-expediente-page .informe-jefe-guardia .informe-jefe-acciones {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .reclamo-expediente-page .informe-jefe-guardia .informe-jefe-acciones button {
+    width: 100%;
+  }
+}
+/* =========================================================
+   INFORME FUERA DE COMPETENCIA
+   ESTILO INTEGRADO CON EL EXPEDIENTE
+========================================================= */
+
+.informe-competencia-registrado {
+  margin: 20px 0;
+  padding: 25px 0;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid #d9d9d9;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.informe-competencia-encabezado {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.informe-competencia-icono {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  background: #fff3e6;
+  color: #b45309;
+  font-size: 20px;
+}
+
+.informe-competencia-encabezado h2 {
+  margin: 0 0 6px;
+  color: #111827;
+  font-size: 21px;
+  font-weight: 700;
+}
+
+.informe-competencia-encabezado p {
+  margin: 0;
+  color: #6b7280;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.informe-competencia-contenido {
+  margin-top: 20px;
+  padding: 14px 18px;
+  background: transparent;
+  border: 0;
+  border-left: 3px solid #d97706;
+  border-radius: 0;
+}
+
+.informe-competencia-contenido span {
+  display: block;
+  margin-bottom: 8px;
+  color: #6b7280;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.informe-competencia-contenido p {
+  margin: 0;
+  color: #374151;
+  font-size: 15px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.informe-competencia-estado {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-top: 18px;
+  padding: 12px 15px;
+  border-radius: 6px;
+}
+
+.informe-competencia-estado.pendiente {
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  color: #92400e;
+}
+
+.informe-competencia-estado.cerrado {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  color: #166534;
+}
+
+.informe-competencia-estado-icono {
+  font-size: 19px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.informe-competencia-estado strong {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.informe-competencia-estado p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+@media (max-width: 600px) {
+  .informe-competencia-registrado {
+    padding: 20px 0;
+  }
+
+  .informe-competencia-encabezado h2 {
+    font-size: 18px;
+  }
+
+  .informe-competencia-contenido {
+    padding: 12px;
+  }
+}
+
+/* CELULAR */
+@media (max-width: 600px) {
+  .informe-competencia-registrado {
+    padding: 16px;
+  }
+
+  .informe-competencia-encabezado h2 {
+    font-size: 18px;
+  }
+
+  .informe-competencia-contenido {
+    padding: 14px;
+  }
+
+  .informe-competencia-estado {
+    padding: 13px;
+  }
+}
