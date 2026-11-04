@@ -247,6 +247,23 @@ const App = () => {
   }
 />
 
+{/* CORREGIR EXPEDIENTE HISTÓRICO */}
+
+<Route
+  path="expedientes/carga-manual/:id/editar"
+  element={
+    <ProtectedRoute
+      roles={[
+        "administrador",
+        "director",
+        "secretaria_reclamos",
+      ]}
+    >
+      <CargaManualPage />
+    </ProtectedRoute>
+  }
+/>
+
 
         <Route
           path="inspeccion/:id"

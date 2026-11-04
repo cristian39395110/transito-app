@@ -179,15 +179,15 @@ router.get(
 |--------------------------------------------------------------------------
 */
 
-router.get(   
+router.get(
   "/traslados/pendientes",
   permitirRoles(
     "administrador",
-    "secretaria_predio"
+    "secretaria_predio",
+    "secretaria_reclamos"
   ),
   listarTrasladosPendientes
 );
-
 
 /*
 |--------------------------------------------------------------------------

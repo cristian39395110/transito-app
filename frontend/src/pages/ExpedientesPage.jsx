@@ -27,6 +27,12 @@ const ExpedientesPage =
 const esSuperadmin =
   rol === "superadmin";
 
+  const puedeCorregir = [
+  "administrador",
+  "director",
+  "secretaria_reclamos",
+].includes(rol);
+
     const [
       texto,
       setTexto,
@@ -572,6 +578,10 @@ const esSuperadmin =
 
       permitirEliminar={
         esSuperadmin
+      }
+
+      permitirCorregir={
+        puedeCorregir
       }
 
       onEliminar={() =>

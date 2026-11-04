@@ -218,11 +218,12 @@ const listarPendientesIngreso =
           req.query.predioId || ""
         ).toUpperCase() === "TODOS";
 
-      const puedeVerTodos = [
-        "director",
-        "administrador",
-        "superadmin",
-      ].includes(req.usuario?.rol);
+ const puedeVerTodos = [
+  "director",
+  "administrador",
+  "superadmin",
+  "secretaria_reclamos",
+].includes(req.usuario?.rol);
 
       const verTodos =
         solicitaTodos &&
@@ -1753,6 +1754,7 @@ const puedeVerTodos = [
   "director",
   "administrador",
   "superadmin",
+  "secretaria_reclamos",
 ].includes(req.usuario?.rol);
 
 const verTodos =
@@ -2350,6 +2352,7 @@ const puedeVerTodos = [
   "director",
   "administrador",
   "superadmin",
+  "secretaria_reclamos",
 ].includes(req.usuario?.rol);
 
 const verTodos =

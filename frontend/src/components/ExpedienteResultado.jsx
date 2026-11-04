@@ -259,6 +259,7 @@ const obtenerCoincidencia = (
 const ExpedienteResultado = ({
   expediente,
   permitirEliminar = false,
+  permitirCorregir = false,
   onEliminar = null,
 }) => {
   const navigate =
@@ -304,16 +305,49 @@ const ExpedienteResultado = ({
       ?.nombre ||
     "Sin tipo";
 
-  const abrirExpediente =
-    () => {
-      if (!reclamo.id) {
-        return;
-      }
 
+      const esHistorico =
+    vehiculos.length === 1 &&
+    vehiculos[0]?.origenRegistro === "CARGA_HISTORICA";
+
+  const mostrarCorregir =
+    permitirCorregir && esHistorico;
+
+      console.log("VERIFICAR EXPEDIENTE", {
+    reclamoId: reclamo.id,
+    numeroReclamo: reclamo.numeroReclamo,
+    permitirCorregir,
+    vehiculos,
+    esHistorico,
+    mostrarCorregir,
+  });
+
+  const manejarCorregir = (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    if (!mostrarCorregir || !reclamo.id) {
+      return;
+    }
+
+    navigate(`/expedientes/carga-manual/${reclamo.id}/editar`);
+  };
+  const abrirExpediente = () => {
+    if (!reclamo.id) {
+      return;
+    }
+
+    if (mostrarCorregir) {
       navigate(
-        `/reclamos/${reclamo.id}`
+        `/expedientes/carga-manual/${reclamo.id}/editar`
       );
-    };
+      return;
+    }
+
+    navigate(
+      `/reclamos/${reclamo.id}`
+    );
+  };
 
   const manejarTeclado =
     (
@@ -468,6 +502,26 @@ const ExpedienteResultado = ({
       </div>
 
       <div className="expediente-acciones-resultado">
+        {mostrarCorregir && (
+          <button
+            type="button"
+            onClick={manejarCorregir}
+            title="Corregir datos del expediente histórico"
+            aria-label="Corregir expediente"
+            style={{
+              padding: "8px 12px",
+              borderRadius: "8px",
+              border: "1px solid #cbd5e1",
+              background: "#ffffff",
+              color: "#1e293b",
+              cursor: "pointer",
+              fontWeight: 600,
+            }}
+          >
+            ✏️ Corregir
+          </button>
+        )}
+
         {permitirEliminar && (
           <button
             type="button"

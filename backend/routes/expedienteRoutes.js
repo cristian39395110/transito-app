@@ -4,9 +4,9 @@ const express =
 const {
   listarExpedientes,
   crearExpedienteManual,
-} = require(
-  "../controllers/expedienteController"
-);
+  obtenerExpedienteManual,
+  actualizarExpedienteManual
+} = require("../controllers/expedienteController");
 
 const {
   verificarToken,
@@ -70,6 +70,29 @@ router.post(
     "secretaria_reclamos"
   ),
   crearExpedienteManual
+);
+
+
+// Consultar expediente histórico para corregir sus datos
+router.get(
+  "/carga-manual/:id",
+  permitirRoles(
+    "administrador",
+    "director",
+    "secretaria_reclamos"
+  ),
+  obtenerExpedienteManual
+);
+
+// Guardar correcciones sin alterar movimientos del vehículo
+router.put(
+  "/carga-manual/:id",
+  permitirRoles(
+    "administrador",
+    "director",
+    "secretaria_reclamos"
+  ),
+  actualizarExpedienteManual
 );
 module.exports =
   router;

@@ -14,7 +14,9 @@ import "./ExpedienteManualForm.css";
 const ExpedienteManualForm = ({
   onCreado,
   onCancelar,
+  expedienteId = null,
 }) => {
+  const modoEdicion = expedienteId !== null && expedienteId !== undefined;
   /*
   |--------------------------------------------------------------------------
   | CATÁLOGOS
@@ -57,6 +59,8 @@ const ExpedienteManualForm = ({
     resultado,
     setResultado,
   ] = useState(null);
+  const [cargandoExpediente, setCargandoExpediente] = useState(false);
+  const [datosOriginales, setDatosOriginales] = useState(null);
 
 
   /*
@@ -455,6 +459,83 @@ const [
   |--------------------------------------------------------------------------
   */
 
+  // Recupera el expediente sin alterar su historial ni movimientos.
+  useEffect(() => {
+    if (!modoEdicion) return;
+    let activo = true;
+    const fechaLocal = (valor) => {
+      if (!valor) return "";
+      const d = new Date(valor);
+      if (Number.isNaN(d.getTime())) return "";
+      return new Date(d.getTime() - d.getTimezoneOffset() * 60000)
+        .toISOString().slice(0, 16);
+    };
+    const cargar = async () => {
+      setCargandoExpediente(true);
+      setError("");
+      try {
+        const { data } = await api.get(`/expedientes/carga-manual/${expedienteId}`);
+        if (!activo) return;
+        const r = data.reclamo || {};
+        const v = data.vehiculo || {};
+        const a = data.acta;
+        const e = data.emplazamiento;
+        const i = data.infraccion;
+        setDatosOriginales(data);
+        setTieneNumeroReclamo(true);
+        setNumeroReclamo(r.numeroReclamo || "");
+        setTipoReclamoId(String(r.tipoReclamoId ?? ""));
+        setDireccion(r.direccion || "");
+        setBarrio(r.barrio || "");
+        setReferencia(r.referencia || "");
+        setObservaciones(r.observaciones || "");
+        setDominio(v.dominio || "");
+        setMarca(v.marca || "");
+        setModelo(v.modelo || "");
+        setColor(v.color || "");
+        setTipoVehiculo(v.tipoVehiculo || "");
+        setDescripcionVehiculo(v.descripcion || "");
+        setTieneActa(Boolean(a));
+        setActa({numeroActa:a?.numeroActa || "", fechaHora:fechaLocal(a?.fechaHora), lugar:a?.lugar || "", atendidoPor:a?.atendidoPor || "", caracterAtendido:a?.caracterAtendido || "", situacion:a?.situacion || "", cantidad:a?.cantidad || "", observaciones:a?.observaciones || ""});
+        setEmplazamiento({fechaHora:fechaLocal(e?.fechaHora), plazoCantidad:e?.plazoCantidad == null ? "" : String(e.plazoCantidad), plazoUnidad:e?.plazoUnidad || "DIAS", fechaVencimiento:fechaLocal(e?.fechaVencimiento), observaciones:e?.observaciones || ""});
+        setTieneInfraccion(Boolean(i));
+        setInfraccion({numeroActa:i?.numeroActa || "", fechaHora:fechaLocal(i?.fechaHora), lugar:i?.lugar || "", personaEncontrada:Boolean(i?.personaEncontrada), nombreInfractor:i?.nombreInfractor || "", dniInfractor:i?.dniInfractor || "", domicilioInfractor:i?.domicilioInfractor || "", motivo:i?.motivo || "", numeroExpedienteJuzgado:i?.numeroExpedienteJuzgado || "", observaciones:i?.observaciones || ""});
+        // La orden judicial está representada por campos de infracción;
+        // su edición se mantiene bloqueada hasta tener un endpoint específico.
+        setTieneOrdenJudicial(Boolean(i?.requiereOrdenRemocion));
+        setOrdenJudicial({fechaHora:fechaLocal(i?.fechaRespuestaOrdenRemocion), numeroReferencia:i?.numeroExpedienteJuzgado || "", observaciones:""});
+        const ingresos = data.ingresos || [];
+        const egresos = data.egresos || [];
+        const ingreso = ingresos[0];
+        const egreso = egresos[egresos.length - 1];
+        if (ingreso) {
+          setPredioId(String(ingreso.predioId ?? ""));
+          setFechaIngreso(fechaLocal(ingreso.fechaHora));
+          setSector(ingreso.sector || "");
+          setPosicion(ingreso.posicion || "");
+          setObservacionesIngreso(ingreso.observaciones || "");
+        }
+        if (egreso) {
+          setFechaEgreso(fechaLocal(egreso.fechaHora));
+          setPredioDestinoId(String(egreso.predioDestinoId ?? ""));
+          setDestinoPersona(egreso.destinoPersona || "");
+          setDniPersona(egreso.dniPersona || "");
+          setNumeroOficio(egreso.numeroOficio || "");
+          setObservacionesEgreso(egreso.observaciones || "");
+          setSituacionActual(egreso.tipoEgreso || "OTRO");
+        } else {
+          setSituacionActual("EN_PREDIO");
+        }
+      } catch (err) {
+        if (activo) setError(err.response?.data?.mensaje || "No se pudo cargar el expediente para corregirlo.");
+      } finally {
+        if (activo) setCargandoExpediente(false);
+      }
+    };
+    cargar();
+    return () => { activo = false; };
+  }, [modoEdicion, expedienteId]);
+
   const cambiarActa = (
     campo,
     valor
@@ -677,12 +758,21 @@ const validar = () => {
     async (event) => {
       event.preventDefault();
 
-      if (resultado) {
+      if (guardando || cargandoExpediente || resultado) return;
+      if (modoEdicion && !datosOriginales) {
+        setError("Primero debe cargarse el expediente original.");
         return;
       }
 
-      const errorValidacion =
-        validar();
+      const errorValidacion = modoEdicion
+        ? (!numeroReclamo.trim() ? "El número de reclamo es obligatorio."
+          : !tipoReclamoId ? "Seleccioná el tipo de reclamo."
+          : !direccion.trim() ? "La dirección es obligatoria."
+          : ![dominio,marca,modelo,color,tipoVehiculo,descripcionVehiculo].some(v => v.trim()) ? "Ingresá al menos un dato del vehículo."
+          : tieneActa && !acta.numeroActa.trim() ? "Ingresá el número del Acta de Vía Pública."
+          : tieneInfraccion && !infraccion.numeroActa.trim() ? "Ingresá el número del Acta de Infracción."
+          : "")
+        : validar();
 
       if (errorValidacion) {
         setError(
@@ -1030,24 +1120,16 @@ predioId:
     : null,
 
 fechaIngreso:
-  mostrarEgreso
-    ? fechaIngreso || null
-    : null,
+  fechaIngreso || null,
 
 sector:
-  mostrarEgreso
-    ? sector.trim() || null
-    : null,
+  sector.trim() || null,
 
 posicion:
-  mostrarEgreso
-    ? posicion.trim() || null
-    : null,
+  posicion.trim() || null,
 
 observacionesIngreso:
-  mostrarEgreso
-    ? observacionesIngreso.trim() || null
-    : null,
+  observacionesIngreso.trim() || null,
 /*
 |--------------------------------------------------------------------------
 | SALIDA
@@ -1105,16 +1187,29 @@ observacionesEgreso:
 
     };
 
-        const respuesta =
-          await api.post(
-            "/expedientes/carga-manual",
-            payload
-          );
+        const respuesta = modoEdicion
+          ? await api.put(`/expedientes/carga-manual/${expedienteId}`, {
+              numeroReclamo: payload.numeroReclamo,
+              tipoReclamoId: payload.tipoReclamoId,
+              direccion: payload.direccion,
+              barrio: payload.barrio,
+              referencia: payload.referencia,
+              observaciones: payload.observaciones,
+              vehiculo: payload.vehiculo,
+              acta: payload.acta,
+              emplazamiento: payload.emplazamiento,
+              infraccion: payload.infraccion,
+              posicion: payload.posicion,
+            })
+          : await api.post("/expedientes/carga-manual", payload);
 
-
-        setResultado(
-          respuesta.data
-        );
+        setResultado(modoEdicion ? {
+          ...respuesta.data,
+          reclamo: datosOriginales.reclamo,
+          vehiculo: datosOriginales.vehiculo,
+          numeroReclamo,
+          numeroGenerado: false,
+        } : respuesta.data);
 
         setSecciones(
           (anterior) => ({
@@ -1176,14 +1271,14 @@ observacionesEgreso:
   |--------------------------------------------------------------------------
   */
 
-  if (cargandoCatalogos) {
+  if (cargandoCatalogos || cargandoExpediente) {
     return (
       <div className="exp-manual">
         <div className="exp-manual-cargando">
           <div className="exp-manual-spinner" />
 
           <strong>
-            Preparando carga de expediente…
+            {modoEdicion ? "Cargando expediente para corregir…" : "Preparando carga de expediente…"}
           </strong>
 
           <span>
@@ -1216,10 +1311,19 @@ observacionesEgreso:
   const infraccionCreada =
     resultado?.infraccion;
 
-  const ingresoCreado =
-    resultado
-      ?.ingresoDestino ||
-    resultado?.ingreso;
+const ingresoCreado =
+  resultado?.ingresoDestino ||
+  resultado?.ingreso;
+
+const reclamoParaFotos =
+  modoEdicion
+    ? datosOriginales?.reclamo
+    : reclamoCreado;
+
+const ingresoParaFotos =
+  modoEdicion
+    ? datosOriginales?.ingresos?.[0]
+    : ingresoCreado;
 
 
   /*
@@ -1237,11 +1341,11 @@ observacionesEgreso:
 
         <div>
           <span className="exp-manual-eyebrow">
-            CARGA MANUAL
+            {modoEdicion ? "CORRECCIÓN HISTÓRICA" : "CARGA MANUAL"}
           </span>
 
           <h2>
-            Cargar expediente anterior
+            {modoEdicion ? "Corregir expediente anterior" : "Cargar expediente anterior"}
           </h2>
 
           <p>
@@ -1303,7 +1407,7 @@ observacionesEgreso:
 
           <div className="exp-manual-exito-contenido">
             <span>
-              EXPEDIENTE CREADO
+              {modoEdicion ? "EXPEDIENTE CORREGIDO" : "EXPEDIENTE CREADO"}
             </span>
 
             <h3>
@@ -1313,9 +1417,11 @@ observacionesEgreso:
             </h3>
 
             <p>
-              {resultado.numeroGenerado
-                ? "El expediente no tenía número de reclamo y el sistema generó uno automáticamente."
-                : "Se conservó el número de reclamo que figuraba en la documentación."}
+              {modoEdicion
+                ? "Las correcciones se guardaron y registraron en el historial."
+                : resultado.numeroGenerado
+                  ? "El expediente no tenía número de reclamo y el sistema generó uno automáticamente."
+                  : "Se conservó el número de reclamo que figuraba en la documentación."}
             </p>
 
             <div className="exp-manual-exito-datos">
@@ -1439,11 +1545,7 @@ observacionesEgreso:
                     checked={
                       tieneNumeroReclamo
                     }
-                    disabled={
-                      Boolean(
-                        resultado
-                      )
-                    }
+                    disabled={Boolean(resultado) || modoEdicion}
                     onChange={() =>
                       setTieneNumeroReclamo(
                         true
@@ -1476,11 +1578,7 @@ observacionesEgreso:
                     checked={
                       !tieneNumeroReclamo
                     }
-                    disabled={
-                      Boolean(
-                        resultado
-                      )
-                    }
+                    disabled={Boolean(resultado) || modoEdicion}
                     onChange={() => {
                       setTieneNumeroReclamo(
                         false
@@ -2023,11 +2121,7 @@ observacionesEgreso:
                     checked={
                       tieneActa
                     }
-                    disabled={
-                      Boolean(
-                        resultado
-                      )
-                    }
+                    disabled={Boolean(resultado) || modoEdicion}
                     onChange={(
                       event
                     ) =>
@@ -2430,11 +2524,7 @@ observacionesEgreso:
                     checked={
                       tieneInfraccion
                     }
-                    disabled={
-                      Boolean(
-                        resultado
-                      )
-                    }
+                    disabled={Boolean(resultado) || modoEdicion}
                     onChange={(
                       event
                     ) =>
@@ -2781,7 +2871,7 @@ observacionesEgreso:
     <input
       type="checkbox"
       checked={tieneOrdenJudicial}
-      disabled={Boolean(resultado)}
+      disabled={Boolean(resultado) || modoEdicion}
       onChange={(event) =>
         setTieneOrdenJudicial(
           event.target.checked
@@ -2815,7 +2905,7 @@ observacionesEgreso:
           <input
             type="datetime-local"
             value={ordenJudicial.fechaHora}
-            disabled={Boolean(resultado)}
+            disabled={Boolean(resultado) || modoEdicion}
             onChange={(event) =>
               setOrdenJudicial((anterior) => ({
                 ...anterior,
@@ -2833,7 +2923,7 @@ observacionesEgreso:
           <input
             type="text"
             value={ordenJudicial.numeroReferencia}
-            disabled={Boolean(resultado)}
+            disabled={Boolean(resultado) || modoEdicion}
             onChange={(event) =>
               setOrdenJudicial((anterior) => ({
                 ...anterior,
@@ -2853,7 +2943,7 @@ observacionesEgreso:
         <textarea
           rows="2"
           value={ordenJudicial.observaciones}
-          disabled={Boolean(resultado)}
+          disabled={Boolean(resultado) || modoEdicion}
           onChange={(event) =>
             setOrdenJudicial((anterior) => ({
               ...anterior,
@@ -2925,13 +3015,12 @@ observacionesEgreso:
 
         <input
           type="radio"
-          name="situacionActual"
-          value="EN_PREDIO"
+        
           checked={
             situacionActual ===
             "EN_PREDIO"
           }
-          disabled={Boolean(resultado)}
+          disabled={Boolean(resultado) || modoEdicion}
           onChange={(event) => {
             const valor =
               event.target.value;
@@ -2982,7 +3071,7 @@ observacionesEgreso:
             situacionActual ===
             "ENTREGADO"
           }
-          disabled={Boolean(resultado)}
+          disabled={Boolean(resultado) || modoEdicion}
           onChange={(event) => {
             const valor =
               event.target.value;
@@ -3022,7 +3111,7 @@ observacionesEgreso:
             situacionActual ===
             "TRASLADADO"
           }
-          disabled={Boolean(resultado)}
+          disabled={Boolean(resultado) || modoEdicion}
           onChange={(event) => {
             const valor =
               event.target.value;
@@ -3065,7 +3154,7 @@ observacionesEgreso:
             situacionActual ===
             "COMPACTADO"
           }
-          disabled={Boolean(resultado)}
+          disabled={Boolean(resultado) || modoEdicion}
           onChange={(event) => {
             const valor =
               event.target.value;
@@ -3112,7 +3201,7 @@ observacionesEgreso:
             situacionActual ===
             "OTRO"
           }
-          disabled={Boolean(resultado)}
+          disabled={Boolean(resultado) || modoEdicion}
           onChange={(event) => {
             const valor =
               event.target.value;
@@ -3193,7 +3282,7 @@ observacionesEgreso:
 
           <select
             value={predioId}
-            disabled={Boolean(resultado)}
+            disabled={Boolean(resultado) || modoEdicion}
             onChange={(event) =>
               setPredioId(
                 event.target.value
@@ -3220,12 +3309,28 @@ observacionesEgreso:
 
           </select>
 
-          <small>
-            Este vehículo quedará pendiente
-            de recepción y confirmación por Predio.
+               <small>
+            El vehículo se registrará directamente
+            en el predio seleccionado.
           </small>
 
         </div>
+
+      <div className="exp-manual-campo">
+  <label>
+    Número de precinto
+  </label>
+
+  <input
+    type="text"
+    value={posicion}
+    disabled={Boolean(resultado)}
+    onChange={(event) =>
+      setPosicion(event.target.value)
+    }
+    placeholder="Se completa al colocar el precinto en el predio"
+  />
+</div>
 
       </div>
 
@@ -3304,7 +3409,7 @@ observacionesEgreso:
 
           <select
             value={predioId}
-            disabled={Boolean(resultado)}
+            disabled={Boolean(resultado) || modoEdicion}
             onChange={(event) =>
               setPredioId(
                 event.target.value
@@ -3348,7 +3453,7 @@ observacionesEgreso:
           <input
             type="datetime-local"
             value={fechaIngreso}
-            disabled={Boolean(resultado)}
+            disabled={Boolean(resultado) || modoEdicion}
             onChange={(event) =>
               setFechaIngreso(
                 event.target.value
@@ -3382,7 +3487,7 @@ observacionesEgreso:
           <input
             type="text"
             value={sector}
-            disabled={Boolean(resultado)}
+            disabled={Boolean(resultado) || modoEdicion}
             onChange={(event) =>
               setSector(
                 event.target.value
@@ -3403,7 +3508,7 @@ observacionesEgreso:
           <input
             type="text"
             value={posicion}
-            disabled={Boolean(resultado)}
+            disabled={Boolean(resultado) || modoEdicion}
             onChange={(event) =>
               setPosicion(
                 event.target.value
@@ -3426,7 +3531,7 @@ observacionesEgreso:
         <textarea
           rows="2"
           value={observacionesIngreso}
-          disabled={Boolean(resultado)}
+          disabled={Boolean(resultado) || modoEdicion}
           onChange={(event) =>
             setObservacionesIngreso(
               event.target.value
@@ -3460,7 +3565,7 @@ observacionesEgreso:
           <input
             type="datetime-local"
             value={fechaEgreso}
-            disabled={Boolean(resultado)}
+            disabled={Boolean(resultado) || modoEdicion}
             onChange={(event) =>
               setFechaEgreso(
                 event.target.value
@@ -3492,7 +3597,7 @@ observacionesEgreso:
             <input
               type="text"
               value={numeroOficio}
-              disabled={Boolean(resultado)}
+              disabled={Boolean(resultado) || modoEdicion}
               onChange={(event) =>
                 setNumeroOficio(
                   event.target.value
@@ -3554,7 +3659,7 @@ observacionesEgreso:
               <input
                 type="text"
                 value={destinoPersona}
-                disabled={Boolean(resultado)}
+                disabled={Boolean(resultado) || modoEdicion}
                 onChange={(event) =>
                   setDestinoPersona(
                     event.target.value
@@ -3576,7 +3681,7 @@ observacionesEgreso:
                 type="text"
                 inputMode="numeric"
                 value={dniPersona}
-                disabled={Boolean(resultado)}
+                disabled={Boolean(resultado) || modoEdicion}
                 onChange={(event) =>
                   setDniPersona(
                     event.target.value
@@ -3617,7 +3722,7 @@ observacionesEgreso:
 
             <select
               value={predioDestinoId}
-              disabled={Boolean(resultado)}
+              disabled={Boolean(resultado) || modoEdicion}
               onChange={(event) =>
                 setPredioDestinoId(
                   event.target.value
@@ -3670,7 +3775,7 @@ observacionesEgreso:
         <textarea
           rows="3"
           value={observacionesEgreso}
-          disabled={Boolean(resultado)}
+          disabled={Boolean(resultado) || modoEdicion}
           onChange={(event) =>
             setObservacionesEgreso(
               event.target.value
@@ -3734,7 +3839,7 @@ observacionesEgreso:
                     ✓
                   </span>
 
-                  Crear expediente
+                  {modoEdicion ? "Guardar correcciones" : "Crear expediente"}
                 </>
               )}
             </button>
@@ -3758,8 +3863,8 @@ observacionesEgreso:
       |--------------------------------------------------------------------------
       */}
 
-      {resultado &&
-        reclamoCreado && (
+  {(modoEdicion || resultado) &&
+  reclamoParaFotos && (
           <section className="exp-manual-fotos">
 
             <div className="exp-manual-fotos-cabecera">
@@ -3789,8 +3894,8 @@ observacionesEgreso:
             | 1 - VEHÍCULO EN EL PREDIO
             |--------------------------------------------------------------------------
             */}
-{situacionActual !== "EN_PREDIO" &&
-  ingresoCreado && (
+{situacionActual === "EN_PREDIO" &&
+  ingresoParaFotos?.id && (
             <div className="exp-manual-foto-card">
               <div className="exp-manual-foto-info">
 
@@ -3811,16 +3916,12 @@ observacionesEgreso:
 
               </div>
 
-              <FotoUploader
-                reclamoId={
-                  reclamoCreado.id
-                }
-                tipoReferencia="INGRESO_PREDIO"
-                referenciaId={
-                  ingresoCreado?.id
-                }
-                maxFotos={5}
-              />
+           <FotoUploader
+  reclamoId={reclamoParaFotos.id}
+  tipoReferencia="INGRESO_PREDIO"
+  referenciaId={ingresoParaFotos.id}
+  maxFotos={5}
+/>
             </div>
   
   )}
@@ -3837,7 +3938,7 @@ observacionesEgreso:
             |--------------------------------------------------------------------------
             */}
 
-            {emplazamientoCreado && (
+        {!modoEdicion && emplazamientoCreado && (
               <div className="exp-manual-foto-card">
 
                 <div className="exp-manual-foto-info">
@@ -3881,7 +3982,7 @@ observacionesEgreso:
             |--------------------------------------------------------------------------
             */}
 
-            {infraccionCreada && (
+         {!modoEdicion && infraccionCreada && (
               <div className="exp-manual-foto-card">
 
                 <div className="exp-manual-foto-info">
@@ -3917,7 +4018,7 @@ observacionesEgreso:
               </div>
             )}
 
-                        {tieneOrdenJudicial && (
+                      {!modoEdicion && tieneOrdenJudicial && (
               <div className="exp-manual-foto-card">
 
                 <div className="exp-manual-foto-info">
@@ -3968,19 +4069,17 @@ observacionesEgreso:
             </div>
 
 
-            <div className="exp-manual-finalizar">
-
-              <button
-                type="button"
-                className="exp-manual-btn exp-manual-btn-principal"
-                onClick={
-                  finalizar
-                }
-              >
-                ✓ Terminar carga
-              </button>
-
-            </div>
+         {!modoEdicion && resultado && (
+  <div className="exp-manual-finalizar">
+    <button
+      type="button"
+      className="exp-manual-btn exp-manual-btn-principal"
+      onClick={finalizar}
+    >
+      ✓ Terminar carga
+    </button>
+  </div>
+)}
 
           </section>
         )}

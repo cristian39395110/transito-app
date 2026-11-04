@@ -1162,6 +1162,7 @@ const listarExpedientes =
               "modelo",
               "color",
               "estadoActual",
+              "origenRegistro",
             ],
 
             order: [
@@ -1588,14 +1589,17 @@ const requierePredio = [
     const esTraslado =
       situacionActual === "TRASLADADO";
 
-const esPendienteIngresoPredio =
+const esPendienteIngresoPredio = false;
+
+const esIngresoHistoricoDirecto =
   situacionActual === "EN_PREDIO";
 
 const esTrasladoEntrePredios =
   situacionActual === "TRASLADADO";
 
 const estaActualmenteEnPredio =
-  esTrasladoEntrePredios;
+  esTrasladoEntrePredios ||
+  esIngresoHistoricoDirecto;
 
 
     /*
@@ -2669,6 +2673,31 @@ anulada:
     let egreso = null;
     let ingresoDestino = null;
 
+    /*
+|--------------------------------------------------------------------------
+| INGRESO DIRECTO DE EXPEDIENTE HISTÓRICO
+|--------------------------------------------------------------------------
+*/
+
+if (esIngresoHistoricoDirecto) {
+  ingreso = await IngresoPredio.create(
+    {
+      reclamoId: nuevoReclamo.id,
+      vehiculoId: nuevoVehiculo.id,
+      remocionId: null,
+      predioId: predio.id,
+      registradoPorId: req.usuario.id,
+      fechaHora: fechaIngreso || new Date(),
+      sector: sector?.trim() || null,
+      posicion: posicion?.trim() || null,
+      observaciones:
+        observacionesIngreso?.trim() ||
+        "Ingreso registrado mediante carga de expediente histórico",
+    },
+    { transaction }
+  );
+}
+
 
 
 
@@ -3215,7 +3244,754 @@ await nuevoVehiculo.save({
       });
   }
 };
+
+
+
+/*
+|--------------------------------------------------------------------------
+| OBTENER EXPEDIENTE HISTÓRICO PARA CORRECCIÓN
+|--------------------------------------------------------------------------
+*/
+const obtenerExpedienteManual = async (req, res) => {
+  try {
+    const reclamoId = Number(req.params.id);
+
+    if (!Number.isSafeInteger(reclamoId) || reclamoId <= 0) {
+      return res.status(400).json({
+        ok: false,
+        mensaje: "ID de expediente inválido",
+      });
+    }
+
+    const reclamo = await Reclamo.findByPk(reclamoId);
+
+    if (!reclamo) {
+      return res.status(404).json({
+        ok: false,
+        mensaje: "Expediente no encontrado",
+      });
+    }
+
+    const vehiculos = await Vehiculo.findAll({
+      where: {
+        reclamoId,
+      },
+      order: [["id", "ASC"]],
+    });
+
+    if (
+      vehiculos.length !== 1 ||
+      vehiculos[0].origenRegistro !== "CARGA_HISTORICA"
+    ) {
+      return res.status(403).json({
+        ok: false,
+        mensaje:
+          "Solo se pueden corregir expedientes históricos con un único vehículo",
+      });
+    }
+
+    const vehiculo = vehiculos[0];
+
+    const [
+      actas,
+      emplazamientos,
+      infracciones,
+      ingresos,
+      egresos,
+    ] = await Promise.all([
+      Acta.findAll({
+        where: {
+          reclamoId,
+          vehiculoId: vehiculo.id,
+          tipo: "VIA_PUBLICA",
+        },
+        order: [["id", "ASC"]],
+      }),
+
+      Emplazamiento.findAll({
+        where: {
+          reclamoId,
+          vehiculoId: vehiculo.id,
+        },
+        order: [["id", "ASC"]],
+      }),
+
+      Infraccion.findAll({
+        where: {
+          reclamoId,
+          vehiculoId: vehiculo.id,
+        },
+        order: [["id", "ASC"]],
+      }),
+
+      IngresoPredio.findAll({
+        where: {
+          reclamoId,
+          vehiculoId: vehiculo.id,
+        },
+        order: [["fechaHora", "ASC"], ["id", "ASC"]],
+      }),
+
+      EgresoPredio.findAll({
+        where: {
+          reclamoId,
+          vehiculoId: vehiculo.id,
+        },
+        order: [["fechaHora", "ASC"], ["id", "ASC"]],
+      }),
+    ]);
+
+    if (
+      actas.length > 1 ||
+      emplazamientos.length > 1 ||
+      infracciones.length > 1
+    ) {
+      return res.status(409).json({
+        ok: false,
+        mensaje:
+          "El expediente tiene varios documentos del mismo tipo. Requiere revisión antes de corregirlo.",
+      });
+    }
+
+    return res.json({
+      ok: true,
+      reclamo,
+      vehiculo,
+      acta: actas[0] || null,
+      emplazamiento: emplazamientos[0] || null,
+      infraccion: infracciones[0] || null,
+      ingresos,
+      egresos,
+    });
+  } catch (error) {
+    console.error(
+      "Error obteniendo expediente histórico:",
+      error
+    );
+
+    return res.status(500).json({
+      ok: false,
+      mensaje: "No se pudo consultar el expediente histórico",
+    });
+  }
+};
+/*
+|--------------------------------------------------------------------------
+| ACTUALIZAR EXPEDIENTE HISTÓRICO
+|--------------------------------------------------------------------------
+| Solo corrige datos administrativos y documentales.
+| No modifica movimientos, estados ni ubicación del vehículo.
+|--------------------------------------------------------------------------
+*/
+
+const actualizarExpedienteManual = async (req, res) => {
+  const Historial = require("../models/Historial");
+
+  const errorHttp = (status, mensaje) => {
+    const error = new Error(mensaje);
+    error.status = status;
+    return error;
+  };
+
+  const texto = (valor, mayusculas = false) => {
+    if (valor === null || valor === undefined) {
+      return null;
+    }
+
+    const resultado = String(valor).trim();
+
+    if (!resultado) return null;
+
+    return mayusculas
+      ? resultado.toUpperCase()
+      : resultado;
+  };
+
+  const fecha = (valor) => {
+    if (valor === null || valor === undefined || valor === "") {
+      return null;
+    }
+
+    const resultado = new Date(valor);
+
+    if (Number.isNaN(resultado.getTime())) {
+      throw errorHttp(400, "Una de las fechas ingresadas es inválida");
+    }
+
+    return resultado;
+  };
+
+  const cambios = [];
+
+  const aplicarCambios = (registro, datos, prefijo) => {
+    if (!registro || !datos) return;
+
+    for (const [campo, valorNuevo] of Object.entries(datos)) {
+      const valorAnterior = registro.get(campo);
+
+      const normalizar = (valor) => {
+        if (valor instanceof Date) {
+          return valor.toISOString();
+        }
+
+        return valor ?? null;
+      };
+
+      if (
+        JSON.stringify(normalizar(valorAnterior)) ===
+        JSON.stringify(normalizar(valorNuevo))
+      ) {
+        continue;
+      }
+
+      cambios.push({
+        registro: prefijo,
+        registroId: registro.id,
+        campo,
+        anterior: normalizar(valorAnterior),
+        nuevo: normalizar(valorNuevo),
+      });
+
+      registro.set(campo, valorNuevo);
+    }
+  };
+
+  try {
+    const reclamoId = Number(req.params.id);
+
+    if (!Number.isSafeInteger(reclamoId) || reclamoId <= 0) {
+      throw errorHttp(400, "ID de expediente inválido");
+    }
+
+    if (!req.usuario?.id) {
+      throw errorHttp(401, "Usuario no identificado");
+    }
+
+    const resultado = await sequelize.transaction(
+      async (transaction) => {
+        /*
+        |--------------------------------------------------------------------------
+        | BUSCAR EXPEDIENTE
+        |--------------------------------------------------------------------------
+        */
+
+        const reclamo = await Reclamo.findByPk(reclamoId, {
+          transaction,
+          lock: transaction.LOCK.UPDATE,
+        });
+
+        if (!reclamo) {
+          throw errorHttp(404, "Expediente no encontrado");
+        }
+
+        const vehiculos = await Vehiculo.findAll({
+          where: { reclamoId },
+          transaction,
+          lock: transaction.LOCK.UPDATE,
+        });
+
+        if (
+          vehiculos.length !== 1 ||
+          vehiculos[0].origenRegistro !== "CARGA_HISTORICA"
+        ) {
+          throw errorHttp(
+            403,
+            "Este expediente no corresponde a una carga histórica editable"
+          );
+        }
+
+        const vehiculo = vehiculos[0];
+
+        /*
+        |--------------------------------------------------------------------------
+        | DOCUMENTOS EXISTENTES
+        |--------------------------------------------------------------------------
+        */
+
+        const [actas, emplazamientos, infracciones] =
+          await Promise.all([
+            Acta.findAll({
+              where: {
+                reclamoId,
+                vehiculoId: vehiculo.id,
+                tipo: "VIA_PUBLICA",
+              },
+              transaction,
+            }),
+
+            Emplazamiento.findAll({
+              where: {
+                reclamoId,
+                vehiculoId: vehiculo.id,
+              },
+              transaction,
+            }),
+
+            Infraccion.findAll({
+              where: {
+                reclamoId,
+                vehiculoId: vehiculo.id,
+              },
+              transaction,
+            }),
+          ]);
+
+        if (
+          actas.length > 1 ||
+          emplazamientos.length > 1 ||
+          infracciones.length > 1
+        ) {
+          throw errorHttp(
+            409,
+            "El expediente tiene varios documentos del mismo tipo y requiere revisión"
+          );
+        }
+
+        const acta = actas[0] || null;
+        const emplazamiento = emplazamientos[0] || null;
+        const infraccion = infracciones[0] || null;
+
+        const body = req.body || {};
+
+        /*
+        |--------------------------------------------------------------------------
+        | VALIDAR DOCUMENTOS
+        |--------------------------------------------------------------------------
+        | En esta primera versión corregimos documentos existentes.
+        | No creamos ni eliminamos documentos.
+        |--------------------------------------------------------------------------
+        */
+
+        const documentos = [
+          ["Acta de Vía Pública", body.acta, acta],
+          ["Emplazamiento", body.emplazamiento, emplazamiento],
+          ["Infracción", body.infraccion, infraccion],
+        ];
+
+        for (const [nombre, enviado, existente] of documentos) {
+          if (!enviado) continue;
+
+          if (
+            enviado.existe !== undefined &&
+            Boolean(enviado.existe) !== Boolean(existente)
+          ) {
+            throw errorHttp(
+              400,
+              `No se puede agregar ni eliminar ${nombre} desde esta corrección`
+            );
+          }
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | RECLAMO
+        |--------------------------------------------------------------------------
+        */
+
+        const numeroReclamo = texto(body.numeroReclamo);
+        const direccion = texto(body.direccion);
+        const tipoReclamoId = Number(body.tipoReclamoId);
+
+        if (!numeroReclamo || !direccion) {
+          throw errorHttp(
+            400,
+            "El número de reclamo y la dirección son obligatorios"
+          );
+        }
+
+        if (
+          !Number.isSafeInteger(tipoReclamoId) ||
+          tipoReclamoId <= 0
+        ) {
+          throw errorHttp(400, "Tipo de reclamo inválido");
+        }
+
+        const tipo = await TipoReclamo.findByPk(
+          tipoReclamoId,
+          { transaction }
+        );
+
+        if (!tipo) {
+          throw errorHttp(
+            400,
+            "El tipo de reclamo seleccionado no existe"
+          );
+        }
+
+        const reclamoDuplicado = await Reclamo.findOne({
+          where: {
+            numeroReclamo,
+            id: { [Op.ne]: reclamoId },
+          },
+          transaction,
+        });
+
+        if (reclamoDuplicado) {
+          throw errorHttp(
+            409,
+            `El reclamo ${numeroReclamo} ya existe`
+          );
+        }
+
+        aplicarCambios(
+          reclamo,
+          {
+            numeroReclamo,
+            tipoReclamoId,
+            direccion,
+            barrio: texto(body.barrio),
+            referencia: texto(body.referencia),
+            observaciones: texto(body.observaciones),
+          },
+          "Reclamo"
+        );
+
+        /*
+        |--------------------------------------------------------------------------
+        | VEHÍCULO
+        |--------------------------------------------------------------------------
+        */
+
+        const datosVehiculo = body.vehiculo || {};
+
+        const vehiculoNuevo = {
+          dominio: texto(datosVehiculo.dominio, true),
+          marca: texto(datosVehiculo.marca),
+          modelo: texto(datosVehiculo.modelo),
+          color: texto(datosVehiculo.color),
+          tipoVehiculo: texto(datosVehiculo.tipoVehiculo),
+          descripcion: texto(datosVehiculo.descripcion),
+        };
+
+        if (!Object.values(vehiculoNuevo).some(Boolean)) {
+          throw errorHttp(
+            400,
+            "Debe existir al menos un dato identificatorio del vehículo"
+          );
+        }
+
+        aplicarCambios(
+          vehiculo,
+          vehiculoNuevo,
+          "Vehículo"
+        );
+
+        /*
+        |--------------------------------------------------------------------------
+        | ACTA DE VÍA PÚBLICA
+        |--------------------------------------------------------------------------
+        */
+
+        if (acta && body.acta) {
+          const datos = body.acta;
+
+          const numeroActa = texto(datos.numeroActa, true);
+
+          if (!numeroActa) {
+            throw errorHttp(
+              400,
+              "El número del Acta de Vía Pública es obligatorio"
+            );
+          }
+
+          const duplicada = await Acta.findOne({
+            where: {
+              numeroActa,
+              id: { [Op.ne]: acta.id },
+            },
+            transaction,
+          });
+
+          if (duplicada) {
+            throw errorHttp(
+              409,
+              `El Acta ${numeroActa} ya existe`
+            );
+          }
+
+          aplicarCambios(
+            acta,
+            {
+              numeroActa,
+              fechaHora: fecha(datos.fechaHora),
+              lugar: texto(datos.lugar),
+              atendidoPor: texto(datos.atendidoPor),
+              caracterAtendido: texto(datos.caracterAtendido),
+              situacion: texto(datos.situacion),
+              cantidad: texto(datos.cantidad),
+              plazoHoras:
+                datos.plazoHoras === null ||
+                datos.plazoHoras === "" ||
+                datos.plazoHoras === undefined
+                  ? null
+                  : Number(datos.plazoHoras),
+              observaciones: texto(datos.observaciones),
+            },
+            "Acta"
+          );
+
+          if (
+            acta.plazoHoras !== null &&
+            (!Number.isSafeInteger(acta.plazoHoras) ||
+              acta.plazoHoras < 0)
+          ) {
+            throw errorHttp(400, "Plazo del acta inválido");
+          }
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | EMPLAZAMIENTO
+        |--------------------------------------------------------------------------
+        */
+
+        if (emplazamiento && body.emplazamiento) {
+          const datos = body.emplazamiento;
+
+          const plazoCantidad =
+            datos.plazoCantidad === null ||
+            datos.plazoCantidad === "" ||
+            datos.plazoCantidad === undefined
+              ? null
+              : Number(datos.plazoCantidad);
+
+          const plazoUnidad = plazoCantidad === null
+            ? null
+            : texto(datos.plazoUnidad);
+
+          if (
+            plazoCantidad !== null &&
+            (!Number.isSafeInteger(plazoCantidad) ||
+              plazoCantidad < 0)
+          ) {
+            throw errorHttp(
+              400,
+              "La cantidad del plazo es inválida"
+            );
+          }
+
+          if (
+            plazoUnidad !== null &&
+            !["HORAS", "DIAS"].includes(plazoUnidad)
+          ) {
+            throw errorHttp(
+              400,
+              "La unidad del plazo es inválida"
+            );
+          }
+
+          const plazoHoras =
+            plazoCantidad === null
+              ? null
+              : plazoUnidad === "DIAS"
+                ? plazoCantidad * 24
+                : plazoCantidad;
+
+          aplicarCambios(
+            emplazamiento,
+            {
+              fechaHora: fecha(datos.fechaHora),
+              plazoCantidad,
+              plazoUnidad,
+              plazoHoras,
+              fechaVencimiento: fecha(
+                datos.fechaVencimiento
+              ),
+              observaciones: texto(datos.observaciones),
+            },
+            "Emplazamiento"
+          );
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | INFRACCIÓN
+        |--------------------------------------------------------------------------
+        */
+
+        if (infraccion && body.infraccion) {
+          const datos = body.infraccion;
+
+          const numeroActa = texto(datos.numeroActa, true);
+
+          if (!numeroActa) {
+            throw errorHttp(
+              400,
+              "El número del Acta de Infracción es obligatorio"
+            );
+          }
+
+          const duplicada = await Infraccion.findOne({
+            where: {
+              numeroActa,
+              id: { [Op.ne]: infraccion.id },
+            },
+            transaction,
+          });
+
+          if (duplicada) {
+            throw errorHttp(
+              409,
+              `El Acta de Infracción ${numeroActa} ya existe`
+            );
+          }
+
+          aplicarCambios(
+            infraccion,
+            {
+              numeroActa,
+              fechaHora: fecha(datos.fechaHora),
+              lugar: texto(datos.lugar),
+              personaEncontrada:
+                datos.personaEncontrada === true,
+              nombreInfractor: texto(datos.nombreInfractor),
+              dniInfractor: texto(datos.dniInfractor),
+              domicilioInfractor: texto(
+                datos.domicilioInfractor
+              ),
+              motivo: texto(datos.motivo),
+              numeroExpedienteJuzgado: texto(
+                datos.numeroExpedienteJuzgado
+              ),
+              observaciones: texto(datos.observaciones),
+            },
+            "Infracción"
+          );
+        }
+
+
+                /*
+        |--------------------------------------------------------------------------
+        | CORREGIR PRECINTO DEL INGRESO HISTÓRICO
+        |--------------------------------------------------------------------------
+        */
+
+          let ingresosParaGuardar = null;
+
+        if (body.posicion !== undefined) {
+          const ingresos = await IngresoPredio.findAll({
+            where: {
+              reclamoId,
+              vehiculoId: vehiculo.id,
+            },
+            transaction,
+            lock: transaction.LOCK.UPDATE,
+          });
+
+          if (ingresos.length !== 1) {
+            throw errorHttp(
+              409,
+              "No se puede identificar un único ingreso al predio para corregir el precinto"
+            );
+          }
+
+                 ingresosParaGuardar = ingresos[0];
+
+          aplicarCambios(
+            ingresosParaGuardar,
+            {
+              posicion: texto(body.posicion),
+            },
+            "IngresoPredio"
+          );
+        }
+        /*
+        |--------------------------------------------------------------------------
+        | GUARDAR CORRECCIONES
+        |--------------------------------------------------------------------------
+        */
+
+        if (cambios.length === 0) {
+          return {
+            ok: true,
+            mensaje: "No se detectaron cambios",
+            cambios: [],
+          };
+        }
+
+        await reclamo.save({ transaction });
+        await vehiculo.save({ transaction });
+
+        if (acta) {
+          await acta.save({ transaction });
+        }
+
+        if (emplazamiento) {
+          await emplazamiento.save({ transaction });
+        }
+
+               if (infraccion) {
+          await infraccion.save({ transaction });
+        }
+
+        if (body.posicion !== undefined) {
+          await ingresosParaGuardar.save({ transaction });
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | AUDITORÍA
+        |--------------------------------------------------------------------------
+        */
+
+        await Historial.create(
+          {
+            reclamoId,
+            usuarioId: req.usuario.id,
+            accion: "CORRECCION_EXPEDIENTE_HISTORICO",
+            descripcion: JSON.stringify({
+              cambios,
+            }),
+            estadoAnterior: null,
+            estadoNuevo: null,
+            fecha: new Date(),
+          },
+          { transaction }
+        );
+
+        return {
+          ok: true,
+          mensaje: "Expediente histórico corregido correctamente",
+          cambios,
+        };
+      }
+    );
+
+    return res.json(resultado);
+
+  } catch (error) {
+    console.error(
+      "Error actualizando expediente histórico:",
+      error
+    );
+
+    if (error.name === "SequelizeUniqueConstraintError") {
+      return res.status(409).json({
+        ok: false,
+        mensaje: "Ya existe un registro con ese número",
+      });
+    }
+
+    if (error.name === "SequelizeValidationError") {
+      return res.status(400).json({
+        ok: false,
+        mensaje: "Los datos ingresados no son válidos",
+      });
+    }
+
+    return res.status(error.status || 500).json({
+      ok: false,
+      mensaje:
+        error.status
+          ? error.message
+          : "No se pudo actualizar el expediente histórico",
+    });
+  }
+};
+
 module.exports = {
   listarExpedientes,
   crearExpedienteManual,
+  obtenerExpedienteManual,
+  actualizarExpedienteManual,
 };

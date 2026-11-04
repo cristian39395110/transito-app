@@ -5956,27 +5956,35 @@ onClick={() => {
                 </div>
               </div>
 
-            {reclamo.etapaActual ===
-    "ESPERANDO_PLAZO" ? (
-      <div className="estado-espera-plazo">
-        <strong>
-          ⏳ Esperando vencimiento del emplazamiento
-        </strong>
+      {seguimiento.vehiculos.some(
+  (vehiculo) =>
+    vehiculo.origenRegistro === "CARGA_HISTORICA"
+) ? (
+  <div className="estado-espera-plazo">
+    <strong>📁 Expediente histórico</strong>
+    <p>
+      Este expediente fue incorporado mediante carga manual.
+      No corresponde asignar un jefe de guardia ni un inspector.
+    </p>
+  </div>
+) : reclamo.etapaActual === "ESPERANDO_PLAZO" ? (
+  <div className="estado-espera-plazo">
+    <strong>
+      ⏳ Esperando vencimiento del emplazamiento
+    </strong>
 
-        <p>
-          Todavía no corresponde realizar un nuevo control.
-          Cuando venza el plazo, el reclamo quedará disponible
-          para que una guardia tome el trabajo y asigne un inspector.
-        </p>
-      </div>
-    ) : (
-      <AsignacionReclamo
-        reclamo={reclamo}
-        onActualizado={
-          cargarReclamo
-        }
-      />
-    )}
+    <p>
+      Todavía no corresponde realizar un nuevo control.
+      Cuando venza el plazo, el reclamo quedará disponible
+      para que una guardia tome el trabajo y asigne un inspector.
+    </p>
+  </div>
+) : (
+  <AsignacionReclamo
+    reclamo={reclamo}
+    onActualizado={cargarReclamo}
+  />
+)}
             </section>
 
 

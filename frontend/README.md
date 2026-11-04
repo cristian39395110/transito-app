@@ -1,14 +1,8 @@
-referenciaTemporal: {
-  type: DataTypes.STRING(100),
-  allowNull: true,
-},  agregar a foto en el vps de transito
-
-indexe agregar  
-  {
-    fields: ["referenciaTemporal"],
-  },
+ALTER TABLE reclamos
+ADD COLUMN informeJefeGuardia TEXT NULL;
 
 
+agregar esto en el vps
 
   USE transito_db;
 

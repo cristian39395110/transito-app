@@ -5,6 +5,7 @@ import {
 } from "react";
 
 import api from "../api/api";
+import { useNavigate } from "react-router-dom";
 
 import IngresoPredioForm from "./IngresoPredioForm";
 import EgresoPredioForm from "./EgresoPredioForm";
@@ -22,9 +23,16 @@ const FichaPredioVehiculo = ({
   onVolver,
   onActualizado,
 }) => {
-  const {
-    rol,
-  } = useAuth();
+  const { rol } = useAuth();
+
+  const navigate = useNavigate();
+
+  const puedeVerExpediente = [
+    "administrador",
+    "director",
+    "secretaria_reclamos",
+    "secretaria_predio",
+  ].includes(rol);
 
 
 const [recibiendoTraslado, setRecibiendoTraslado] =
@@ -327,6 +335,28 @@ if (!precinto) {
         ← Volver al predio
       </button>
 
+      {puedeVerExpediente && reclamo?.id && (
+        <div style={{ marginBottom: "20px" }}>
+          <button
+            type="button"
+            onClick={() =>
+              navigate(`/reclamos/${reclamo.id}`)
+            }
+            style={{
+              padding: "12px 20px",
+              backgroundColor: "#1e40af",
+              color: "#ffffff",
+              border: "none",
+              borderRadius: "8px",
+              fontWeight: "600",
+              fontSize: "15px",
+              cursor: "pointer",
+            }}
+          >
+            📄 Ver expediente completo
+          </button>
+        </div>
+      )}
       <section className="ficha-cabecera">
         <div className="ficha-identificacion">
           <span>
