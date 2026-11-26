@@ -1,0 +1,2 @@
+# Los scripts de bash tienen que llegar al VPS (Linux) con fin de línea LF.
+*.sh text eol=lf

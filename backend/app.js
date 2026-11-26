@@ -56,6 +56,10 @@ const remocionRoutes = require(
   "./routes/remocionRoutes"
 );
 
+const gruaRoutes = require(
+  "./routes/gruaRoutes"
+);
+
 const predioRoutes = require(
   "./routes/predioRoutes"
 );
@@ -199,6 +203,11 @@ app.use(
 app.use(
   "/api/remociones",
   remocionRoutes
+);
+
+app.use(
+  "/api/grua",
+  gruaRoutes
 );
 
 app.use(

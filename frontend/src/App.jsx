@@ -19,6 +19,7 @@ import ReclamoDetallePage from "./pages/ReclamoDetallePage";
 
 import SegundaVisitaPage from "./pages/SegundaVisitaPage";
 import RemocionVehiculoPage from "./pages/RemocionVehiculoPage";
+import RetirosGruaPage from "./pages/RetirosGruaPage";
 
 import MiGuardiaPage from "./pages/MiGuardiaPage";
 
@@ -60,6 +61,18 @@ const InicioPorRol = () => {
     return (
       <Navigate
         to="/predio"
+        replace
+      />
+    );
+  }
+
+  if (
+    rol ===
+    "grua"
+  ) {
+    return (
+      <Navigate
+        to="/retiros-grua"
         replace
       />
     );
@@ -287,6 +300,7 @@ const App = () => {
               roles={[
                 "administrador",
                 "inspector",
+                "grua",
               ]}
             >
               <SegundaVisitaPage />
@@ -306,9 +320,31 @@ const App = () => {
               roles={[
                 "administrador",
                 "inspector",
+                "grua",
               ]}
             >
               <RemocionVehiculoPage />
+            </ProtectedRoute>
+          }
+        />
+
+
+        {/* ==============================================
+            GRÚA
+        ============================================== */}
+
+        <Route
+          path="retiros-grua"
+          element={
+            <ProtectedRoute
+              roles={[
+                "administrador",
+                "director",
+                "jefe_guardia",
+                "grua",
+              ]}
+            >
+              <RetirosGruaPage />
             </ProtectedRoute>
           }
         />

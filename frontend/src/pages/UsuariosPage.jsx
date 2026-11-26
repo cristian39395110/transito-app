@@ -379,6 +379,10 @@ const UsuariosPage = () => {
           <option value="secretaria_predio">
             Secretaría predio
           </option>
+
+          <option value="grua">
+            Grúa
+          </option>
         </select>
 
         <select

@@ -21,12 +21,31 @@ const {
   "../services/historialService"
 );
 
+const {
+  puedeRetirarGrua,
+} = require(
+  "../services/gruaService"
+);
+
 
 /*
 |--------------------------------------------------------------------------
 | PERMISO
 |--------------------------------------------------------------------------
+|
+| Inspector: solamente el inspector asignado al reclamo.
+|
+| Grúa: no está asignada al reclamo. Su permiso se valida
+| más abajo, cuando ya se conoce el vehículo y el acta:
+| el acta debe ser RETIRO_GRUA y el vehículo debe seguir
+| PENDIENTE_REMOCION (ver puedeRetirarGrua).
+|
 */
+
+const esUsuarioGrua = (
+  usuario
+) =>
+  usuario?.rol === "grua";
 
 const validarInspector = (
   reclamo,
@@ -53,8 +72,34 @@ const validarInspector = (
 const actualizarEstadoReclamoDespuesDeRemocion = async ({
   reclamo,
   vehiculoRemovido,
+  realizadaPorGrua = false,
   transaction,
 }) => {
+  /*
+  |--------------------------------------------------------------------------
+  | REMOCIÓN HECHA POR LA GRÚA MIENTRAS UN INSPECTOR TRABAJA EL RECLAMO
+  |--------------------------------------------------------------------------
+  |
+  | Ejemplo: el inspector sigue controlando otro vehículo del mismo
+  | reclamo en su segunda visita.
+  |
+  | No tocamos el estado del reclamo para no sacarle el trabajo al
+  | inspector. Cuando el inspector termine, su propio flujo ya ve que
+  | este vehículo pasó a PENDIENTE_INGRESO_PREDIO.
+  |
+  */
+
+  if (
+    realizadaPorGrua &&
+    reclamo.inspectorId
+  ) {
+    return {
+      modo: "GRUA_CON_INSPECTOR_ACTIVO",
+      hayOtroParaControlarAhora: false,
+      hayOtroEsperandoPlazo: false,
+    };
+  }
+
   const vehiculos = await Vehiculo.findAll({
     where: {
       reclamoId: reclamo.id,
@@ -275,6 +320,41 @@ const actualizarEstadoReclamoDespuesDeRemocion = async ({
   |--------------------------------------------------------------------------
   */
 
+  /*
+  |--------------------------------------------------------------------------
+  | PRIORIDAD 1 (GRÚA) - HAY OTRO VEHÍCULO VENCIDO
+  |--------------------------------------------------------------------------
+  |
+  | La grúa no hace segundas visitas. El otro vehículo
+  | vuelve a quedar para que el jefe asigne inspector.
+  |
+  */
+
+  if (
+    realizadaPorGrua &&
+    pendientesVencidos.length > 0
+  ) {
+    reclamo.estado =
+      "PENDIENTE_ACTUACION";
+
+    reclamo.etapaActual =
+      "PENDIENTE_SEGUNDA_VISITA";
+
+    reclamo.inspectorId = null;
+    reclamo.fechaResolucion = null;
+
+    await reclamo.save({
+      transaction,
+    });
+
+    return {
+      modo: "MULTIVEHICULO",
+      hayOtroParaControlarAhora: false,
+      hayOtroEsperandoPlazo:
+        pendientesEnPlazo.length > 0,
+    };
+  }
+
   if (pendientesVencidos.length > 0) {
     reclamo.estado =
       "PENDIENTE_ACTUACION";
@@ -401,7 +481,13 @@ const obtenerContextoRemocion =
       }
 
 
+      const porGrua =
+        esUsuarioGrua(
+          req.usuario
+        );
+
       if (
+        !porGrua &&
         !validarInspector(
           reclamo,
           req.usuario
@@ -411,6 +497,22 @@ const obtenerContextoRemocion =
           ok: false,
           mensaje:
             "Este trabajo no está asignado a este inspector",
+        });
+      }
+
+      /*
+      | La grúa siempre entra desde su bandeja
+      | con el acta exacta del vehículo.
+      */
+
+      if (
+        porGrua &&
+        !infraccionId
+      ) {
+        return res.status(400).json({
+          ok: false,
+          mensaje:
+            "Falta indicar el Acta de Infracción del vehículo a retirar",
         });
       }
 
@@ -526,6 +628,26 @@ else {
     });
   }
 }
+
+      /*
+      |--------------------------------------------------------------------------
+      | PERMISO DE LA GRÚA
+      |--------------------------------------------------------------------------
+      */
+
+      if (
+        porGrua &&
+        !puedeRetirarGrua({
+          infraccion,
+          vehiculo,
+        })
+      ) {
+        return res.status(403).json({
+          ok: false,
+          mensaje:
+            "Este vehículo no está marcado como listo para retirar con grúa",
+        });
+      }
 
 
       const inventario =
@@ -1501,7 +1623,13 @@ const registrarRemocionCompleta =
         });
       }
 
+      const porGrua =
+        esUsuarioGrua(
+          req.usuario
+        );
+
       if (
+        !porGrua &&
         !validarInspector(
           reclamo,
           req.usuario
@@ -1520,6 +1648,11 @@ const registrarRemocionCompleta =
       |--------------------------------------------------------------------------
       | VEHÍCULO EXACTO
       |--------------------------------------------------------------------------
+      |
+      | Se bloquea la fila para que dos usuarios
+      | (por ejemplo dos grúas) no registren
+      | la misma remoción al mismo tiempo.
+      |
       */
 
       const vehiculo =
@@ -1530,6 +1663,8 @@ const registrarRemocionCompleta =
               reclamo.id,
           },
           transaction,
+          lock:
+            transaction.LOCK.UPDATE,
         });
 
       if (!vehiculo) {
@@ -1568,6 +1703,28 @@ const registrarRemocionCompleta =
           ok: false,
           mensaje:
             "No se puede retirar el vehículo sin una Acta de Infracción válida",
+        });
+      }
+
+      /*
+      |--------------------------------------------------------------------------
+      | PERMISO DE LA GRÚA
+      |--------------------------------------------------------------------------
+      */
+
+      if (
+        porGrua &&
+        !puedeRetirarGrua({
+          infraccion,
+          vehiculo,
+        })
+      ) {
+        await transaction.rollback();
+
+        return res.status(403).json({
+          ok: false,
+          mensaje:
+            "Este vehículo no está marcado como listo para retirar con grúa",
         });
       }
 
@@ -1736,11 +1893,28 @@ const registrarRemocionCompleta =
       |
       */
 
+      /*
+      | Si la grúa es la que tiene tomada la segunda
+      | visita de este reclamo (por ejemplo, queda otro
+      | vehículo para controlar), trabaja como un
+      | inspector: sigue su propia visita.
+      */
+
+      const gruaEsResponsable =
+        porGrua &&
+        Number(
+          reclamo.inspectorId
+        ) ===
+          Number(req.usuario.id);
+
       const estadoPostRemocion =
         await actualizarEstadoReclamoDespuesDeRemocion({
           reclamo,
           vehiculoRemovido:
             vehiculo,
+          realizadaPorGrua:
+            porGrua &&
+            !gruaEsResponsable,
           transaction,
         });
 
@@ -1855,7 +2029,9 @@ const registrarRemocionCompleta =
           "REMOCION_VEHICULO",
 
         descripcion:
-          `Vehículo N.º ${vehiculo.numeroInterno || vehiculo.id} retirado y trasladado a ${predioDestino.nombre}`,
+          porGrua
+            ? `Vehículo N.º ${vehiculo.numeroInterno || vehiculo.id} retirado por grúa y trasladado a ${predioDestino.nombre}`
+            : `Vehículo N.º ${vehiculo.numeroInterno || vehiculo.id} retirado y trasladado a ${predioDestino.nombre}`,
 
         estadoAnterior:
           reclamo.estado,

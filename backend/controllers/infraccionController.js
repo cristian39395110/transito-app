@@ -7,6 +7,13 @@ const {
 
 const { enviarCorreo } = require("../services/emailService");
 
+const {
+  ACCION_RETIRO_GRUA,
+  reclamoTieneRetiroGruaPendiente,
+  buscarConOrdenParaGrua,
+  avisarGruaEnSegundoPlano,
+} = require("../services/gruaService");
+
 const enviarAlJuzgado = async (
   req,
   res
@@ -200,6 +207,31 @@ const textoObservacion =
         await Reclamo.findByPk(
           infraccion.reclamoId
         );
+
+      /*
+      | Si un vehículo de este reclamo todavía está
+      | esperando a la grúa, guardamos la respuesta
+      | del Juzgado en el acta pero NO movemos el
+      | reclamo: primero tiene que pasar la grúa.
+      */
+
+      const esperandoGrua =
+        reclamo
+          ? await reclamoTieneRetiroGruaPendiente(
+              reclamo.id
+            )
+          : false;
+
+      if (esperandoGrua) {
+        return res.json({
+          ok: true,
+
+          mensaje:
+            "Respuesta del Juzgado registrada. El reclamo sigue esperando que la grúa retire el vehículo.",
+
+          infraccion,
+        });
+      }
 
       if (reclamo) {
         reclamo.inspectorId = null;
@@ -493,11 +525,64 @@ if (resultado === "AUTORIZADA") {
           infraccion.reclamoId
         );
 
+      /*
+      |--------------------------------------------------------------------------
+      | ORDEN AUTORIZADA: VA DIRECTO A LA GRÚA
+      |--------------------------------------------------------------------------
+      |
+      | Si el vehículo sigue en la calle, queda listo para la
+      | grúa (aparece en su bandeja y le llega un mail).
+      | Ya no pasa por Director -> guardia -> inspector.
+      |
+      | La orden judicial queda registrada igual en el acta.
+      |
+      */
+
+      let directoAGrua = false;
+
+      if (
+        resultado === "AUTORIZADA" &&
+        reclamo
+      ) {
+        const paraGrua =
+          await buscarConOrdenParaGrua({
+            reclamoId:
+              reclamo.id,
+            infraccionId:
+              infraccion.id,
+          });
+
+        if (paraGrua.length) {
+          infraccion.accionPosterior =
+            ACCION_RETIRO_GRUA;
+
+          await infraccion.save();
+
+          directoAGrua = true;
+
+          avisarGruaEnSegundoPlano({
+            reclamo,
+            vehiculo:
+              paraGrua[0].vehiculo,
+            infraccion,
+          });
+        }
+      }
+
       if (reclamo) {
         reclamo.inspectorId = null;
         reclamo.jefeGuardiaId = null;
 
-        if (
+        if (directoAGrua) {
+          reclamo.estado =
+            "PENDIENTE_ACTUACION";
+
+          reclamo.etapaActual =
+            "PENDIENTE_REMOCION";
+
+          reclamo.fechaResolucion =
+            null;
+        } else if (
           resultado === "AUTORIZADA"
         ) {
           reclamo.estado =
@@ -556,7 +641,9 @@ if (resultado === "AUTORIZADA" && reclamo) {
             `El Juzgado autorizó la remoción de un vehículo.\n\n` +
             `Reclamo N°: ${reclamo.numeroReclamo}\n` +
             `Dirección: ${reclamo.direccion || "Sin dirección"}\n\n` +
-            `El expediente requiere que asignes un jefe de guardia para continuar con la remoción.\n\n` +
+            (directoAGrua
+              ? `El vehículo quedó listo para que lo retire la grúa. No hace falta asignar guardia.\n\n`
+              : `El expediente requiere que asignes un jefe de guardia para continuar con la remoción.\n\n`) +
             `Ingresá al Sistema de Tránsito:\n` +
             `https://transito.informerapido.com.ar`,
         });
@@ -585,9 +672,11 @@ if (resultado === "AUTORIZADA" && reclamo) {
         ok: true,
 
         mensaje:
-          resultado === "AUTORIZADA"
-            ? "Orden judicial registrada. El vehículo quedó habilitado para continuar con la remoción."
-            : "El Juzgado no autorizó la remoción del vehículo.",
+          directoAGrua
+            ? "Orden judicial registrada. El vehículo quedó listo para la grúa y se le avisó por email."
+            : resultado === "AUTORIZADA"
+              ? "Orden judicial registrada. El vehículo quedó habilitado para continuar con la remoción."
+              : "El Juzgado no autorizó la remoción del vehículo.",
 
         infraccion,
       });

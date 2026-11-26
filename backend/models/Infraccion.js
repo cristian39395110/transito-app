@@ -96,7 +96,14 @@ const Infraccion = sequelize.define(
         "MUNICIPALIDAD",
         "OTRA_ACTUACION",
         "RETIRO_INMEDIATO",
-        "BUSQUEDA_REMOCION"
+        "BUSQUEDA_REMOCION",
+
+        /*
+        El inspector labró el acta y dejó
+        el vehículo listo para que lo
+        retire la grúa (rol "grua").
+        */
+        "RETIRO_GRUA"
       ),
 
       allowNull: true,

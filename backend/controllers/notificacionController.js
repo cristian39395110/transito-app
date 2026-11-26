@@ -15,6 +15,13 @@ const {
   "../services/emplazamientoService"
 );
 
+const {
+  buscarRetirosPendientes,
+  buscarSegundasVisitasParaGrua,
+} = require(
+  "../services/gruaService"
+);
+
 const ETAPAS_FUERA_RECLAMOS = [
   "EN_PREDIO",
   "EGRESADO",
@@ -126,6 +133,89 @@ const obtenerResumen =
 
       /*
       |--------------------------------------------------------------------------
+      | RETIROS GRÚA
+      |--------------------------------------------------------------------------
+      |
+      | Vehículos con Acta de Infracción que el inspector
+      | dejó listos para que los retire la grúa.
+      |
+      | Si lo único pendiente de un reclamo es que pase
+      | la grúa, NO se cuenta como trabajo de la guardia.
+      |
+      */
+
+      let retirosPendientesGrua = [];
+
+      if (
+        [
+          "grua",
+          "administrador",
+          "superadmin",
+          "director",
+          "jefe_guardia",
+        ].includes(rol)
+      ) {
+        try {
+          retirosPendientesGrua =
+            await buscarRetirosPendientes();
+        } catch (error) {
+          console.error(
+            "Error contando retiros de grúa:",
+            error
+          );
+        }
+      }
+
+      const reclamosEsperandoGrua =
+        new Set(
+          retirosPendientesGrua.map(
+            (item) =>
+              Number(item.reclamoId)
+          )
+        );
+
+      const esperaSoloGrua = (
+        reclamo
+      ) =>
+        reclamo.etapaActual ===
+          "PENDIENTE_REMOCION" &&
+        reclamosEsperandoGrua.has(
+          Number(reclamo.id)
+        );
+
+      /*
+      | Al gruyero también le contamos las segundas
+      | visitas que puede tomar o que ya tiene tomadas.
+      */
+
+      let visitasGrua = 0;
+
+      if (rol === "grua") {
+        try {
+          visitasGrua =
+            (
+              await buscarSegundasVisitasParaGrua({
+                usuarioId,
+              })
+            ).filter(
+              (item) =>
+                item.puedeTomar ||
+                item.esMia
+            ).length;
+        } catch (error) {
+          console.error(
+            "Error contando segundas visitas de grúa:",
+            error
+          );
+        }
+      }
+
+      const retirosGrua =
+        retirosPendientesGrua.length +
+        visitasGrua;
+
+      /*
+      |--------------------------------------------------------------------------
       | CONTADOR RECLAMOS
       |--------------------------------------------------------------------------
       |
@@ -144,7 +234,8 @@ const obtenerResumen =
             (reclamo) =>
               ETAPAS_ACCION_ADMIN.includes(
                 reclamo.etapaActual
-              )
+              ) &&
+              !esperaSoloGrua(reclamo)
           ).length;
       }
 
@@ -242,7 +333,8 @@ const obtenerResumen =
                   "PENDIENTE_REMOCION",
                 ].includes(
                   reclamo.etapaActual
-                )
+                ) &&
+                !esperaSoloGrua(reclamo)
             ).length;
         } else {
           miGuardia =
@@ -253,6 +345,12 @@ const obtenerResumen =
                   "PENDIENTE_SEGUNDA_VISITA"
                 ) {
                   return true;
+                }
+
+                if (
+                  esperaSoloGrua(reclamo)
+                ) {
+                  return false;
                 }
 
                 return (
@@ -376,6 +474,8 @@ const obtenerResumen =
           misTrabajos,
 
           predio,
+
+          retirosGrua,
         },
       });
     } catch (error) {

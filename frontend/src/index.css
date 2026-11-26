@@ -1,31 +1,78 @@
-:root {
-  --text: #6b6375;
-  --text-h: #08060d;
-  --bg: #fff;
-  --border: #e5e4e7;
-  --code-bg: #f4f3ec;
-  --accent: #aa3bff;
-  --accent-bg: rgba(170, 59, 255, 0.1);
-  --accent-border: rgba(170, 59, 255, 0.5);
-  --social-bg: rgba(244, 243, 236, 0.5);
-  --shadow:
-    rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
+/* =========================================================
+   BASE DEL SISTEMA DE TRÁNSITO
+   ---------------------------------------------------------
+   Estilos comunes a todas las pantallas.
 
-  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
+   IMPORTANTE: casi todo va dentro de :where(), que tiene
+   prioridad cero. Así cada pantalla puede seguir usando
+   sus propios estilos sin que esto los pise.
+   ========================================================= */
+
+:root {
+  /* Colores de marca */
+  --t-primario: #1d4ed8;
+  --t-primario-suave: #eff6ff;
+  --t-acento: #f59e0b;
+  --t-marca: #c62828;
+
+  /* Neutros */
+  --t-texto: #0f172a;
+  --t-texto-suave: #475569;
+  --t-texto-tenue: #64748b;
+  --t-borde: #e2e8f0;
+  --t-fondo: #f1f5f9;
+  --t-superficie: #ffffff;
+
+  /* Estados */
+  --t-ok: #16a34a;
+  --t-aviso: #d97706;
+  --t-error: #dc2626;
+
+  /* Forma */
+  --t-radio: 12px;
+  --t-sombra:
+    0 1px 2px rgba(15, 23, 42, 0.05),
+    0 4px 12px rgba(15, 23, 42, 0.05);
+  --t-foco: 0 0 0 3px rgba(37, 99, 235, 0.25);
+
+  /* Compatibilidad con variables viejas */
+  --text: var(--t-texto-suave);
+  --text-h: var(--t-texto);
+  --bg: var(--t-fondo);
+  --border: var(--t-borde);
+  --accent: var(--t-primario);
+  --accent-bg: var(--t-primario-suave);
+  --accent-border: rgba(29, 78, 216, 0.4);
+
+  --sans:
+    "Inter",
+    "Segoe UI",
+    system-ui,
+    -apple-system,
+    Roboto,
+    "Helvetica Neue",
+    Arial,
+    sans-serif;
+  --heading: var(--sans);
   --mono: ui-monospace, Consolas, monospace;
 
+  /* Mismo tamaño base que antes: no cambia
+     el tamaño de ninguna pantalla. */
   font: 18px/145% var(--sans);
-  letter-spacing: 0.18px;
-color-scheme: light;
-  color: var(--text);
-  background: var(--bg);
+
+  color-scheme: light;
+  color: var(--t-texto);
+  background: var(--t-fondo);
+
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  -webkit-tap-highlight-color: transparent;
+}
 
-  @media (max-width: 1024px) {
+@media (max-width: 1024px) {
+  :root {
     font-size: 16px;
   }
 }
@@ -34,56 +81,183 @@ html,
 body,
 #root {
   color-scheme: light;
-  background-color: #fff;
+  background-color: var(--t-fondo);
 }
-
 
 body {
   margin: 0;
 }
 
+::selection {
+  background: rgba(37, 99, 235, 0.18);
+}
 
+/* Un elemento con el atributo hidden se oculta siempre,
+   aunque su clase le ponga display: flex / grid. */
 
-h1,
-h2 {
+[hidden] {
+  display: none !important;
+}
+
+/* =========================================================
+   TÍTULOS Y TEXTO
+   ========================================================= */
+
+:where(h1, h2, h3, h4) {
   font-family: var(--heading);
-  font-weight: 500;
-  color: var(--text-h);
+  color: var(--t-texto);
+  letter-spacing: -0.01em;
 }
 
-h1 {
-  font-size: 56px;
-  letter-spacing: -1.68px;
-  margin: 32px 0;
-  @media (max-width: 1024px) {
-    font-size: 36px;
-    margin: 20px 0;
-  }
+:where(h1) {
+  margin: 0 0 12px;
+  font-size: 30px;
+  font-weight: 800;
+  line-height: 1.15;
 }
-h2 {
-  font-size: 24px;
-  line-height: 118%;
-  letter-spacing: -0.24px;
+
+:where(h2) {
   margin: 0 0 8px;
-  @media (max-width: 1024px) {
-    font-size: 20px;
+  font-size: 21px;
+  font-weight: 750;
+  line-height: 1.2;
+}
+
+:where(h3) {
+  font-weight: 700;
+}
+
+@media (max-width: 768px) {
+  :where(h1) {
+    font-size: 24px;
+  }
+
+  :where(h2) {
+    font-size: 19px;
   }
 }
+
 p {
   margin: 0;
 }
 
-code,
-.counter {
-  font-family: var(--mono);
-  display: inline-flex;
-  border-radius: 4px;
-  color: var(--text-h);
+:where(a) {
+  color: var(--t-primario);
 }
 
 code {
+  font-family: var(--mono);
   font-size: 15px;
   line-height: 135%;
-  padding: 4px 8px;
-  background: var(--code-bg);
+  padding: 3px 7px;
+  border-radius: 6px;
+  background: #f1f5f9;
+  color: var(--t-texto);
+}
+
+/* =========================================================
+   BOTONES
+   ========================================================= */
+
+:where(button) {
+  font-family: inherit;
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.08s ease;
+}
+
+:where(button:not(:disabled)):active {
+  transform: scale(0.98);
+}
+
+:where(button:disabled) {
+  cursor: not-allowed;
+}
+
+/* =========================================================
+   CAMPOS
+   ========================================================= */
+
+:where(input, select, textarea) {
+  font-family: inherit;
+  color: var(--t-texto);
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+:where(input, select, textarea):focus {
+  border-color: var(--t-primario);
+}
+
+:where(input::placeholder, textarea::placeholder) {
+  color: #94a3b8;
+}
+
+/* Foco visible y prolijo (teclado) */
+
+:where(
+  button,
+  a,
+  input,
+  select,
+  textarea,
+  [tabindex]
+):focus-visible {
+  outline: none;
+  box-shadow: var(--t-foco);
+}
+
+/* En el celular, los campos con letra menor a 16px
+   hacen que el teléfono haga zoom al escribir. */
+
+@media (max-width: 768px) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+  select,
+  textarea {
+    font-size: max(16px, 1em);
+  }
+}
+
+/* =========================================================
+   BARRAS DE DESPLAZAMIENTO
+   ========================================================= */
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+*::-webkit-scrollbar-thumb {
+  border: 3px solid transparent;
+  border-radius: 999px;
+  background: #cbd5e1;
+  background-clip: padding-box;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+  background-clip: padding-box;
+}
+
+/* =========================================================
+   MOVIMIENTO REDUCIDO
+   ========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }

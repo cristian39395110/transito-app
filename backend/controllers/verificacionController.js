@@ -11,7 +11,21 @@ const {
   Infraccion,
   Vehiculo,
   Foto,
+  Remocion,
 } = require("../models");
+
+const {
+  ACCION_RETIRO_GRUA,
+  avisarGruaEnSegundoPlano,
+} = require(
+  "../services/gruaService"
+);
+
+const {
+  registrarHistorial,
+} = require(
+  "../services/historialService"
+);
 
 
 const convertirPlazoAHoras = (
@@ -404,6 +418,55 @@ const registrarSegundaVisita = async (
       });
     }
 
+    /*
+    |--------------------------------------------------------------------------
+    | GRÚA: SOLO 3 OPCIONES
+    |--------------------------------------------------------------------------
+    |
+    | - Ya no estaba        -> CUMPLIDO
+    | - Me lo llevo         -> NO_CUMPLIDO + RETIRO_GRUA
+    | - El dueño se opone   -> NO_CUMPLIDO + BUSQUEDA_REMOCION
+    |
+    | Las prórrogas y otros resultados los decide un inspector.
+    |
+    */
+
+    const esGrua =
+      req.usuario.rol === "grua";
+
+    if (
+      esGrua &&
+      ![
+        "CUMPLIDO",
+        "NO_CUMPLIDO",
+      ].includes(resultado)
+    ) {
+      await transaction.rollback();
+
+      return res.status(400).json({
+        ok: false,
+        mensaje:
+          "Elegí si el vehículo ya no estaba, si te lo llevás o si el dueño se opone",
+      });
+    }
+
+    if (
+      esGrua &&
+      resultado === "NO_CUMPLIDO" &&
+      ![
+        ACCION_RETIRO_GRUA,
+        "BUSQUEDA_REMOCION",
+      ].includes(accionPosterior)
+    ) {
+      await transaction.rollback();
+
+      return res.status(400).json({
+        ok: false,
+        mensaje:
+          "Indicá si te llevás el vehículo o si el dueño se opone",
+      });
+    }
+
     const reclamo =
       await Reclamo.findByPk(
         reclamoId,
@@ -657,6 +720,7 @@ const registrarSegundaVisita = async (
     const accionesVehiculoPermitidas = [
       "RETIRO_INMEDIATO",
       "BUSQUEDA_REMOCION",
+      ACCION_RETIRO_GRUA,
     ];
 
     if (
@@ -705,6 +769,7 @@ const registrarSegundaVisita = async (
         [
           "RETIRO_INMEDIATO",
           "BUSQUEDA_REMOCION",
+          ACCION_RETIRO_GRUA,
         ].includes(
           accionPosterior
         ) &&
@@ -760,6 +825,8 @@ const registrarSegundaVisita = async (
     let quedanEmplazamientosPendientes =
       false;
     let quedanEmplazamientosVencidos =
+      false;
+    let avisarGrua =
       false;
 if (
   resultado === "CUMPLIDO"
@@ -1144,8 +1211,13 @@ if (
       reclamo.etapaActual =
         "PENDIENTE_REMOCION";
     } else {
+      // "PENDIENTE_ACTUACION" no es una etapa válida
+      // (en el VPS, con modo estricto, daría error).
+      // En la práctica no se llega acá: si hay gestión
+      // posterior, el otro vehículo está en remoción o
+      // en predio.
       reclamo.etapaActual =
-        "PENDIENTE_ACTUACION";
+        "PENDIENTE_REMOCION";
     }
   } else {
     /*
@@ -1594,6 +1666,114 @@ if (
           true;
       } else if (
         accionPosterior ===
+        ACCION_RETIRO_GRUA
+      ) {
+        /*
+        |--------------------------------------------------------------------------
+        | LISTO PARA LA GRÚA
+        |--------------------------------------------------------------------------
+        |
+        | El inspector labró el acta y el vehículo
+        | queda esperando a la grúa en el lugar.
+        |
+        | El inspector NO sigue con la remoción:
+        | la registra el usuario con rol "grua"
+        | desde su bandeja "Retiros grúa".
+        |
+        */
+
+        vehiculo.estadoActual =
+          "PENDIENTE_REMOCION";
+
+        await vehiculo.save({
+          transaction,
+        });
+
+        /*
+        | Si el que hizo la visita es la misma grúa,
+        | no avisamos por mail: sigue directo al retiro.
+        */
+
+        avisarGrua =
+          !esGrua;
+
+        if (esGrua) {
+          continuarRemocion =
+            true;
+        }
+
+        const pendientesMismaVisita =
+          tarea
+            ? await obtenerPendientesDeLaTarea({
+                reclamoId,
+                tareaId:
+                  tarea.id,
+                transaction,
+              })
+            : [];
+
+        if (
+          tarea &&
+          pendientesMismaVisita
+            .length > 0
+        ) {
+          /*
+          | Queda otro vehículo para controlar
+          | en esta misma visita.
+          */
+
+          reclamo.estado =
+            "PENDIENTE_ACTUACION";
+
+          reclamo.etapaActual =
+            "SEGUNDA_VISITA";
+
+          reclamo.inspectorId =
+            req.usuario.id;
+
+          reclamo.fechaResolucion =
+            null;
+
+          tarea.estadoTarea =
+            "EN_CURSO";
+
+          tarea.fechaFinalizacion =
+            null;
+
+          await tarea.save({
+            transaction,
+          });
+
+          quedanEmplazamientosPendientes =
+            true;
+
+          quedanEmplazamientosVencidos =
+            true;
+        } else {
+          /*
+          | Terminó el trabajo del inspector.
+          | El reclamo queda esperando la grúa.
+          */
+
+          reclamo.estado =
+            "PENDIENTE_ACTUACION";
+
+          reclamo.etapaActual =
+            "PENDIENTE_REMOCION";
+
+          reclamo.inspectorId =
+            null;
+
+          reclamo.fechaResolucion =
+            null;
+
+          await finalizarTarea(
+            tarea,
+            transaction
+          );
+        }
+      } else if (
+        accionPosterior ===
         "BUSQUEDA_REMOCION"
       ) {
         vehiculo.estadoActual =
@@ -1697,6 +1877,25 @@ if (
 
     await transaction.commit();
 
+    /*
+    |--------------------------------------------------------------------------
+    | AVISO POR EMAIL A LA GRÚA
+    |--------------------------------------------------------------------------
+    |
+    | El control ya quedó guardado.
+    | El mail sale en segundo plano: el inspector
+    | no espera, y si el correo falla no se rompe nada.
+    |
+    */
+
+    if (avisarGrua) {
+      avisarGruaEnSegundoPlano({
+        reclamo,
+        vehiculo,
+        infraccion,
+      });
+    }
+
     let mensaje =
       "Control finalizado";
 
@@ -1755,6 +1954,20 @@ if (
     ) {
       mensaje =
         "Acta de Infracción registrada. Como no se pudo retirar el vehículo, quedó pendiente de envío al Juzgado para solicitar la orden de remoción.";
+    }
+
+    if (
+      resultado ===
+        "NO_CUMPLIDO" &&
+      accionPosterior ===
+        ACCION_RETIRO_GRUA
+    ) {
+      mensaje =
+        esGrua
+          ? "Acta de Infracción registrada. Ahora sacá las fotos, completá el inventario y elegí el predio."
+          : quedanEmplazamientosPendientes
+            ? "Acta de Infracción registrada. El vehículo quedó listo para la grúa y se avisó por email. Todavía queda otro vehículo para controlar."
+            : "Acta de Infracción registrada. El vehículo quedó listo para que lo retire la grúa y se avisó por email.";
     }
 
     return res.status(201).json({
@@ -1998,8 +2211,12 @@ const obtenerSegundaVisita = async (
     };
 
     if (
-      req.usuario.rol ===
-      "inspector"
+      [
+        "inspector",
+        "grua",
+      ].includes(
+        req.usuario.rol
+      )
     ) {
       whereTarea.asignadoAId =
         req.usuario.id;
@@ -2528,8 +2745,12 @@ const obtenerSegundaVisita = async (
         req.usuario.rol ===
           "administrador" ||
         (
-          req.usuario.rol ===
-            "inspector" &&
+          [
+            "inspector",
+            "grua",
+          ].includes(
+            req.usuario.rol
+          ) &&
           esAutor &&
           dentroDelPlazo
         );
@@ -2781,7 +3002,7 @@ const editarSegundaVisita = async (req, res) => {
       etapa: "SEGUNDA_VISITA",
     };
 
-    if (req.usuario.rol === "inspector") {
+    if (["inspector", "grua"].includes(req.usuario.rol)) {
       whereTarea.asignadoAId = req.usuario.id;
     }
 
@@ -3182,8 +3403,566 @@ const editarSegundaVisita = async (req, res) => {
     });
   }
 };
+/*
+|--------------------------------------------------------------------------
+| CAMBIAR QUÉ PASA CON EL VEHÍCULO
+|--------------------------------------------------------------------------
+|
+| Para corregir una elección del inspector mientras
+| el vehículo sigue en la calle (sin remoción):
+|
+| - Retiro inmediato  -> Lo retira la grúa
+|   (el inspector está en la pantalla de remoción
+|    y no lo puede llevar)
+|
+| - Lo retira la grúa -> Esperar orden del juez
+| - Esperar orden del juez -> Lo retira la grúa
+|   (solamente si Secretaría todavía no lo envió
+|    al Juzgado)
+|
+| Quién puede:
+| - administrador: siempre;
+| - inspector autor del control: dentro de la hora
+|   de edición, o mientras tenga la remoción
+|   inmediata en curso.
+|
+*/
+
+const ACCIONES_DESTINO = [
+  ACCION_RETIRO_GRUA,
+  "BUSQUEDA_REMOCION",
+];
+
+const ETAPAS_RECLAMO_POR_ACCION = {
+  RETIRO_INMEDIATO: [
+    "REMOCION_EN_CURSO",
+  ],
+
+  [ACCION_RETIRO_GRUA]: [
+    "PENDIENTE_REMOCION",
+    "SEGUNDA_VISITA",
+  ],
+
+  BUSQUEDA_REMOCION: [
+    "PENDIENTE_ENVIO_JUZGADO",
+    "PENDIENTE_REMOCION",
+    "SEGUNDA_VISITA",
+  ],
+};
+
+const NOMBRE_ACCION = {
+  RETIRO_INMEDIATO:
+    "Retiro inmediato",
+
+  [ACCION_RETIRO_GRUA]:
+    "Lo retira la grúa",
+
+  BUSQUEDA_REMOCION:
+    "Esperar orden del juez",
+};
+
+const cambiarAccionVehiculo = async (
+  req,
+  res
+) => {
+  const transaction =
+    await sequelize.transaction();
+
+  const rechazar = async (
+    status,
+    mensaje
+  ) => {
+    await transaction.rollback();
+
+    return res.status(status).json({
+      ok: false,
+      mensaje,
+    });
+  };
+
+  try {
+    const infraccionId =
+      Number(
+        req.params.infraccionId
+      );
+
+    const nuevaAccion =
+      req.body?.accionPosterior;
+
+    const detalle =
+      String(
+        req.body
+          ?.detalleAccionPosterior ||
+          ""
+      ).trim();
+
+    if (!infraccionId) {
+      return rechazar(
+        400,
+        "Acta de Infracción inválida"
+      );
+    }
+
+    if (
+      !ACCIONES_DESTINO.includes(
+        nuevaAccion
+      )
+    ) {
+      return rechazar(
+        400,
+        "Elegí qué pasa con el vehículo"
+      );
+    }
+
+    if (
+      nuevaAccion ===
+        "BUSQUEDA_REMOCION" &&
+      !detalle
+    ) {
+      return rechazar(
+        400,
+        "Contá brevemente por qué no se puede retirar el vehículo"
+      );
+    }
+
+    const infraccion =
+      await Infraccion.findByPk(
+        infraccionId,
+        {
+          transaction,
+          lock:
+            transaction.LOCK.UPDATE,
+        }
+      );
+
+    if (
+      !infraccion ||
+      infraccion.anulada
+    ) {
+      return rechazar(
+        404,
+        "Acta de Infracción no encontrada"
+      );
+    }
+
+    const accionAnterior =
+      infraccion.accionPosterior;
+
+    if (
+      !ETAPAS_RECLAMO_POR_ACCION[
+        accionAnterior
+      ]
+    ) {
+      return rechazar(
+        409,
+        "Esta acta no tiene una acción que se pueda cambiar"
+      );
+    }
+
+    if (
+      accionAnterior ===
+      nuevaAccion
+    ) {
+      return rechazar(
+        409,
+        "El vehículo ya tiene esa opción"
+      );
+    }
+
+    if (
+      infraccion.estadoOrdenRemocion ===
+      "AUTORIZADA"
+    ) {
+      return rechazar(
+        409,
+        "Este vehículo ya tiene la orden del juez autorizada. No se puede cambiar desde acá."
+      );
+    }
+
+    if (
+      accionAnterior ===
+        "BUSQUEDA_REMOCION" &&
+      (
+        infraccion.estadoJuzgado !==
+          "PENDIENTE_ENVIO" ||
+        infraccion.estadoOrdenRemocion !==
+          "PENDIENTE_SOLICITUD"
+      )
+    ) {
+      return rechazar(
+        409,
+        "Secretaría ya envió este caso al Juzgado. Ya no se puede cambiar desde acá."
+      );
+    }
+
+    const [
+      reclamo,
+      vehiculo,
+      verificacion,
+    ] = await Promise.all([
+      Reclamo.findByPk(
+        infraccion.reclamoId,
+        {
+          transaction,
+          lock:
+            transaction.LOCK.UPDATE,
+        }
+      ),
+
+      infraccion.vehiculoId
+        ? Vehiculo.findByPk(
+            infraccion.vehiculoId,
+            {
+              transaction,
+              lock:
+                transaction.LOCK.UPDATE,
+            }
+          )
+        : null,
+
+      infraccion.verificacionId
+        ? Verificacion.findByPk(
+            infraccion.verificacionId,
+            {
+              transaction,
+            }
+          )
+        : null,
+    ]);
+
+    if (
+      !reclamo ||
+      !vehiculo
+    ) {
+      return rechazar(
+        404,
+        "No se encontró el reclamo o el vehículo del acta"
+      );
+    }
+
+    /*
+    | El vehículo tiene que seguir en la calle.
+    */
+
+    const remocion =
+      await Remocion.findOne({
+        where: {
+          vehiculoId:
+            vehiculo.id,
+        },
+        transaction,
+      });
+
+    if (
+      remocion ||
+      vehiculo.estadoActual !==
+        "PENDIENTE_REMOCION"
+    ) {
+      return rechazar(
+        409,
+        "El vehículo ya fue retirado. No se puede cambiar."
+      );
+    }
+
+    /*
+    | El reclamo no tiene que haber avanzado
+    | a otra etapa (Juzgado, otra visita, etc.).
+    */
+
+    if (
+      !ETAPAS_RECLAMO_POR_ACCION[
+        accionAnterior
+      ].includes(
+        reclamo.etapaActual
+      )
+    ) {
+      return rechazar(
+        409,
+        "El reclamo ya avanzó a otra etapa. Pedile al administrador que lo corrija."
+      );
+    }
+
+    /*
+    | PERMISOS
+    */
+
+    const esAdmin =
+      [
+        "administrador",
+        "superadmin",
+      ].includes(
+        req.usuario.rol
+      );
+
+    if (!esAdmin) {
+      if (
+        req.usuario.rol !==
+        "inspector"
+      ) {
+        return rechazar(
+          403,
+          "No tiene permisos para cambiar esta opción"
+        );
+      }
+
+      const esAutor =
+        Number(
+          infraccion.inspectorId
+        ) ===
+        Number(req.usuario.id);
+
+      const tieneRemocionEnCurso =
+        accionAnterior ===
+          "RETIRO_INMEDIATO" &&
+        Number(
+          reclamo.inspectorId
+        ) ===
+          Number(req.usuario.id);
+
+      const fechaBase =
+        new Date(
+          verificacion?.createdAt ||
+            infraccion.createdAt
+        );
+
+      const dentroDeLaHora =
+        Date.now() -
+          fechaBase.getTime() <=
+        60 * 60 * 1000;
+
+      if (
+        !esAutor ||
+        (
+          !dentroDeLaHora &&
+          !tieneRemocionEnCurso
+        )
+      ) {
+        return rechazar(
+          403,
+          "Ya pasó el plazo para cambiar esta opción. Pedile al administrador que lo corrija."
+        );
+      }
+    }
+
+    /*
+    | ACTA
+    */
+
+    infraccion.accionPosterior =
+      nuevaAccion;
+
+    infraccion.detalleAccionPosterior =
+      detalle || null;
+
+    if (
+      nuevaAccion ===
+      "BUSQUEDA_REMOCION"
+    ) {
+      infraccion.requiereOrdenRemocion =
+        true;
+
+      infraccion.estadoOrdenRemocion =
+        "PENDIENTE_SOLICITUD";
+    } else {
+      infraccion.requiereOrdenRemocion =
+        false;
+
+      infraccion.estadoOrdenRemocion =
+        "NO_REQUIERE";
+    }
+
+    await infraccion.save({
+      transaction,
+    });
+
+    /*
+    | RECLAMO
+    |
+    | Si el inspector sigue en la segunda visita
+    | (queda otro vehículo), no tocamos nada.
+    */
+
+    const estadoAnterior =
+      reclamo.estado;
+
+    if (
+      reclamo.etapaActual !==
+      "SEGUNDA_VISITA"
+    ) {
+      const tarea =
+        verificacion?.asignacionId
+          ? await Asignacion.findByPk(
+              verificacion.asignacionId,
+              {
+                transaction,
+              }
+            )
+          : null;
+
+      const tareaActiva =
+        Boolean(
+          tarea &&
+          [
+            "PENDIENTE",
+            "EN_CURSO",
+          ].includes(
+            tarea.estadoTarea
+          )
+        );
+
+      const pendientes =
+        tareaActiva
+          ? await obtenerPendientesDeLaTarea({
+              reclamoId:
+                reclamo.id,
+              tareaId:
+                tarea.id,
+              transaction,
+            })
+          : [];
+
+      if (
+        tareaActiva &&
+        pendientes.length > 0
+      ) {
+        /*
+        | Venía de una remoción inmediata y
+        | todavía queda otro vehículo para
+        | controlar en la misma visita.
+        */
+
+        reclamo.estado =
+          "PENDIENTE_ACTUACION";
+
+        reclamo.etapaActual =
+          "SEGUNDA_VISITA";
+
+        reclamo.inspectorId =
+          tarea.asignadoAId;
+
+        tarea.estadoTarea =
+          "EN_CURSO";
+
+        tarea.fechaFinalizacion =
+          null;
+
+        await tarea.save({
+          transaction,
+        });
+      } else {
+        if (
+          nuevaAccion ===
+          ACCION_RETIRO_GRUA
+        ) {
+          reclamo.estado =
+            "PENDIENTE_ACTUACION";
+
+          reclamo.etapaActual =
+            "PENDIENTE_REMOCION";
+        } else {
+          reclamo.estado =
+            "EN_SEGUIMIENTO";
+
+          reclamo.etapaActual =
+            "PENDIENTE_ENVIO_JUZGADO";
+        }
+
+        reclamo.inspectorId =
+          null;
+
+        if (tareaActiva) {
+          await finalizarTarea(
+            tarea,
+            transaction
+          );
+        }
+      }
+
+      reclamo.fechaResolucion =
+        null;
+
+      await reclamo.save({
+        transaction,
+      });
+    }
+
+    await registrarHistorial({
+      reclamoId:
+        reclamo.id,
+
+      usuarioId:
+        req.usuario.id,
+
+      accion:
+        "CAMBIO_ACCION_VEHICULO",
+
+      descripcion:
+        `Vehículo ${vehiculo.dominio || `N.º ${vehiculo.numeroInterno || vehiculo.id}`}: ` +
+        `"${NOMBRE_ACCION[accionAnterior]}" cambiado a "${NOMBRE_ACCION[nuevaAccion]}"` +
+        (detalle ? `. ${detalle}` : ""),
+
+      estadoAnterior,
+
+      estadoNuevo:
+        reclamo.estado,
+
+      transaction,
+    });
+
+    await transaction.commit();
+
+    if (
+      nuevaAccion ===
+      ACCION_RETIRO_GRUA
+    ) {
+      avisarGruaEnSegundoPlano({
+        reclamo,
+        vehiculo,
+        infraccion,
+      });
+    }
+
+    return res.json({
+      ok: true,
+
+      mensaje:
+        nuevaAccion ===
+        ACCION_RETIRO_GRUA
+          ? "Listo. El vehículo quedó para la grúa y se le avisó por email."
+          : "Listo. El vehículo queda esperando la orden del juez. Secretaría continúa el trámite.",
+
+      infraccion,
+
+      etapaActual:
+        reclamo.etapaActual,
+
+      continuarSegundaVisita:
+        reclamo.etapaActual ===
+        "SEGUNDA_VISITA",
+    });
+  } catch (error) {
+    if (
+      !transaction.finished
+    ) {
+      await transaction.rollback();
+    }
+
+    console.error(
+      "Error cambiando la acción del vehículo:",
+      error
+    );
+
+    return res.status(500).json({
+      ok: false,
+      mensaje:
+        "Error cambiando qué pasa con el vehículo",
+    });
+  }
+};
+
 module.exports = {
   registrarSegundaVisita,
   obtenerSegundaVisita,
   editarSegundaVisita,
+  cambiarAccionVehiculo,
 };

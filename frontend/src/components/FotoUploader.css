@@ -74,3 +74,32 @@
     align-self: flex-start;
   }
 }
+
+/* Sacar foto / Adjuntar foto, uno al lado del otro */
+
+.foto-uploader-botones {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.foto-uploader-botones .foto-uploader-boton {
+  width: 100%;
+}
+
+.foto-uploader-boton.secundario {
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #1f2937;
+}
+
+.foto-uploader-boton.secundario:hover {
+  background: #f8fafc;
+  opacity: 1;
+}
+
+@media (min-width: 768px) {
+  .foto-uploader-botones {
+    max-width: 440px;
+  }
+}

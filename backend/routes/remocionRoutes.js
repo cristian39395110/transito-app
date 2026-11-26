@@ -40,7 +40,8 @@ router.get(
 
   permitirRoles(
     "administrador",
-    "inspector"
+    "inspector",
+    "grua"
   ),
 
   obtenerContextoRemocion
@@ -100,7 +101,8 @@ router.post(
 
   permitirRoles(
     "administrador",
-    "inspector"
+    "inspector",
+    "grua"
   ),
 
   registrarRemocionCompleta

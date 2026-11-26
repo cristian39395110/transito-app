@@ -10,6 +10,7 @@ import {
   useAuth,
 } from "../context/AuthContext";
 
+import MandarAGruaConOrden from "./MandarAGruaConOrden";
 import "./AsignacionReclamo.css";
 
 
@@ -939,6 +940,18 @@ console.log("DEBUG ASIGNACION", {
             </button>
           </div>
         )}
+
+
+      {/* =====================================================
+          ORDEN DEL JUEZ AUTORIZADA: MANDAR A LA GRÚA
+      ===================================================== */}
+
+      {!accionAbierta && (
+        <MandarAGruaConOrden
+          reclamo={reclamo}
+          onEnviado={onActualizado}
+        />
+      )}
 
 
       {/* =====================================================

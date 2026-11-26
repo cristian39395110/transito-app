@@ -11,6 +11,10 @@ import {
 
 import api from "../api/api";
 
+import {
+  useAuth,
+} from "../context/AuthContext";
+
 import FotosReclamo from "../components/FotosReclamo";
 
 import "./RemocionVehiculoPage.css";
@@ -140,6 +144,19 @@ const RemocionVehiculoPage =
     const navigate =
       useNavigate();
 
+    const {
+      rol,
+      usuario,
+    } = useAuth();
+
+    const esGrua =
+      rol === "grua";
+
+    const [
+      pasandoAGrua,
+      setPasandoAGrua,
+    ] = useState(false);
+
     const [
       searchParams,
     ] =
@@ -214,7 +231,11 @@ const RemocionVehiculoPage =
     const [
       chofer,
       setChofer,
-    ] = useState("");
+    ] = useState(() =>
+      rol === "grua"
+        ? usuario?.nombre || ""
+        : ""
+    );
 
    const [
   predios,
@@ -563,7 +584,9 @@ if (granja) {
       */
 
       navigate(
-        "/mis-trabajos"
+        rol === "grua"
+          ? "/retiros-grua"
+          : "/mis-trabajos"
       );
     } catch (err) {
       console.error(
@@ -627,6 +650,96 @@ if (granja) {
     |--------------------------------------------------------------------------
     */
 
+    /*
+    |--------------------------------------------------------------------------
+    | INSPECTOR: NO LO PUEDE LLEVAR -> QUE LO RETIRE LA GRÚA
+    |--------------------------------------------------------------------------
+    */
+
+    const conOrdenJudicial =
+      infraccion?.estadoOrdenRemocion ===
+      "AUTORIZADA";
+
+    /*
+    | Dos casos:
+    | - eligió "Lo retiro yo ahora" en la segunda visita;
+    | - actuación posterior a la orden del juez.
+    */
+
+    const esPostOrden =
+      conOrdenJudicial &&
+      infraccion?.accionPosterior ===
+        "BUSQUEDA_REMOCION";
+
+    const puedePasarAGrua =
+      !esGrua &&
+      (
+        infraccion?.accionPosterior ===
+          "RETIRO_INMEDIATO" ||
+        esPostOrden
+      );
+
+    const pasarAGrua =
+      async () => {
+        const confirmar =
+          window.confirm(
+            "¿Dejás el vehículo para que lo retire la grúa?" +
+            " Se le avisará por email y tu trabajo con este vehículo termina acá."
+          );
+
+        if (!confirmar) {
+          return;
+        }
+
+        try {
+          setPasandoAGrua(true);
+          setError("");
+
+          const respuesta =
+            esPostOrden
+              ? await api.post(
+                  `/grua/reclamos/${id}/enviar-con-orden`,
+                  {
+                    infraccionId:
+                      infraccion.id,
+                  }
+                )
+              : await api.patch(
+                  `/verificaciones/infraccion/${infraccion.id}/accion-vehiculo`,
+                  {
+                    accionPosterior:
+                      "RETIRO_GRUA",
+                  }
+                );
+
+          alert(
+            respuesta.data
+              ?.mensaje ||
+              "El vehículo quedó para la grúa."
+          );
+
+          navigate(
+            respuesta.data
+              ?.continuarSegundaVisita
+              ? `/segunda-visita/${id}`
+              : "/mis-trabajos"
+          );
+        } catch (err) {
+          setError(
+            err.response?.data
+              ?.mensaje ||
+              "No se pudo pasar el vehículo a la grúa."
+          );
+
+          window.scrollTo({
+            top: 0,
+            behavior: "smooth",
+          });
+        } finally {
+          setPasandoAGrua(false);
+        }
+      };
+
     return (
       <div className="remocion-page">
 
@@ -644,16 +757,21 @@ if (granja) {
 
           <div>
             <span>
-              REMOCIÓN
+              {esGrua
+                ? "GRÚA"
+                : "REMOCIÓN"}
             </span>
 
             <h1>
-              Retiro del vehículo
+              {esGrua
+                ? "Retiro con grúa"
+                : "Retiro del vehículo"}
             </h1>
 
             <p>
-              Completá el inventario antes
-              de confirmar el traslado.
+              {esGrua
+                ? "Sacá las fotos, completá el inventario y elegí a qué predio lo llevás."
+                : "Completá el inventario antes de confirmar el traslado."}
             </p>
           </div>
 
@@ -683,12 +801,77 @@ if (granja) {
           </strong>
 
           <p>
-            El Acta de Infracción ya fue
-            registrada. Ahora corresponde
-            realizar el inventario y retiro.
+            {esGrua
+              ? conOrdenJudicial
+                ? "El juez autorizó la remoción de este vehículo. Ya podés retirarlo."
+                : "El inspector ya labró el Acta de Infracción y dejó el vehículo listo para la grúa."
+              : "El Acta de Infracción ya fue registrada. Ahora corresponde realizar el inventario y retiro."}
           </p>
 
+          {esGrua &&
+            infraccion
+              ?.detalleAccionPosterior && (
+              <p>
+                <strong>
+                  {conOrdenJudicial
+                    ? "Observación del inspector:"
+                    : "Indicaciones del inspector:"}
+                </strong>{" "}
+                {
+                  infraccion.detalleAccionPosterior
+                }
+              </p>
+            )}
+
+          {conOrdenJudicial && (
+            <div className="remocion-orden-judicial">
+              <strong>
+                ⚖️ Orden del juez autorizada
+              </strong>
+
+              <span>
+                Si alguien se opone, mostrá la orden.
+              </span>
+
+              <FotosReclamo
+                reclamoId={
+                  Number(id)
+                }
+                tipoReferencia="ORDEN_JUDICIAL_REMOCION"
+                referenciaId={
+                  infraccion.id
+                }
+                permitirSubir={false}
+              />
+            </div>
+          )}
+
         </section>
+
+
+        {puedePasarAGrua && (
+          <section className="remocion-pasar-grua">
+            <strong>
+              ¿No lo podés llevar vos?
+            </strong>
+
+            <p>
+              Dejalo listo para la grúa: se le
+              avisa por email y ella hace el
+              inventario y el traslado.
+            </p>
+
+            <button
+              type="button"
+              disabled={pasandoAGrua}
+              onClick={pasarAGrua}
+            >
+              {pasandoAGrua
+                ? "Guardando..."
+                : "🏗️ Que lo retire la grúa"}
+            </button>
+          </section>
+        )}
 
 
         {/* RESUMEN */}
@@ -1062,7 +1245,9 @@ if (granja) {
           >
             {guardando
               ? "Guardando..."
-              : "Finalizar remoción"}
+              : esGrua
+                ? "✅ Confirmar retiro"
+                : "Finalizar remoción"}
           </button>
 
         </section>

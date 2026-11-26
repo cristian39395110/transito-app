@@ -8,7 +8,9 @@
       useParams,
     } from "react-router-dom";
     import api from "../api/api";
+import { useAuth } from "../context/AuthContext";
     import FotosReclamo from "../components/FotosReclamo";
+import CambiarAccionVehiculo from "../components/CambiarAccionVehiculo";
     import {  
     MapContainer,
     Marker,
@@ -64,6 +66,15 @@
         useParams();
       const navigate =
         useNavigate();
+      /*
+      | La grúa también puede hacer la segunda visita,
+      | pero solo con 3 opciones: ya no estaba,
+      | me lo llevo, o el dueño se opone.
+      */
+      const { rol } = useAuth();
+      const esGrua = rol === "grua";
+      const rutaVolver = esGrua ? "/retiros-grua" : "/mis-trabajos";
+
       /*
       |--------------------------------------------------------------------------
       | DATOS
@@ -1261,6 +1272,7 @@
     esVehiculo &&
     ![
       "RETIRO_INMEDIATO",
+      "RETIRO_GRUA",
       "BUSQUEDA_REMOCION",
     ].includes(
       accionPosterior
@@ -1564,7 +1576,7 @@
   );
 
   navigate(
-    "/mis-trabajos"
+    rutaVolver
   );
           } catch (err) {
             console.error(
@@ -1624,7 +1636,7 @@
               className="segunda-volver"
               onClick={() =>
                 navigate(
-                  "/mis-trabajos"
+                  rutaVolver
                 )
               }
             >
@@ -2170,9 +2182,12 @@
                     "RETIRO_INMEDIATO"
                       ? "Retiro inmediato"
                       : infraccion.accionPosterior ===
-                          "BUSQUEDA_REMOCION"
-                        ? "Pendiente de remoción"
-                        : infraccion.accionPosterior}
+                          "RETIRO_GRUA"
+                        ? "Lo retira la grúa"
+                        : infraccion.accionPosterior ===
+                            "BUSQUEDA_REMOCION"
+                          ? "Pendiente de remoción"
+                          : infraccion.accionPosterior}
                   </p>
                 )}
 
@@ -2188,6 +2203,16 @@
                     permitirSubir={false}
                   />
                 </div>
+
+                {control?.puedeEditar && !esGrua && (
+                  <CambiarAccionVehiculo
+                    infraccion={infraccion}
+                    vehiculo={vehiculo}
+                    onCambiado={() =>
+                      window.location.reload()
+                    }
+                  />
+                )}
               </div>
             )}
 
@@ -2484,14 +2509,14 @@
                 }
               >
                 <strong>
-                  ✅ Ya está solucionado
+                  {esGrua ? "✅ Ya no estaba" : "✅ Ya está solucionado"}
 
                 </strong>
                 <span>
                   Cumplió con lo solicitado.
                 </span>
               </button>
-              <button
+              <button hidden={esGrua}
 
                 type="button"
                 className={
@@ -2532,14 +2557,14 @@
                 }
               >
                 <strong>
-                  📝 Hacer Acta de Infracción
+                  {esGrua ? "📝 Sigue ahí: hacer Acta de Infracción" : "📝 Hacer Acta de Infracción"}
 
                 </strong>
                 <span>
                   No cumplió con lo solicitado.
                 </span>
               </button>
-              <button
+              <button hidden={esGrua}
 
                 type="button"
                 className={
@@ -2948,14 +2973,13 @@
     !editandoControl && (
     
 <div className="accion-posterior">
-  <h3>¿Se puede retirar el vehículo ahora?</h3>
+  <h3>¿Qué pasa con el vehículo?</h3>
 
   <p>
-    Elegí cómo continúa el procedimiento después
-    de realizar el Acta de Infracción.
+    Elegí cómo sigue después del Acta de Infracción.
   </p>
 
-  <button
+  <button hidden={esGrua}
     type="button"
     className={`opcion-remocion ${
       accionPosterior === "RETIRO_INMEDIATO"
@@ -2969,15 +2993,55 @@
     }}
   >
     <strong>
-      🚛 SÍ — Remoción inmediata
+      🚛 Lo retiro yo ahora
       {accionPosterior === "RETIRO_INMEDIATO" && " ✓"}
     </strong>
     <span>
-      El vehículo puede retirarse ahora.
-      Al guardar el control, continuarás con
-      el inventario y la remoción.
+      Al guardar, pasás a la pantalla de
+      inventario y remoción.
     </span>
   </button>
+
+  <button
+    type="button"
+    className={`opcion-remocion opcion-remocion-grua ${
+      accionPosterior === "RETIRO_GRUA"
+        ? "opcion-remocion-activa"
+        : ""
+    }`}
+    aria-pressed={accionPosterior === "RETIRO_GRUA"}
+    onClick={() => {
+      setAccionPosterior("RETIRO_GRUA");
+      setDetalleAccionPosterior("");
+    }}
+  >
+    <strong>
+      {esGrua ? "🏗️ Me lo llevo ahora" : "🏗️ Lo retira la grúa"}
+      {accionPosterior === "RETIRO_GRUA" && " ✓"}
+    </strong>
+    <span>
+      {esGrua
+        ? "Al guardar, pasás a las fotos, el inventario y el predio."
+        : "Queda listo para la grúa y se le avisa por email. Tu trabajo termina acá."}
+    </span>
+  </button>
+
+  {accionPosterior === "RETIRO_GRUA" && !esGrua && (
+    <>
+      <label>
+        Indicaciones para la grúa (opcional)
+      </label>
+
+      <textarea
+        value={detalleAccionPosterior}
+        onChange={(e) =>
+          setDetalleAccionPosterior(e.target.value)
+        }
+        rows={3}
+        placeholder="Ej.: Está frente al portón verde, sin ruedas delanteras."
+      />
+    </>
+  )}
 
   <button
     type="button"
@@ -2988,11 +3052,19 @@
     }`}
     aria-pressed={accionPosterior === "BUSQUEDA_REMOCION"}
     onClick={() => {
+      if (accionPosterior !== "BUSQUEDA_REMOCION") {
+        // Lo escrito para la grúa no sirve como motivo
+        // para el juez: se pide de nuevo.
+        setDetalleAccionPosterior("");
+      }
+
       setAccionPosterior("BUSQUEDA_REMOCION");
     }}
   >
     <strong>
-      ⚖️ NO — Esperar orden del juez
+      {esGrua
+        ? "⚖️ El dueño se opone — pedir orden del juez"
+        : "⚖️ No se puede retirar — esperar orden del juez"}
       {accionPosterior === "BUSQUEDA_REMOCION" && " ✓"}
     </strong>
     <span>
@@ -3107,6 +3179,13 @@
       : accionPosterior ===
           "RETIRO_INMEDIATO"
         ? "Registrar infracción y continuar al retiro →"
+          : resultado ===
+              "NO_CUMPLIDO" &&
+            accionPosterior ===
+              "RETIRO_GRUA"
+            ? esGrua
+            ? "Registrar infracción y seguir al retiro →"
+            : "Registrar infracción y avisar a la grúa"
         : resultado ===
             "PRORROGA"
           ? "Finalizar y otorgar nuevo plazo"

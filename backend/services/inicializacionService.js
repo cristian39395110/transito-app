@@ -37,6 +37,11 @@ const crearRolesIniciales = async () => {
       descripcion:
         "Secretaría encargada del predio y egreso de vehículos",
     },
+    {
+      nombre: "grua",
+      descripcion:
+        "Grúa: retira vehículos con Acta de Infracción listos para llevar al predio",
+    },
   ];
 
   for (const datos of roles) {

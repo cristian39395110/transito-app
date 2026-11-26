@@ -29,7 +29,8 @@ router.get(
     "jefe_guardia",
     "inspector",
     "secretaria_reclamos",
-    "secretaria_predio"
+    "secretaria_predio",
+    "grua"
   ),
   obtenerSeguimientoReclamo
 );

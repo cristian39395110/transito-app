@@ -1,0 +1,478 @@
+.retiros-grua-page {
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 24px;
+  color: #0f172a;
+  box-sizing: border-box;
+}
+
+/* HEADER */
+
+.retiros-grua-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 25px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid #cbd5e1;
+}
+
+.retiros-grua-eyebrow {
+  display: block;
+  margin-bottom: 4px;
+  color: #b45309;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.8px;
+}
+
+.retiros-grua-header h1 {
+  margin: 0;
+  font-size: 31px;
+}
+
+.retiros-grua-header p {
+  max-width: 700px;
+  margin: 7px 0 0;
+  color: #64748b;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.retiros-grua-header .boton-actualizar {
+  min-height: 44px;
+  padding: 9px 15px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #334155;
+  font-weight: 800;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.retiros-grua-header .boton-actualizar:hover {
+  background: #f8fafc;
+}
+
+/* PASOS */
+
+.retiros-grua-pasos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 22px;
+  margin: 16px 0 0;
+  padding: 12px 14px;
+  border: 1px solid #fde68a;
+  border-radius: 10px;
+  background: #fffbeb;
+  color: #78350f;
+  font-size: 13px;
+  line-height: 1.4;
+  list-style: none;
+}
+
+/* RESUMEN */
+
+.retiros-grua-resumen {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  padding: 18px 0 12px;
+}
+
+.retiros-grua-resumen strong {
+  font-size: 26px;
+}
+
+.retiros-grua-resumen span {
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+/* MENSAJES */
+
+.retiros-grua-mensaje {
+  padding: 22px 18px;
+  border: 1px dashed #cbd5e1;
+  border-radius: 10px;
+  background: #f8fafc;
+  color: #475569;
+  font-size: 15px;
+  text-align: center;
+}
+
+.retiros-grua-mensaje.error {
+  border-style: solid;
+  border-color: #fecaca;
+  background: #fef2f2;
+  color: #991b1b;
+}
+
+/* LISTADO */
+
+.retiros-grua-listado {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.retiro-grua-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  padding: 18px;
+  border: 1px solid #e2e8f0;
+  border-left: 5px solid #f59e0b;
+  border-radius: 12px;
+  background: #ffffff;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+}
+
+.retiro-grua-principal {
+  min-width: 0;
+}
+
+.retiro-grua-reclamo {
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+}
+
+.retiro-grua-etiquetas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.retiro-grua-espera,
+.retiro-grua-orden {
+  display: inline-block;
+  padding: 3px 9px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.retiro-grua-espera {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.retiro-grua-orden {
+  background: #e0e7ff;
+  color: #3730a3;
+}
+
+.retiro-grua-principal h2 {
+  margin: 8px 0 8px;
+  font-size: 20px;
+  line-height: 1.25;
+}
+
+.retiro-grua-datos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+  color: #334155;
+  font-size: 14px;
+}
+
+.retiro-grua-direccion {
+  margin: 12px 0 0;
+  font-size: 16px;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.retiro-grua-nota {
+  margin: 8px 0 0;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: #f8fafc;
+  color: #334155;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+/* ACCIONES */
+
+.retiro-grua-acciones {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex-shrink: 0;
+  min-width: 200px;
+}
+
+.retiro-grua-acciones .boton-retirar,
+.retiro-grua-acciones .boton-mapa {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 10px 16px;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 800;
+  text-decoration: none;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+.retiro-grua-acciones .boton-retirar {
+  border: 1px solid #b45309;
+  background: #d97706;
+  color: #ffffff;
+}
+
+.retiro-grua-acciones .boton-retirar:hover {
+  background: #b45309;
+}
+
+.retiro-grua-acciones .boton-mapa {
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #334155;
+}
+
+/* =========================================================
+   CELULAR
+   ========================================================= */
+
+@media (max-width: 760px) {
+  .retiros-grua-page {
+    padding: 14px 12px 20px;
+  }
+
+  .retiros-grua-header {
+    align-items: flex-start;
+    gap: 12px;
+    padding-bottom: 12px;
+  }
+
+  .retiros-grua-header h1 {
+    font-size: 24px;
+  }
+
+  .retiros-grua-header p {
+    font-size: 13px;
+  }
+
+  .retiros-grua-header .boton-actualizar {
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+
+  /* Pasos en columna, compactos */
+
+  .retiros-grua-pasos {
+    flex-direction: column;
+    gap: 4px;
+    margin-top: 12px;
+    padding: 10px 12px;
+    font-size: 13px;
+  }
+
+  .retiros-grua-resumen {
+    padding: 14px 2px 10px;
+  }
+
+  /* Tarjeta: todo a lo ancho */
+
+  .retiro-grua-card {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 14px;
+    padding: 14px;
+  }
+
+  .retiro-grua-principal h2 {
+    font-size: 19px;
+  }
+
+  .retiro-grua-datos {
+    flex-direction: column;
+    gap: 3px;
+    font-size: 14px;
+  }
+
+  .retiro-grua-direccion {
+    font-size: 17px;
+  }
+
+  /* Botones grandes, uno al lado del otro */
+
+  .retiro-grua-acciones {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 8px;
+    min-width: 0;
+  }
+
+  .retiro-grua-acciones .boton-retirar,
+  .retiro-grua-acciones .boton-mapa {
+    width: 100%;
+    min-height: 54px;
+    padding: 10px 8px;
+    font-size: 15px;
+  }
+
+  .retiro-grua-acciones .boton-retirar:only-child,
+  .retiro-grua-acciones .boton-mapa:only-child {
+    grid-column: 1 / -1;
+  }
+}
+
+/* =========================================================
+   PESTAÑAS: PARA RETIRAR / SEGUNDAS VISITAS
+   ========================================================= */
+
+.retiros-grua-pestanas {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+
+  margin-top: 16px;
+  padding: 5px;
+
+  border-radius: 14px;
+
+  background: #e2e8f0;
+}
+
+.retiros-grua-pestanas button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+
+  min-height: 48px;
+
+  padding: 8px 10px;
+
+  border: 0;
+  border-radius: 10px;
+
+  background: transparent;
+  color: #475569;
+
+  font-size: 15px;
+  font-weight: 800;
+
+  cursor: pointer;
+}
+
+.retiros-grua-pestanas button.activa {
+  background: #ffffff;
+  color: #0f172a;
+
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.12);
+}
+
+.retiros-grua-pestanas button span {
+  min-width: 24px;
+  height: 22px;
+
+  padding: 0 7px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 999px;
+
+  background: #cbd5e1;
+  color: #0f172a;
+
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.retiros-grua-pestanas button.activa span {
+  background: #d97706;
+  color: #ffffff;
+}
+
+/* =========================================================
+   TARJETAS DE SEGUNDA VISITA
+   ========================================================= */
+
+.visita-grua-card {
+  border-left-color: #2563eb;
+}
+
+.visita-grua-card.mia {
+  border-left-color: #16a34a;
+  background: #f0fdf4;
+}
+
+.visita-grua-card.bloqueada {
+  border-left-color: #94a3b8;
+  opacity: 0.75;
+}
+
+.visita-grua-estado {
+  display: inline-block;
+  padding: 3px 9px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.visita-grua-estado.mia {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.visita-grua-estado.asignada {
+  background: #e0e7ff;
+  color: #3730a3;
+}
+
+.visita-grua-estado.bloqueada {
+  background: #e2e8f0;
+  color: #334155;
+}
+
+.visita-grua-vehiculos {
+  margin: 10px 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 14px;
+}
+
+.visita-grua-vehiculos li {
+  padding: 6px 0;
+  border-top: 1px dashed #e2e8f0;
+}
+
+.visita-grua-vehiculos li:first-child {
+  border-top: 0;
+}
+
+.visita-grua-card .boton-retirar {
+  border-color: #1d4ed8;
+  background: #2563eb;
+}
+
+.visita-grua-card .boton-retirar:hover {
+  background: #1d4ed8;
+}
+
+.visita-grua-card.mia .boton-retirar {
+  border-color: #15803d;
+  background: #16a34a;
+}
+
+@media (max-width: 760px) {
+  .retiros-grua-pestanas button {
+    min-height: 50px;
+    font-size: 14px;
+  }
+}

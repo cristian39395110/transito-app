@@ -18,6 +18,7 @@ const FotosReclamo = ({
   descripcion = "",
   onCantidadFotosChange = null,
   maxFotos = null,
+  permitirAdjuntar = false,
 }) => {
   const [
     fotos,
@@ -182,6 +183,9 @@ if (
   }
   onFotoSubida={
     manejarFotoSubida
+  }
+  permitirAdjuntar={
+    permitirAdjuntar
   }
 
 />

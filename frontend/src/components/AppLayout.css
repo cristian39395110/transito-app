@@ -1,6 +1,13 @@
 /* =========================================================
    APP LAYOUT
    Sistema de Tránsito y Vía Pública
+   ---------------------------------------------------------
+   PC: menú lateral oscuro.
+   Celular: barra superior + barra inferior.
+
+   IMPORTANTE: las alturas de las barras del celular
+   (58px arriba, 64px abajo) las usan otras pantallas
+   para sus botones fijos. No cambiarlas sin revisar.
    ========================================================= */
 
 * {
@@ -30,7 +37,7 @@ body {
 
   display: flex;
 
-  background: #f4f6f8;
+  background: var(--t-fondo, #f1f5f9);
 }
 
 
@@ -50,9 +57,14 @@ body {
   display: flex;
   flex-direction: column;
 
-  background: #ffffff;
+  background:
+    linear-gradient(
+      180deg,
+      #0f172a 0%,
+      #111c35 100%
+    );
 
-  border-right: 1px solid #dfe3e8;
+  border-right: 1px solid #0b1222;
 
   z-index: 100;
 }
@@ -63,9 +75,9 @@ body {
    ========================================================= */
 
 .app-marca {
-  min-height: 76px;
+  min-height: 78px;
 
-  padding: 14px 18px;
+  padding: 16px 18px;
 
   display: flex;
   align-items: center;
@@ -74,7 +86,7 @@ body {
 
   flex-shrink: 0;
 
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
 }
 
 .app-logo {
@@ -87,13 +99,21 @@ body {
 
   flex-shrink: 0;
 
-  border-radius: 10px;
+  border-radius: 12px;
 
-  background: #b71c1c;
+  background:
+    linear-gradient(
+      135deg,
+      #ef4444 0%,
+      #c62828 55%,
+      #f59e0b 140%
+    );
   color: #ffffff;
 
+  box-shadow: 0 6px 16px rgba(198, 40, 40, 0.35);
+
   font-size: 22px;
-  font-weight: 800;
+  font-weight: 900;
 }
 
 .app-marca > div:last-child {
@@ -104,16 +124,18 @@ body {
 }
 
 .app-marca strong {
-  color: #1f2937;
+  color: #ffffff;
 
   font-size: 18px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
   line-height: 1.2;
 }
 
 .app-marca span {
   margin-top: 3px;
 
-  color: #6b7280;
+  color: #94a3b8;
 
   font-size: 12px;
 }
@@ -128,17 +150,21 @@ body {
 
   min-height: 0;
 
-  padding: 12px 10px;
+  padding: 14px 12px;
 
   overflow-y: auto;
   overflow-x: hidden;
+
+  scrollbar-color: #334155 transparent;
 }
 
 .app-menu-link {
-  width: 100%;
-  min-height: 46px;
+  position: relative;
 
-  margin-bottom: 3px;
+  width: 100%;
+  min-height: 44px;
+
+  margin-bottom: 4px;
   padding: 8px 10px;
 
   display: flex;
@@ -146,9 +172,9 @@ body {
 
   gap: 11px;
 
-  border-radius: 8px;
+  border-radius: 10px;
 
-  color: #374151;
+  color: #cbd5e1;
 
   text-decoration: none;
 
@@ -158,18 +184,35 @@ body {
 }
 
 .app-menu-link:hover {
-  background: #f3f4f6;
+  background: rgba(255, 255, 255, 0.06);
+  color: #ffffff;
 }
 
 .app-menu-link.activo {
-  background: #fbe9e7;
-  color: #b71c1c;
+  background: rgba(255, 255, 255, 0.11);
+  color: #ffffff;
 
   font-weight: 700;
 }
 
+.app-menu-link.activo::before {
+  content: "";
+
+  position: absolute;
+  left: -12px;
+  top: 9px;
+  bottom: 9px;
+
+  width: 4px;
+
+  border-radius: 0 4px 4px 0;
+
+  background: var(--t-acento, #f59e0b);
+}
+
 .app-menu-icono {
-  width: 27px;
+  width: 30px;
+  height: 30px;
 
   display: flex;
   align-items: center;
@@ -177,7 +220,15 @@ body {
 
   flex-shrink: 0;
 
-  font-size: 19px;
+  border-radius: 8px;
+
+  background: rgba(255, 255, 255, 0.05);
+
+  font-size: 17px;
+}
+
+.app-menu-link.activo .app-menu-icono {
+  background: rgba(245, 158, 11, 0.18);
 }
 
 .app-menu-texto {
@@ -200,7 +251,7 @@ body {
 
 .app-menu-contador {
   min-width: 24px;
-  height: 24px;
+  height: 22px;
 
   padding: 0 7px;
 
@@ -212,8 +263,10 @@ body {
 
   border-radius: 999px;
 
-  background: #c62828;
+  background: #ef4444;
   color: #ffffff;
+
+  box-shadow: 0 2px 6px rgba(239, 68, 68, 0.35);
 
   font-size: 12px;
   font-weight: 800;
@@ -228,7 +281,8 @@ body {
 .app-usuario {
   min-height: 72px;
 
-  padding: 11px 12px;
+  margin: 10px;
+  padding: 10px;
 
   display: flex;
   align-items: center;
@@ -237,9 +291,10 @@ body {
 
   flex-shrink: 0;
 
-  background: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 12px;
 
-  border-top: 1px solid #e5e7eb;
+  background: rgba(255, 255, 255, 0.04);
 }
 
 .app-avatar {
@@ -254,8 +309,13 @@ body {
 
   border-radius: 50%;
 
-  background: #eeeeee;
-  color: #333333;
+  background:
+    linear-gradient(
+      135deg,
+      #3b82f6,
+      #1d4ed8
+    );
+  color: #ffffff;
 
   font-size: 16px;
   font-weight: 800;
@@ -273,7 +333,7 @@ body {
 .app-usuario-info strong {
   overflow: hidden;
 
-  color: #1f2937;
+  color: #f8fafc;
 
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -286,7 +346,7 @@ body {
 
   overflow: hidden;
 
-  color: #6b7280;
+  color: #94a3b8;
 
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -306,11 +366,11 @@ body {
 
   flex-shrink: 0;
 
-  border: 1px solid #d1d5db;
-  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 9px;
 
-  background: #ffffff;
-  color: #4b5563;
+  background: transparent;
+  color: #cbd5e1;
 
   font-size: 18px;
 
@@ -318,7 +378,9 @@ body {
 }
 
 .app-usuario > button:hover {
-  background: #f3f4f6;
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.4);
+  color: #fecaca;
 }
 
 
@@ -338,6 +400,26 @@ body {
   width: 100%;
 
   padding: 22px;
+}
+
+/*
+| Aparición suave de cada pantalla.
+| Solo opacidad (sin transform) para no afectar
+| a los botones fijos / pegajosos de las pantallas.
+*/
+
+.app-pagina > * {
+  animation: app-entrar 0.2s ease-out;
+}
+
+@keyframes app-entrar {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 
@@ -415,15 +497,9 @@ body {
 
     padding:
       7px
-      max(
-        12px,
-        env(safe-area-inset-right)
-      )
+      max(12px, env(safe-area-inset-right))
       7px
-      max(
-        12px,
-        env(safe-area-inset-left)
-      );
+      max(12px, env(safe-area-inset-left));
 
     display: flex;
     align-items: center;
@@ -431,14 +507,48 @@ body {
 
     gap: 12px;
 
-    background: #ffffff;
+    background: rgba(15, 23, 42, 0.97);
 
-    border-bottom: 1px solid #dfe3e8;
+    box-shadow: 0 2px 10px rgba(15, 23, 42, 0.18);
 
     z-index: 900;
   }
 
-  .app-topbar-mobile > div {
+  .app-topbar-marca {
+    min-width: 0;
+
+    display: flex;
+    align-items: center;
+
+    gap: 10px;
+  }
+
+  .app-topbar-logo {
+    width: 36px;
+    height: 36px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    flex-shrink: 0;
+
+    border-radius: 10px;
+
+    background:
+      linear-gradient(
+        135deg,
+        #ef4444 0%,
+        #c62828 55%,
+        #f59e0b 140%
+      );
+    color: #ffffff;
+
+    font-size: 18px;
+    font-weight: 900;
+  }
+
+  .app-topbar-texto {
     min-width: 0;
 
     display: flex;
@@ -446,18 +556,19 @@ body {
   }
 
   .app-topbar-mobile strong {
-    color: #1f2937;
+    color: #ffffff;
 
     font-size: 16px;
+    font-weight: 800;
     line-height: 1.2;
   }
 
   .app-topbar-mobile span {
-    margin-top: 2px;
+    margin-top: 1px;
 
     overflow: hidden;
 
-    color: #6b7280;
+    color: #94a3b8;
 
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -472,14 +583,14 @@ body {
 
     flex-shrink: 0;
 
-    border: 1px solid #d1d5db;
-    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 9px;
 
-    background: #ffffff;
-    color: #374151;
+    background: rgba(255, 255, 255, 0.06);
+    color: #e2e8f0;
 
     font-size: 13px;
-    font-weight: 600;
+    font-weight: 700;
 
     cursor: pointer;
   }
@@ -509,30 +620,22 @@ body {
     right: 0;
     bottom: 0;
 
-    height:
-      calc(
-        64px +
-        env(safe-area-inset-bottom)
-      );
+    height: calc(64px + env(safe-area-inset-bottom));
 
     padding:
-      4px
-      max(
-        4px,
-        env(safe-area-inset-right)
-      )
+      6px
+      max(4px, env(safe-area-inset-right))
       env(safe-area-inset-bottom)
-      max(
-        4px,
-        env(safe-area-inset-left)
-      );
+      max(4px, env(safe-area-inset-left));
 
     display: flex;
     align-items: stretch;
 
-    background: #ffffff;
+    background: rgba(255, 255, 255, 0.98);
 
-    border-top: 1px solid #d9dde3;
+    border-top: 1px solid #e2e8f0;
+
+    box-shadow: 0 -4px 16px rgba(15, 23, 42, 0.06);
 
     z-index: 1200;
   }
@@ -541,7 +644,7 @@ body {
   .app-menu-mobile > button {
     min-width: 0;
 
-    padding: 5px 2px;
+    padding: 2px 2px 4px;
 
     display: flex;
     flex: 1;
@@ -549,7 +652,7 @@ body {
     align-items: center;
     justify-content: center;
 
-    gap: 4px;
+    gap: 3px;
 
     position: relative;
 
@@ -558,7 +661,7 @@ body {
     border: 0;
 
     background: transparent;
-    color: #6b7280;
+    color: #64748b;
 
     text-decoration: none;
 
@@ -569,21 +672,32 @@ body {
 
   .app-menu-mobile > a.activo,
   .app-menu-mobile > button.activo {
-    color: #b71c1c;
+    color: var(--t-primario, #1d4ed8);
   }
 
   .app-menu-mobile-icono {
     position: relative;
 
-    min-width: 26px;
-    height: 23px;
+    min-width: 52px;
+    height: 30px;
 
     display: inline-flex;
     align-items: center;
     justify-content: center;
 
-    font-size: 20px;
+    border-radius: 999px;
+
+    font-size: 19px;
     line-height: 1;
+
+    transition: background 0.15s ease;
+  }
+
+  /* Pastilla de color detrás del ícono activo */
+
+  .app-menu-mobile > a.activo .app-menu-mobile-icono,
+  .app-menu-mobile > button.activo .app-menu-mobile-icono {
+    background: #dbeafe;
   }
 
   .app-menu-mobile small {
@@ -597,8 +711,8 @@ body {
     text-overflow: ellipsis;
     white-space: nowrap;
 
-    font-size: 9px;
-    font-weight: 600;
+    font-size: 10px;
+    font-weight: 700;
     line-height: 1.1;
   }
 
@@ -610,8 +724,8 @@ body {
   .app-menu-mobile-contador {
     position: absolute;
 
-    top: -7px;
-    right: -12px;
+    top: -5px;
+    right: 2px;
 
     min-width: 18px;
     height: 18px;
@@ -625,7 +739,7 @@ body {
     border: 2px solid #ffffff;
     border-radius: 999px;
 
-    background: #c62828;
+    background: #ef4444;
     color: #ffffff;
 
     font-size: 9px;
@@ -649,14 +763,23 @@ body {
 
     border: 0;
 
-    background: rgba(
-      0,
-      0,
-      0,
-      0.38
-    );
+    background: rgba(15, 23, 42, 0.45);
+
+    backdrop-filter: blur(2px);
 
     z-index: 1050;
+
+    animation: app-fondo-entrar 0.15s ease-out;
+  }
+
+  @keyframes app-fondo-entrar {
+    from {
+      opacity: 0;
+    }
+
+    to {
+      opacity: 1;
+    }
   }
 
 
@@ -670,17 +793,9 @@ body {
     left: 0;
     right: 0;
 
-    bottom:
-      calc(
-        64px +
-        env(safe-area-inset-bottom)
-      );
+    bottom: calc(64px + env(safe-area-inset-bottom));
 
-    max-height:
-      calc(
-        100dvh -
-        100px
-      );
+    max-height: calc(100dvh - 100px);
 
     display: flex;
     flex-direction: column;
@@ -689,21 +804,26 @@ body {
 
     background: #ffffff;
 
-    border-top: 1px solid #d1d5db;
+    border-top-left-radius: 20px;
+    border-top-right-radius: 20px;
 
-    border-top-left-radius: 16px;
-    border-top-right-radius: 16px;
-
-    box-shadow:
-      0 -8px 24px
-      rgba(
-        0,
-        0,
-        0,
-        0.16
-      );
+    box-shadow: 0 -10px 30px rgba(15, 23, 42, 0.2);
 
     z-index: 1100;
+
+    animation: app-panel-subir 0.2s ease-out;
+  }
+
+  @keyframes app-panel-subir {
+    from {
+      transform: translateY(24px);
+      opacity: 0;
+    }
+
+    to {
+      transform: none;
+      opacity: 1;
+    }
   }
 
 
@@ -712,9 +832,11 @@ body {
      ------------------------------------------------------- */
 
   .app-menu-mas-cabecera {
-    min-height: 62px;
+    position: relative;
 
-    padding: 10px 14px;
+    min-height: 66px;
+
+    padding: 16px 16px 10px;
 
     display: flex;
     align-items: center;
@@ -724,7 +846,26 @@ body {
 
     flex-shrink: 0;
 
-    border-bottom: 1px solid #e5e7eb;
+    border-bottom: 1px solid #f1f5f9;
+  }
+
+  /* Manija del panel */
+
+  .app-menu-mas-cabecera::before {
+    content: "";
+
+    position: absolute;
+    top: 7px;
+    left: 50%;
+
+    width: 40px;
+    height: 4px;
+
+    margin-left: -20px;
+
+    border-radius: 999px;
+
+    background: #cbd5e1;
   }
 
   .app-menu-mas-cabecera > div {
@@ -735,17 +876,18 @@ body {
   }
 
   .app-menu-mas-cabecera strong {
-    color: #1f2937;
+    color: #0f172a;
 
-    font-size: 16px;
+    font-size: 17px;
+    font-weight: 800;
   }
 
   .app-menu-mas-cabecera span {
     margin-top: 2px;
 
-    color: #6b7280;
+    color: #64748b;
 
-    font-size: 11px;
+    font-size: 12px;
   }
 
   .app-menu-mas-cabecera button {
@@ -763,8 +905,8 @@ body {
     border: 0;
     border-radius: 50%;
 
-    background: #f3f4f6;
-    color: #374151;
+    background: #f1f5f9;
+    color: #334155;
 
     font-size: 25px;
     line-height: 1;
@@ -780,10 +922,12 @@ body {
   .app-menu-mas-lista {
     min-height: 0;
 
-    padding: 4px 0;
+    padding: 8px 10px 12px;
 
     display: flex;
     flex-direction: column;
+
+    gap: 4px;
 
     overflow-y: auto;
 
@@ -794,7 +938,7 @@ body {
     width: 100%;
     min-height: 54px;
 
-    padding: 8px 15px;
+    padding: 8px 12px;
 
     display: flex;
     align-items: center;
@@ -803,26 +947,27 @@ body {
 
     flex-shrink: 0;
 
-    color: #374151;
+    border-radius: 12px;
+
+    color: #1e293b;
 
     text-decoration: none;
-
-    border-bottom: 1px solid #eeeeee;
   }
 
-  .app-menu-mas-link:last-child {
-    border-bottom: 0;
+  .app-menu-mas-link:active {
+    background: #f1f5f9;
   }
 
   .app-menu-mas-link.activo {
-    background: #fbe9e7;
-    color: #b71c1c;
+    background: #eff6ff;
+    color: var(--t-primario, #1d4ed8);
 
     font-weight: 700;
   }
 
   .app-menu-mas-icono {
-    width: 30px;
+    width: 38px;
+    height: 38px;
 
     display: flex;
     align-items: center;
@@ -830,7 +975,15 @@ body {
 
     flex-shrink: 0;
 
-    font-size: 20px;
+    border-radius: 10px;
+
+    background: #f1f5f9;
+
+    font-size: 19px;
+  }
+
+  .app-menu-mas-link.activo .app-menu-mas-icono {
+    background: #dbeafe;
   }
 
   .app-menu-mas-texto {
@@ -843,7 +996,7 @@ body {
     text-overflow: ellipsis;
     white-space: nowrap;
 
-    font-size: 14px;
+    font-size: 15px;
   }
 
 
@@ -867,15 +1020,13 @@ body {
   }
 
   .app-menu-mobile small {
-    font-size: 8px;
+    font-size: 9px;
   }
 
   .app-menu-mobile-icono {
-    font-size: 18px;
-  }
+    min-width: 44px;
 
-  .app-menu-mobile-contador {
-    right: -10px;
+    font-size: 18px;
   }
 }
 
@@ -890,10 +1041,7 @@ body {
   }
 
   .app-contenido {
-    width:
-      calc(
-        100% - 260px
-      );
+    width: calc(100% - 260px);
 
     margin-left: 260px;
   }

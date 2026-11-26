@@ -94,8 +94,10 @@ const obtenerSeguimientoReclamo =
 
 
       if (
-        rol ===
-        "inspector"
+        [
+          "inspector",
+          "grua",
+        ].includes(rol)
       ) {
         const estuvoAsignado =
           asignaciones.some(

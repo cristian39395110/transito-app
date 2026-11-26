@@ -43,6 +43,7 @@ const AppLayout = () => {
     miGuardia: 0,
     misTrabajos: 0,
     predio: 0,
+    retirosGrua: 0,
   });
 
   /*
@@ -94,6 +95,11 @@ const AppLayout = () => {
             predio:
               Number(
                 datos.predio
+              ) || 0,
+
+            retirosGrua:
+              Number(
+                datos.retirosGrua
               ) || 0,
           });
         } catch (error) {
@@ -309,6 +315,24 @@ const puede = (
     },
 
     {
+      to: "/retiros-grua",
+      texto:
+        rol === "grua"
+          ? "Mi trabajo"
+          : "Retiros grúa",
+      icono: "🏗",
+      contador:
+        "retirosGrua",
+
+      roles: [
+        "grua",
+        "administrador",
+        "director",
+        "jefe_guardia",
+      ],
+    },
+
+    {
       to: "/usuarios",
       texto: "Usuarios",
       icono: "♟",
@@ -504,8 +528,9 @@ const puede = (
             type="button"
             onClick={logout}
             title="Cerrar sesión"
+            aria-label="Cerrar sesión"
           >
-            ↪
+            ⏻
           </button>
         </div>
       </aside>
@@ -514,14 +539,22 @@ const puede = (
 
       <main className="app-contenido">
         <div className="app-topbar-mobile">
-          <div>
-            <strong>
-              Tránsito
-            </strong>
+          <div className="app-topbar-marca">
+            <div className="app-topbar-logo">
+              T
+            </div>
 
-            <span>
-              {nombreRol(rol)}
-            </span>
+            <div className="app-topbar-texto">
+              <strong>
+                Tránsito
+              </strong>
+
+              <span>
+                {usuario?.nombre
+                  ? `${usuario.nombre} · ${nombreRol(rol)}`
+                  : nombreRol(rol)}
+              </span>
+            </div>
           </div>
 
           <button
@@ -728,6 +761,9 @@ const nombreRol = (
 
     secretaria_predio:
       "Secretaría predio",
+
+    grua:
+      "Grúa",
   };
 
   return (

@@ -578,6 +578,42 @@ if (!precinto) {
       tipoReferencia="INGRESO_PREDIO"
       referenciaId={ingresoPredio.id}
       permitirSubir={puedeGestionarPredio}
+      permitirAdjuntar
+      maxFotos={1}
+    />
+  </>
+) : reclamo?.id &&
+  puedeGestionarPredio &&
+  !esTrasladoPredio ? (
+  <>
+    {/* TODAVÍA PENDIENTE: la foto se puede sacar
+        ya, al recibirlo. Se guarda con una
+        referencia provisoria y, al confirmar
+        el ingreso, queda pegada a ese ingreso. */}
+    <div className="ficha-seccion-titulo">
+      <div>
+        <span>
+          AL RECIBIRLO EN EL PREDIO
+        </span>
+
+        <h2>
+          📷 Foto al recibir el vehículo
+        </h2>
+      </div>
+    </div>
+
+    <p className="ficha-ayuda">
+      Sacala o adjuntala ahora. Queda
+      guardada y se suma al ingreso
+      cuando lo confirmes abajo.
+    </p>
+
+    <FotosReclamo
+      reclamoId={reclamo.id}
+      tipoReferencia="INGRESO_PREDIO"
+      referenciaTemporal={`INGRESO_VEHICULO_${vehiculo.id}`}
+      permitirSubir
+      permitirAdjuntar
       maxFotos={1}
     />
   </>

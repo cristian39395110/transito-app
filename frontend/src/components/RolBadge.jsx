@@ -16,6 +16,9 @@ const nombres = {
 
   secretaria_predio:
     "Secretaría predio",
+
+  grua:
+    "Grúa",
 };
 
 const estilos = {
@@ -47,6 +50,11 @@ const estilos = {
   secretaria_predio: {
     background: "#fdf2f8",
     color: "#be185d",
+  },
+
+  grua: {
+    background: "#fffbeb",
+    color: "#b45309",
   },
 };
 

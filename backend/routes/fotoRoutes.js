@@ -41,6 +41,7 @@ router.post(
     "inspector",
     "secretaria_predio",
     "secretaria_reclamos",
+    "grua",
   ),
   uploadFoto.single("foto"),
   subirFoto
@@ -60,7 +61,8 @@ router.get(
     "jefe_guardia",
     "inspector",
     "secretaria_reclamos",
-    "secretaria_predio"
+    "secretaria_predio",
+    "grua"
   ),
   listarFotosReclamo
 );
@@ -76,7 +78,8 @@ router.patch(
   permitirRoles(
     "administrador",
     "inspector",
-    "secretaria_predio"
+    "secretaria_predio",
+    "grua"
   ),
   anularFoto
 );

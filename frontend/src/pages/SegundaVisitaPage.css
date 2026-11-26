@@ -3544,3 +3544,11 @@
     font-size: 14px;
   }
 }
+
+
+/* Opción "Lo retira la grúa": color propio para distinguirla */
+
+.accion-posterior .opcion-remocion.opcion-remocion-grua.opcion-remocion-activa {
+  border-color: #d97706;
+  background: #fffbeb;
+}

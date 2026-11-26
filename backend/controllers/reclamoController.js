@@ -29,6 +29,12 @@ const {
   "../services/historialService"
 );
 
+const {
+  obtenerReclamosEsperandoGrua,
+} = require(
+  "../services/gruaService"
+);
+
 
 /*
 |--------------------------------------------------------------------------
@@ -1122,6 +1128,25 @@ const infraccionesOrden =
 const ordenPorReclamo =
   new Map();
 
+/*
+| Reclamos cuyo único pendiente es que pase la grúa.
+| Nadie de la guardia tiene que hacer nada:
+| no se marcan como "para hacer".
+*/
+
+let reclamosEsperandoGrua =
+  new Set();
+
+try {
+  reclamosEsperandoGrua =
+    await obtenerReclamosEsperandoGrua();
+} catch (errorGrua) {
+  console.error(
+    "Error obteniendo reclamos esperando grúa:",
+    errorGrua
+  );
+}
+
 
 for (
   const infraccion of
@@ -1153,6 +1178,20 @@ const reclamos =
           modelo,
           req.usuario
         );
+
+      if (
+        preparado.etapaActual ===
+          "PENDIENTE_REMOCION" &&
+        reclamosEsperandoGrua.has(
+          Number(modelo.id)
+        )
+      ) {
+        preparado.requiereAccion =
+          false;
+
+        preparado.accionSimple =
+          "Esperando que la grúa retire el vehículo";
+      }
 
       const infraccionOrden =
         ordenPorReclamo.get(
@@ -2197,8 +2236,12 @@ const obtenerReclamo =
       */
 
       if (
-        req.usuario.rol ===
-        "inspector"
+        [
+          "inspector",
+          "grua",
+        ].includes(
+          req.usuario.rol
+        )
       ) {
         const tuvoAsignacion =
           await Asignacion.findOne({

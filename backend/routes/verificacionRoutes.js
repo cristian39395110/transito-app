@@ -5,6 +5,7 @@ const {
   registrarSegundaVisita,
   obtenerSegundaVisita,
   editarSegundaVisita,
+  cambiarAccionVehiculo,
 } = require(
   "../controllers/verificacionController"
 );
@@ -26,6 +27,26 @@ router.use(
 
 /*
 |--------------------------------------------------------------------------
+| CAMBIAR QUÉ PASA CON EL VEHÍCULO
+|--------------------------------------------------------------------------
+|
+| Retiro inmediato -> grúa, grúa <-> orden del juez,
+| mientras el vehículo siga en la calle.
+|
+*/
+
+router.patch(
+  "/infraccion/:infraccionId/accion-vehiculo",
+  permitirRoles(
+    "administrador",
+    "inspector"
+  ),
+  cambiarAccionVehiculo
+);
+
+
+/*
+|--------------------------------------------------------------------------
 | REGISTRAR NUEVO CONTROL
 |--------------------------------------------------------------------------
 */
@@ -34,7 +55,8 @@ router.post(
   "/segunda-visita/:reclamoId",
   permitirRoles(
     "administrador",
-    "inspector"
+    "inspector",
+    "grua"
   ),
   registrarSegundaVisita
 );
@@ -50,7 +72,8 @@ router.get(
   "/segunda-visita/:reclamoId",
   permitirRoles(
     "administrador",
-    "inspector"
+    "inspector",
+    "grua"
   ),
   obtenerSegundaVisita
 );
@@ -66,7 +89,8 @@ router.put(
   "/segunda-visita/:reclamoId",
   permitirRoles(
     "administrador",
-    "inspector"
+    "inspector",
+    "grua"
   ),
   editarSegundaVisita
 );

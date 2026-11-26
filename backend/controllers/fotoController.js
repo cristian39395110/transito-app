@@ -16,6 +16,12 @@ const {
   "../services/historialService"
 );
 
+const {
+  reclamoTieneRetiroGruaPendiente,
+} = require(
+  "../services/gruaService"
+);
+
 /*
 |--------------------------------------------------------------------------
 | TIPOS DE REFERENCIA
@@ -93,6 +99,49 @@ const subirFoto =
           mensaje:
             "Este reclamo no está asignado a este inspector",
         });
+      }
+
+      /*
+      Grúa solamente puede subir fotos
+      de la remoción de un vehículo que
+      está listo para retirar con grúa.
+      */
+
+      /*
+      Si la grúa tomó la segunda visita de este
+      reclamo, trabaja como un inspector:
+      puede subir cualquier foto de la visita.
+      */
+
+      const gruaTieneLaVisita =
+        req.usuario.rol ===
+          "grua" &&
+        Number(
+          reclamo.inspectorId
+        ) ===
+          Number(req.usuario.id);
+
+      if (
+        req.usuario.rol ===
+          "grua" &&
+        !gruaTieneLaVisita
+      ) {
+        const tieneRetiro =
+          await reclamoTieneRetiroGruaPendiente(
+            reclamo.id
+          );
+
+        if (
+          !tieneRetiro ||
+          req.body?.tipoReferencia !==
+            "REMOCION"
+        ) {
+          return res.status(403).json({
+            ok: false,
+            mensaje:
+              "Solo podés subir fotos de un vehículo listo para retirar con grúa",
+          });
+        }
       }
 
       if (!req.file) {
@@ -285,6 +334,24 @@ const listarFotosReclamo =
         });
       }
 
+      if (
+        req.usuario.rol ===
+          "grua" &&
+        Number(
+          reclamo.inspectorId
+        ) !==
+          Number(req.usuario.id) &&
+        !(await reclamoTieneRetiroGruaPendiente(
+          reclamo.id
+        ))
+      ) {
+        return res.status(403).json({
+          ok: false,
+          mensaje:
+            "No tiene acceso a las fotografías de este reclamo",
+        });
+      }
+
       const where = {
         reclamoId:
           reclamo.id,
@@ -382,6 +449,24 @@ const anularFoto =
           ok: false,
           mensaje:
             "La fotografía ya está anulada",
+        });
+      }
+
+      /*
+      Grúa solamente puede anular
+      las fotos que subió ella misma.
+      */
+
+      if (
+        req.usuario.rol ===
+          "grua" &&
+        Number(foto.subidoPorId) !==
+          Number(req.usuario.id)
+      ) {
+        return res.status(403).json({
+          ok: false,
+          mensaje:
+            "Solo podés anular fotos que subiste vos",
         });
       }
 

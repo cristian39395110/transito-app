@@ -13,6 +13,7 @@ const {
   Acta,
   Infraccion,
   Emplazamiento,
+  Foto,
 } = require("../models");
 
 const {
@@ -914,6 +915,48 @@ if (
 
       /*
       |--------------------------------------------------------------------------
+      | FOTO SACADA MIENTRAS ESTABA PENDIENTE
+      |--------------------------------------------------------------------------
+      |
+      | Desde la ficha del pendiente se puede sacar
+      | la foto antes de confirmar el ingreso. Queda
+      | con una referencia provisoria y acá se pega
+      | al ingreso que se acaba de crear.
+      |
+      */
+
+      await Foto.update(
+        {
+          referenciaId:
+            ingreso.id,
+
+          referenciaTemporal:
+            null,
+        },
+        {
+          where: {
+            reclamoId:
+              reclamo.id,
+
+            tipoReferencia:
+              "INGRESO_PREDIO",
+
+            referenciaId:
+              null,
+
+            referenciaTemporal:
+              `INGRESO_VEHICULO_${vehiculo.id}`,
+
+            activo:
+              true,
+          },
+
+          transaction,
+        }
+      );
+
+      /*
+      |--------------------------------------------------------------------------
       | ACTUALIZAR RECLAMO
       |--------------------------------------------------------------------------
       */
@@ -935,8 +978,11 @@ if (vehiculosDelReclamo.length <= 1) {
   |------------------------------------------------------------
   | Un solo vehículo: conservamos el comportamiento anterior.
   */
+  // "EN_PREDIO" no existe en reclamos.estado (la base lo
+  // guardaba vacío). Se usa EN_SEGUIMIENTO, igual que la
+  // carga manual; la etapa EN_PREDIO es la que manda.
   reclamo.estado =
-    "EN_PREDIO";
+    "EN_SEGUIMIENTO";
 
   reclamo.etapaActual =
     "EN_PREDIO";
@@ -3544,8 +3590,11 @@ const recibirTraslado =
   const estadoAnterior =
     reclamo.estado;
 
+  // "EN_PREDIO" no existe en reclamos.estado (la base lo
+  // guardaba vacío). Se usa EN_SEGUIMIENTO, igual que la
+  // carga manual; la etapa EN_PREDIO es la que manda.
   reclamo.estado =
-    "EN_PREDIO";
+    "EN_SEGUIMIENTO";
 
   reclamo.etapaActual =
     "EN_PREDIO";

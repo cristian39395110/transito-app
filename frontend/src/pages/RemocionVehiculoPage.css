@@ -507,3 +507,126 @@
     minmax(0, 1fr) !important;
   width: 100% !important;
 }
+
+
+/* =========================================================
+   GRÚA / ORDEN JUDICIAL
+   ========================================================= */
+
+.remocion-pasar-grua {
+  margin: 14px 0;
+  padding: 14px;
+  border: 1px solid #fde68a;
+  border-left: 4px solid #f59e0b;
+  border-radius: 10px;
+  background: #fffbeb;
+}
+
+.remocion-pasar-grua strong {
+  display: block;
+  font-size: 16px;
+}
+
+.remocion-pasar-grua p {
+  margin: 6px 0 10px;
+  color: #475569;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.remocion-pasar-grua button {
+  width: 100%;
+  min-height: 48px;
+  padding: 12px;
+  border: 1px solid #b45309;
+  border-radius: 8px;
+  background: #d97706;
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.remocion-pasar-grua button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.remocion-orden-judicial {
+  margin-top: 12px;
+  padding: 12px;
+  border: 1px solid #c7d2fe;
+  border-radius: 8px;
+  background: #eef2ff;
+}
+
+.remocion-orden-judicial strong {
+  display: block;
+  color: #3730a3;
+  font-size: 14px;
+}
+
+.remocion-orden-judicial > span {
+  display: block;
+  margin: 2px 0 8px;
+  color: #4338ca;
+  font-size: 12px;
+}
+
+
+/* =========================================================
+   CELULAR: BOTÓN FINAL SIEMPRE A MANO
+   ========================================================= */
+
+@media (max-width: 768px) {
+  .remocion-page {
+    padding-bottom: 20px;
+  }
+
+  .remocion-header h1 {
+    font-size: 23px;
+  }
+
+  .remocion-acta {
+    border-radius: 0 8px 8px 0;
+  }
+
+  .remocion-final {
+    position: sticky;
+    bottom: calc(66px + env(safe-area-inset-bottom));
+    z-index: 5;
+
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    margin: 18px -12px 0;
+    padding: 10px 12px;
+
+    border-top: 1px solid #e2e8f0;
+    background: rgba(255, 255, 255, 0.97);
+    box-shadow: 0 -6px 16px rgba(15, 23, 42, 0.08);
+  }
+
+  .remocion-final > div {
+    display: none;
+  }
+
+  .remocion-final > button {
+    width: 100%;
+    min-width: 0;
+    min-height: 54px;
+    margin-top: 0;
+    border-radius: 10px;
+    background: #15803d;
+    font-size: 17px;
+  }
+
+  .remocion-seccion select,
+  .remocion-seccion input[type="text"],
+  .remocion-seccion input:not([type]),
+  .remocion-seccion textarea {
+    min-height: 46px;
+    font-size: 16px;
+  }
+}

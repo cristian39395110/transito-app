@@ -19,8 +19,17 @@ const FotoUploader = ({
   referenciaTemporal = null,
   descripcion = "",
   onFotoSubida,
+  permitirAdjuntar = false,
 }) => {
   const inputRef =
+    useRef(null);
+
+  /*
+   * Segundo selector, sin "capture":
+   * en el celular deja elegir una foto
+   * que ya está en la galería.
+   */
+  const galeriaRef =
     useRef(null);
 
   const [
@@ -176,20 +185,64 @@ const FotoUploader = ({
         }
       />
 
-      <button
-        type="button"
-        className="foto-uploader-boton"
-        onClick={
-          seleccionarFoto
-        }
-        disabled={
-          procesando
-        }
-      >
-        {procesando
-          ? "Procesando foto..."
-          : "📷 Tomar / seleccionar foto"}
-      </button>
+      {permitirAdjuntar ? (
+        <>
+          <input
+            ref={galeriaRef}
+            className="foto-uploader-input"
+            type="file"
+            accept="image/*"
+            onChange={
+              manejarArchivo
+            }
+          />
+
+          <div className="foto-uploader-botones">
+            <button
+              type="button"
+              className="foto-uploader-boton"
+              onClick={
+                seleccionarFoto
+              }
+              disabled={
+                procesando
+              }
+            >
+              {procesando
+                ? "Procesando foto..."
+                : "📷 Sacar foto"}
+            </button>
+
+            <button
+              type="button"
+              className="foto-uploader-boton secundario"
+              onClick={() =>
+                galeriaRef.current?.click()
+              }
+              disabled={
+                procesando
+              }
+            >
+              📎 Adjuntar foto
+            </button>
+          </div>
+        </>
+      ) : (
+        <button
+          type="button"
+          className="foto-uploader-boton"
+          onClick={
+            seleccionarFoto
+          }
+          disabled={
+            procesando
+          }
+        >
+          {procesando
+            ? "Procesando foto..."
+            : "📷 Tomar / seleccionar foto"}
+        </button>
+      )}
 
       {procesando && (
         <div className="foto-uploader-progreso">
