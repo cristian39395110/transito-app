@@ -3105,13 +3105,39 @@ const listarTrasladosPendientes =
       |--------------------------------------------------------------------------
       */
 
-      const predioId =
-        obtenerPredioPermitido(
-          req,
-          req.query.predioId
-        );
+      /*
+      | "TODOS": director, administrador y secretaría
+      | de reclamos pueden ver todos los predios juntos
+      | (igual que en los pendientes de ingreso).
+      | Antes esto respondía error y la pantalla de
+      | Predio no cargaba nada con "Todos".
+      */
 
-      if (!predioId) {
+      const solicitaTodos =
+        String(
+          req.query.predioId || ""
+        ).toUpperCase() === "TODOS";
+
+      const puedeVerTodos = [
+        "director",
+        "administrador",
+        "superadmin",
+        "secretaria_reclamos",
+      ].includes(req.usuario?.rol);
+
+      const verTodos =
+        solicitaTodos &&
+        puedeVerTodos;
+
+      const predioId =
+        verTodos
+          ? null
+          : obtenerPredioPermitido(
+              req,
+              req.query.predioId
+            );
+
+      if (!verTodos && !predioId) {
         return res.status(400).json({
           ok: false,
           mensaje:
@@ -3127,14 +3153,16 @@ const listarTrasladosPendientes =
       */
 
       const predio =
-        await Predio.findOne({
-          where: {
-            id: Number(predioId),
-            activo: true,
-          },
-        });
+        verTodos
+          ? null
+          : await Predio.findOne({
+              where: {
+                id: Number(predioId),
+                activo: true,
+              },
+            });
 
-      if (!predio) {
+      if (!verTodos && !predio) {
         return res.status(404).json({
           ok: false,
           mensaje:
@@ -3145,7 +3173,7 @@ const listarTrasladosPendientes =
 
       /*
       |--------------------------------------------------------------------------
-      | BUSCAR TRASLADOS HACIA ESTE PREDIO
+      | BUSCAR TRASLADOS HACIA ESTE PREDIO (O HACIA CUALQUIERA)
       |--------------------------------------------------------------------------
       */
 
@@ -3156,7 +3184,11 @@ const listarTrasladosPendientes =
               "TRASLADADO",
 
             predioDestinoId:
-              predio.id,
+              predio
+                ? predio.id
+                : {
+                    [Op.ne]: null,
+                  },
           },
 
           order: [
@@ -3189,7 +3221,9 @@ const listarTrasladosPendientes =
                 traslado.vehiculoId,
 
               predioId:
-                predio.id,
+                predio
+                  ? predio.id
+                  : traslado.predioDestinoId,
 
               fechaHora: {
                 [Op.gte]:
@@ -3265,7 +3299,10 @@ const listarTrasladosPendientes =
           predioOrigen,
 
           predioDestino:
-            predio,
+            predio ||
+            (await Predio.findByPk(
+              traslado.predioDestinoId
+            )),
 
           origen:
             "TRASLADO_PREDIO",

@@ -27,9 +27,10 @@ const ExpedientesPage =
 const esSuperadmin =
   rol === "superadmin";
 
+  // El director solo consulta: al tocar un expediente
+  // lo abre para verlo, no para corregirlo.
   const puedeCorregir = [
   "administrador",
-  "director",
   "secretaria_reclamos",
 ].includes(rol);
 

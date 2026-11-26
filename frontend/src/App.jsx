@@ -268,7 +268,6 @@ const App = () => {
     <ProtectedRoute
       roles={[
         "administrador",
-        "director",
         "secretaria_reclamos",
       ]}
     >

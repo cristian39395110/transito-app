@@ -78,7 +78,6 @@ router.get(
   "/carga-manual/:id",
   permitirRoles(
     "administrador",
-    "director",
     "secretaria_reclamos"
   ),
   obtenerExpedienteManual
@@ -89,7 +88,6 @@ router.put(
   "/carga-manual/:id",
   permitirRoles(
     "administrador",
-    "director",
     "secretaria_reclamos"
   ),
   actualizarExpedienteManual

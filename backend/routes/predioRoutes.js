@@ -184,6 +184,8 @@ router.get(
   "/traslados/pendientes",
   permitirRoles(
     "administrador",
+    "director",
+    "jefe_guardia",
     "secretaria_predio",
     "secretaria_reclamos"
   ),
